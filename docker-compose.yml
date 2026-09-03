@@ -15,41 +15,5 @@ services:
       timeout: 5s
       retries: 5
 
-  api:
-    build:
-      context: .
-      dockerfile: packages/api/Dockerfile
-    ports:
-      - "3001:3001"
-    environment:
-      NODE_ENV: development
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: fleetos
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      JWT_SECRET: dev-secret-change-in-production
-      UPLOAD_DIR: /app/uploads
-      EXPORT_DIR: /app/exports
-    volumes:
-      - uploads:/app/uploads
-      - exports:/app/exports
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  web:
-    build:
-      context: .
-      dockerfile: packages/web/Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      API_URL: http://api:3001
-    depends_on:
-      - api
-
 volumes:
   pgdata:
-  uploads:
-  exports:

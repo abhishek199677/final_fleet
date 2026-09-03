@@ -1,11 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../common/database/database.service';
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { promises as fs } from 'fs';
+import { join } from 'path';
+import { createHash } from 'crypto';
 
-const s3 = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
-const BUCKET = process.env.EVIDENCE_BUCKET || 'fleetos-evidence-dev';
-const OCR_API_URL = process.env.OCR_API_URL || 'https://api.openai.com/v1/chat/completions';
-const OCR_API_KEY = process.env.OCR_API_KEY;
+const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 export interface OcrResult {
   value: number;
@@ -33,15 +34,14 @@ export class OcrWorker {
 
       const photo = photoResult.rows[0];
 
-      // Download image from S3
-      const response = await s3.send(new GetObjectCommand({ Bucket: BUCKET, Key: photo.key }));
-      const body = response.Body;
-      if (!body) throw new Error('Empty response body');
-      const imageBytes = await body.transformToByteArray();
-      const base64 = Buffer.from(imageBytes).toString('base64');
+      // Read image from local filesystem
+      const filePath = join(UPLOAD_DIR, photo.key);
+      const buffer = await fs.readFile(filePath);
+      const base64 = buffer.toString('base64');
+      const mimeType = photo.key.endsWith('.png') ? 'image/png' : 'image/jpeg';
 
-      // Call vision API for OCR
-      const ocrResult = await this.callVisionApi(base64, photo.entity_type);
+      // Call Gemini API for OCR
+      const ocrResult = await this.callGeminiApi(base64, mimeType, photo.entity_type);
 
       if (ocrResult && ocrResult.confidence > 0.7) {
         // Update work session with OCR value
@@ -77,43 +77,40 @@ export class OcrWorker {
     }
   }
 
-  private async callVisionApi(base64Image: string, entityType: string): Promise<OcrResult | null> {
-    if (!OCR_API_KEY) {
-      this.logger.warn('OCR API key not configured, using mock');
+  private async callGeminiApi(base64Image: string, mimeType: string, entityType: string): Promise<OcrResult | null> {
+    if (!GEMINI_API_KEY) {
+      this.logger.warn('Gemini API key not configured, using mock');
       return this.mockOcrResult();
     }
 
     const prompt = entityType === 'work_session'
-      ? 'Read the meter/hour reading from this equipment dashboard. Return JSON with fields: value (number), confidence (0-1), raw_text (string).'
-      : 'Read any numerical values from this image. Return JSON with fields: value (number), confidence (0-1), raw_text (string).';
+      ? 'Read the meter/hour reading from this equipment dashboard. Return ONLY a JSON object with fields: value (number), confidence (0-1), raw_text (string). No other text.'
+      : 'Read any numerical values from this image. Return ONLY a JSON object with fields: value (number), confidence (0-1), raw_text (string). No other text.';
 
-    const response = await fetch(OCR_API_URL, {
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OCR_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'gpt-4-vision-preview',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } },
-            ],
-          },
-        ],
-        max_tokens: 300,
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inline_data: { mime_type: mimeType, data: base64Image } }
+          ]
+        }],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 200,
+        }
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`OCR API error: ${response.status}`);
+      const error = await response.text();
+      throw new Error(`Gemini API error: ${response.status} - ${error}`);
     }
 
-    const data = await response.json() as { choices?: { message?: { content?: string } }[] };
-    const content = data.choices?.[0]?.message?.content;
+    const data = await response.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     // Parse JSON from response
     const jsonMatch = content?.match(/\{[\s\S]*\}/);
