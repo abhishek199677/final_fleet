@@ -1,19 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../common/database/database.service';
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { promises as fs } from 'fs';
+import { join } from 'path';
 import { createHash } from 'crypto';
 
-// MinIO-compatible S3 client
-const s3 = new S3Client({
-  region: process.env.S3_REGION || 'us-east-1',
-  endpoint: process.env.S3_ENDPOINT || undefined,
-  forcePathStyle: !!process.env.S3_ENDPOINT,
-  credentials: process.env.S3_ACCESS_KEY ? {
-    accessKeyId: process.env.S3_ACCESS_KEY,
-    secretAccessKey: process.env.S3_SECRET_KEY || '',
-  } : undefined,
-});
-const BUCKET = process.env.S3_BUCKET || 'fleetos';
+const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 
 interface MediaJob {
   tenant_id: string;
@@ -31,18 +22,15 @@ export class MediaWorker {
     this.logger.log(`Processing photo ${job.photo_id} for tenant ${job.tenant_id}`);
 
     try {
-      const response = await s3.send(new GetObjectCommand({ Bucket: BUCKET, Key: job.key }));
-      const body = response.Body;
-      if (!body) throw new Error('Empty response body');
-      const bytes = await body.transformToByteArray();
-      const sha256 = createHash('sha256').update(Buffer.from(bytes)).digest('hex');
-      const fileSize = bytes.length;
+      const filePath = join(UPLOAD_DIR, job.key);
+      const buffer = await fs.readFile(filePath);
+      const sha256 = createHash('sha256').update(buffer).digest('hex');
 
       // Update photo with SHA-256 and metadata
       await this.db.queryWithTenant(job.tenant_id, 'owner',
         `UPDATE tenant.photos SET sha256 = $2, file_size = $3, committed_at = COALESCE(committed_at, NOW())
          WHERE id = $1`,
-        [job.photo_id, sha256, fileSize]);
+        [job.photo_id, sha256, buffer.length]);
 
       // TODO: Extract EXIF data, generate thumbnail, validate GPS accuracy
       // This would use sharp or similar library in production

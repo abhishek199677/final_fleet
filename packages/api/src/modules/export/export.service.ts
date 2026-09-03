@@ -1,20 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { promises as fs } from 'fs';
+import { join } from 'path';
 import * as XLSX from 'xlsx';
 
-// MinIO-compatible S3 client
-const s3 = new S3Client({
-  region: process.env.S3_REGION || 'us-east-1',
-  endpoint: process.env.S3_ENDPOINT || undefined,
-  forcePathStyle: !!process.env.S3_ENDPOINT,
-  credentials: process.env.S3_ACCESS_KEY ? {
-    accessKeyId: process.env.S3_ACCESS_KEY,
-    secretAccessKey: process.env.S3_SECRET_KEY || '',
-  } : undefined,
-});
-const BUCKET = process.env.S3_BUCKET || 'fleetos';
+const EXPORT_DIR = process.env.EXPORT_DIR || './exports';
 
 export interface ExportOptions {
   type: 'machines' | 'billing' | 'expenses' | 'sessions' | 'receivables';
@@ -65,23 +55,26 @@ export class ExportService {
     // Generate buffer
     const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 
-    // Upload to S3
+    // Save to local filesystem
+    await fs.mkdir(join(EXPORT_DIR, tenantId), { recursive: true });
     const filename = `${options.type}-${new Date().toISOString().split('T')[0]}.xlsx`;
-    const key = `${tenantId}/exports/${filename}`;
-
-    await s3.send(new PutObjectCommand({
-      Bucket: BUCKET,
-      Key: key,
-      Body: buffer,
-      ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    }));
-
-    // Generate signed URL
-    const command = new PutObjectCommand({ Bucket: BUCKET, Key: key });
-    const download_url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+    const filePath = join(EXPORT_DIR, tenantId, filename);
+    await fs.writeFile(filePath, buffer);
 
     this.logger.log(`Exported ${data.length} rows to ${filename}`);
-    return { download_url, filename };
+    return {
+      download_url: `/api/v1/export/download/${tenantId}/${filename}`,
+      filename,
+    };
+  }
+
+  async downloadFile(tenantId: string, filename: string): Promise<{ buffer: Buffer; contentType: string }> {
+    const filePath = join(EXPORT_DIR, tenantId, filename);
+    const buffer = await fs.readFile(filePath);
+    return {
+      buffer,
+      contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    };
   }
 
   private async exportMachines(tenantId: string) {
