@@ -2,10 +2,18 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { createHash } from 'crypto';
 
-const s3 = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
-const BUCKET = process.env.EVIDENCE_BUCKET || 'fleetos-evidence-dev';
+// MinIO-compatible S3 client (works with AWS S3, MinIO, or any S3-compatible storage)
+const s3 = new S3Client({
+  region: process.env.S3_REGION || 'us-east-1',
+  endpoint: process.env.S3_ENDPOINT || undefined, // Set for MinIO: http://localhost:9000
+  forcePathStyle: !!process.env.S3_ENDPOINT, // Required for MinIO
+  credentials: process.env.S3_ACCESS_KEY ? {
+    accessKeyId: process.env.S3_ACCESS_KEY,
+    secretAccessKey: process.env.S3_SECRET_KEY || '',
+  } : undefined,
+});
+const BUCKET = process.env.S3_BUCKET || 'fleetos';
 
 @Injectable()
 export class PhotosService {

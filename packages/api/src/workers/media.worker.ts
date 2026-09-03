@@ -3,8 +3,17 @@ import { DatabaseService } from '../common/database/database.service';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { createHash } from 'crypto';
 
-const s3 = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
-const BUCKET = process.env.EVIDENCE_BUCKET || 'fleetos-evidence-dev';
+// MinIO-compatible S3 client
+const s3 = new S3Client({
+  region: process.env.S3_REGION || 'us-east-1',
+  endpoint: process.env.S3_ENDPOINT || undefined,
+  forcePathStyle: !!process.env.S3_ENDPOINT,
+  credentials: process.env.S3_ACCESS_KEY ? {
+    accessKeyId: process.env.S3_ACCESS_KEY,
+    secretAccessKey: process.env.S3_SECRET_KEY || '',
+  } : undefined,
+});
+const BUCKET = process.env.S3_BUCKET || 'fleetos';
 
 interface MediaJob {
   tenant_id: string;

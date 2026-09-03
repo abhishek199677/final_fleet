@@ -12,12 +12,21 @@
     "test:append-only": "node packages/db/generators/test-append-only.js",
     "test:e2e": "playwright test",
     "db:migrate": "node-pg-migrate up --migrations-dir packages/db/migrations --database-url-env-var DATABASE_URL",
+    "db:seed": "cd packages/db && node seed.js",
     "db:lint": "node packages/db/linters/migration-linter.js",
-    "openapi:gen": "openapi-generator-cli generate -i packages/api/openapi.json -o packages/shared/src/generated -g typescript-axios"
+    "openapi:gen": "openapi-generator-cli generate -i packages/api/openapi.json -o packages/shared/src/generated -g typescript-axios",
+    "dev": "concurrently \"pnpm dev:api\" \"pnpm dev:web\"",
+    "dev:api": "cd packages/api && pnpm start:dev",
+    "dev:web": "cd packages/web && pnpm dev",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:seed": "docker-compose exec api node packages/db/seed.js",
+    "setup": "cp .env.example .env && pnpm db:migrate && pnpm db:seed"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
+    "concurrently": "^9.0.0",
     "eslint": "^9.0.0",
     "eslint-plugin-import": "^2.31.0",
     "prettier": "^3.4.0",
