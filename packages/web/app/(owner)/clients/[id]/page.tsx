@@ -30,7 +30,7 @@ export default function ClientDetail() {
   if (loading) return <p className="text-muted-foreground">Loading...</p>;
   if (!client) return <p>Client not found</p>;
 
-  const formatMoney = (amount: number) => `$${(amount / 100).toLocaleString()}`;
+  const formatMoney = (amount: number) => `₹${(amount / 100).toLocaleString('en-IN')}`;
 
   return (
     <div className="space-y-6">
@@ -67,7 +67,7 @@ export default function ClientDetail() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Balance</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-orange-600">{receivable ? formatMoney(receivable.balance_minor as number) : '$0'}</p>
+            <p className="text-2xl font-bold text-orange-600">{receivable ? formatMoney(receivable.balance_minor as number) : '₹0'}</p>
           </CardContent>
         </Card>
         <Card>

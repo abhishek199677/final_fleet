@@ -104,7 +104,7 @@ export default function Settings() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium">Base Currency</label>
-                    <Input value="USD" disabled />
+                    <Input value="INR" disabled />
                   </div>
                   <div>
                     <label className="text-sm font-medium">Default FX Rate</label>

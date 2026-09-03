@@ -31,7 +31,7 @@ export default function OwnerHome() {
     }).finally(() => setLoading(false));
   }, []);
 
-  const formatMoney = (amount: number) => `$${(amount / 100).toLocaleString()}`;
+  const formatMoney = (amount: number) => `₹${(amount / 100).toLocaleString('en-IN')}`;
 
   return (
     <div className="space-y-6">
@@ -51,7 +51,7 @@ export default function OwnerHome() {
                 <CardTitle className="text-sm font-medium text-muted-foreground">Revenue</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">{kpis ? formatMoney(kpis.total_revenue) : '$0'}</p>
+                <p className="text-2xl font-bold">{kpis ? formatMoney(kpis.total_revenue) : '₹0'}</p>
               </CardContent>
             </Card>
             <Card>
@@ -59,7 +59,7 @@ export default function OwnerHome() {
                 <CardTitle className="text-sm font-medium text-muted-foreground">Expenses</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">{kpis ? formatMoney(kpis.total_expenses) : '$0'}</p>
+                <p className="text-2xl font-bold">{kpis ? formatMoney(kpis.total_expenses) : '₹0'}</p>
               </CardContent>
             </Card>
             <Card>
@@ -83,7 +83,7 @@ export default function OwnerHome() {
                 <CardTitle className="text-sm font-medium text-muted-foreground">Pending Collections</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold text-orange-600">{kpis ? formatMoney(kpis.pending_collections) : '$0'}</p>
+                <p className="text-2xl font-bold text-orange-600">{kpis ? formatMoney(kpis.pending_collections) : '₹0'}</p>
               </CardContent>
             </Card>
             <Card>

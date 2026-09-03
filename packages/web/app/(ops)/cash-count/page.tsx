@@ -66,7 +66,7 @@ export default function CashCount() {
           <div className="grid grid-cols-3 gap-4">
             {Object.entries(denominations).map(([value, qty]) => (
               <div key={value}>
-                <label className="text-sm font-medium">${value}</label>
+                <label className="text-sm font-medium">₹{value}</label>
                 <input
                   type="number"
                   min="0"
@@ -77,7 +77,7 @@ export default function CashCount() {
               </div>
             ))}
           </div>
-          <div className="text-right text-xl font-bold">Total: ${(total / 100).toFixed(2)}</div>
+          <div className="text-right text-xl font-bold">Total: ₹{(total / 100).toFixed(2)}</div>
           <div className="flex gap-4">
             <Button onClick={handleSubmit} disabled={!selectedAccount || loading}>{loading ? 'Saving...' : 'Submit Count'}</Button>
             <Button variant="outline" onClick={() => router.back()}>Cancel</Button>

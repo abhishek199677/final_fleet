@@ -30,7 +30,7 @@ async function testFinanceDenial() {
   // Create a test tenant for RLS
   await client.query(`
     INSERT INTO platform.tenants (id, name, slug, country, base_currency, timezone, status)
-    VALUES ('00000000-0000-0000-0000-000000000001', 'Test', 'test', 'US', 'USD', 'UTC', 'active')
+    VALUES ('00000000-0000-0000-0000-000000000001', 'Test', 'test', 'IN', 'INR', 'UTC', 'active')
     ON CONFLICT (id) DO NOTHING
   `);
 

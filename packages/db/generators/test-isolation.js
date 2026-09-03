@@ -31,8 +31,8 @@ async function testIsolation() {
 
   // Create test tenants
   await client.query(`INSERT INTO platform.tenants (id, name, slug, country, base_currency, timezone, status)
-    VALUES ($1, 'Test A', 'test-a', 'US', 'USD', 'UTC', 'active'),
-           ($2, 'Test B', 'test-b', 'US', 'USD', 'UTC', 'active')
+    VALUES ($1, 'Test A', 'test-a', 'IN', 'INR', 'UTC', 'active'),
+           ($2, 'Test B', 'test-b', 'IN', 'INR', 'UTC', 'active')
     ON CONFLICT (id) DO NOTHING`, [tenantA, tenantB]);
 
   for (const table of tables) {

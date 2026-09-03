@@ -84,7 +84,7 @@ export class AuthService {
     const slug = tenantName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
     const tenantResult = await this.db.query('platform',
       `INSERT INTO platform.tenants (name, slug, country, base_currency, status)
-       VALUES ($1, $2, 'US', 'USD', 'active') RETURNING id`,
+       VALUES ($1, $2, 'IN', 'INR', 'active') RETURNING id`,
       [tenantName, slug]
     );
     const tenantId = tenantResult.rows[0].id;

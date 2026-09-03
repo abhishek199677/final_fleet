@@ -18,7 +18,7 @@ async function seed() {
     // Create test tenant
     await client.query(`
       INSERT INTO platform.tenants (id, name, slug, country, base_currency, status)
-      VALUES ('00000000-0000-0000-0000-000000000001', 'Demo Construction', 'demo', 'US', 'USD', 'active')
+      VALUES ('00000000-0000-0000-0000-000000000001', 'Demo Construction', 'demo', 'IN', 'INR', 'active')
       ON CONFLICT (id) DO NOTHING
     `);
 
@@ -72,7 +72,7 @@ async function seed() {
     for (const name of clientNames) {
       await client.query(`
         INSERT INTO tenant.clients (tenant_id, name, currency, payment_terms_days, client_uuid)
-        VALUES ('00000000-0000-0000-0000-000000000001', $1, 'USD', 30, gen_random_uuid())
+        VALUES ('00000000-0000-0000-0000-000000000001', $1, 'INR', 30, gen_random_uuid())
         ON CONFLICT DO NOTHING
       `, [name]);
     }
@@ -100,7 +100,7 @@ async function seed() {
     // Create cash accounts
     await client.query(`
       INSERT INTO tenant.cash_accounts (tenant_id, name, type, currency, is_default)
-      VALUES ('00000000-0000-0000-0000-000000000001', 'Main Cash', 'site_cash', 'USD', true)
+      VALUES ('00000000-0000-0000-0000-000000000001', 'Main Cash', 'site_cash', 'INR', true)
       ON CONFLICT DO NOTHING
     `);
 

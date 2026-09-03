@@ -75,7 +75,7 @@ export class ImportService {
         await this.db.queryWithTenant(tenantId, 'ops',
           `INSERT INTO tenant.expenses (tenant_id, date, category_id, description, currency, amount_minor, created_by, client_uuid)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-          [tenantId, row.date, categoryId, row.description || null, row.currency || 'USD',
+          [tenantId, row.date, categoryId, row.description || null, row.currency || 'INR',
            Math.round(parseFloat(row.amount) * 100), row.created_by || 'system', row.client_uuid || crypto.randomUUID()]);
         result.imported++;
       } catch (error) {
@@ -108,7 +108,7 @@ export class ImportService {
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
            ON CONFLICT (tenant_id, client_uuid) DO NOTHING`,
           [tenantId, row.name, row.contact || null, row.phone || null, row.whatsapp || null,
-           row.address || null, row.currency || 'USD', parseInt(row.payment_terms_days || '30'),
+           row.address || null, row.currency || 'INR', parseInt(row.payment_terms_days || '30'),
            row.client_uuid || crypto.randomUUID()]);
         result.imported++;
       } catch (error) {
