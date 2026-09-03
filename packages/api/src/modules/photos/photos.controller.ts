@@ -7,7 +7,7 @@ import { Response } from 'express';
 
 @ApiTags('Photos')
 @ApiBearerAuth('tenant-auth')
-@Controller('v1/photos')
+@Controller('photos')
 export class PhotosController {
   constructor(private service: PhotosService) {}
 

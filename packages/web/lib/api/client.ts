@@ -1,12 +1,23 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE = '/api';
+
+async function getToken(): Promise<string | null> {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('fleetos_token');
+}
 
 async function fetchApi(path: string, options: RequestInit = {}) {
+  const token = await getToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {}),
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({ detail: res.statusText }));
@@ -25,6 +36,9 @@ export const api = {
   getClients: () => fetchApi('/v1/clients'),
   getClient: (id: string) => fetchApi(`/v1/clients/${id}`),
   createClient: (data: Record<string, unknown>) => fetchApi('/v1/clients', { method: 'POST', body: JSON.stringify(data) }),
+
+  // Operators
+  getOperators: () => fetchApi('/v1/operators'),
 
   // Work Sessions
   getWorkSessions: (machineId?: string) => fetchApi(`/v1/work-sessions${machineId ? `?machine_id=${machineId}` : ''}`),

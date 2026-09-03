@@ -6,7 +6,7 @@ import { Response } from 'express';
 
 @ApiTags('Export')
 @ApiBearerAuth('tenant-auth')
-@Controller('v1/export')
+@Controller('export')
 export class ExportController {
   constructor(private service: ExportService) {}
 

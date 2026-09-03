@@ -5,7 +5,7 @@ import { TenantRequest } from '../../common/middleware/tenant-context.middleware
 
 @ApiTags('Alerts')
 @ApiBearerAuth('tenant-auth')
-@Controller('v1/alerts')
+@Controller('alerts')
 export class AlertsController {
   constructor(private service: AlertsService) {}
 

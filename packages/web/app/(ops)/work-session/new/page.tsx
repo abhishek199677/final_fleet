@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { authFetch } from '@/lib/api/auth-fetch';
 
 export default function NewWorkSession() {
   const router = useRouter();
@@ -20,8 +21,8 @@ export default function NewWorkSession() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/v1/machines').then(r => r.json()),
-      fetch('/v1/operators').then(r => r.json()),
+      authFetch('/api/v1/machines').then(r => r.json()),
+      authFetch('/api/v1/operators').then(r => r.json()),
     ]).then(([m, o]) => {
       setMachines(m || []);
       setOperators(o || []);
@@ -32,9 +33,8 @@ export default function NewWorkSession() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('/v1/work-sessions', {
+      const res = await authFetch('/api/v1/work-sessions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           start_meter: parseFloat(formData.start_meter),

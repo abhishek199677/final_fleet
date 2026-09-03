@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { authFetch } from '@/lib/api/auth-fetch';
 
 interface KPIs {
   total_revenue: number;
@@ -21,9 +22,9 @@ export default function OwnerHome() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/v1/billing/kpis').then(r => r.json()).catch(() => null),
-      fetch('/v1/machines').then(r => r.json()).catch(() => []),
-      fetch('/v1/billing/receivables').then(r => r.json()).catch(() => []),
+      authFetch('/api/v1/billing/kpis').then(r => r.json()).catch(() => null),
+      authFetch('/api/v1/machines').then(r => r.json()).catch(() => []),
+      authFetch('/api/v1/billing/receivables').then(r => r.json()).catch(() => []),
     ]).then(([k, m, r]) => {
       setKpis(k);
       setMachines(m || []);

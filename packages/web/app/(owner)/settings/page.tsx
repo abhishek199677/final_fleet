@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { authFetch } from '@/lib/api/auth-fetch';
 
 export default function Settings() {
   const [tab, setTab] = useState<'users' | 'machines' | 'categories' | 'fx'>('users');
@@ -13,8 +14,8 @@ export default function Settings() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/v1/users').then(r => r.json()).catch(() => []),
-      fetch('/v1/expenses/categories').then(r => r.json()).catch(() => []),
+      authFetch('/api/v1/users').then(r => r.json()).catch(() => []),
+      authFetch('/api/v1/expenses/categories').then(r => r.json()).catch(() => []),
     ]).then(([u, c]) => {
       setUsers(u || []);
       setCategories(c || []);

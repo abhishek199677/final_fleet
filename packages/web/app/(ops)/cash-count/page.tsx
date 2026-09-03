@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { authFetch } from '@/lib/api/auth-fetch';
 
 export default function CashCount() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function CashCount() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch('/v1/cash/accounts').then(r => r.json()).then(setAccounts).catch(() => setAccounts([]));
+    authFetch('/api/v1/cash/accounts').then(r => r.json()).then(setAccounts).catch(() => setAccounts([]));
   }, []);
 
   const total = Object.entries(denominations).reduce((sum, [val, qty]) => {
@@ -30,9 +31,8 @@ export default function CashCount() {
         .filter(([, qty]) => qty)
         .map(([value, quantity]) => ({ value: parseFloat(value), quantity: parseInt(quantity) }));
 
-      const res = await fetch('/v1/cash/counts', {
+      const res = await authFetch('/api/v1/cash/counts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cash_account_id: selectedAccount,
           count_date: new Date().toISOString().split('T')[0],

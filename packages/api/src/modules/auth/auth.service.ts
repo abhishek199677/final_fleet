@@ -61,7 +61,7 @@ export class AuthService {
         'custom:tenant_id': user.tenant_id,
       },
       JWT_SECRET,
-      { expiresIn: JWT_EXPIRES }
+      { expiresIn: JWT_EXPIRES, issuer: 'fleetos' }
     );
 
     return {
@@ -133,7 +133,7 @@ export class AuthService {
         'custom:tenant_id': tenantId,
       },
       JWT_SECRET,
-      { expiresIn: JWT_EXPIRES }
+      { expiresIn: JWT_EXPIRES, issuer: 'fleetos' }
     );
 
     return {

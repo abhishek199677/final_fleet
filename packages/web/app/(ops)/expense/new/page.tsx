@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { authFetch } from '@/lib/api/auth-fetch';
 
 export default function NewExpense() {
   const router = useRouter();
@@ -14,22 +15,21 @@ export default function NewExpense() {
     date: new Date().toISOString().split('T')[0],
     description: '',
     amount_minor: '',
-    currency: 'USD',
+    currency: 'INR',
     notes: '',
   });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch('/v1/expenses/categories').then(r => r.json()).then(setCategories).catch(() => setCategories([]));
+    authFetch('/api/v1/expenses/categories').then(r => r.json()).then(setCategories).catch(() => setCategories([]));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('/v1/expenses', {
+      const res = await authFetch('/api/v1/expenses', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           amount_minor: parseInt(formData.amount_minor),
@@ -63,7 +63,7 @@ export default function NewExpense() {
                 <Input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
               </div>
               <div>
-                <label className="text-sm font-medium">Amount (cents) *</label>
+                <label className="text-sm font-medium">Amount (paise) *</label>
                 <Input type="number" value={formData.amount_minor} onChange={e => setFormData({ ...formData, amount_minor: e.target.value })} required />
               </div>
             </div>

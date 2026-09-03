@@ -17,7 +17,7 @@
     "db:lint": "node packages/db/linters/migration-linter.js",
     "openapi:gen": "openapi-generator-cli generate -i packages/api/openapi.json -o packages/shared/src/generated -g typescript-axios",
     "dev": "concurrently \"pnpm dev:api\" \"pnpm dev:web\"",
-    "dev:api": "cd packages/api && pnpm start:dev",
+    "dev:api": "cd packages/api && pnpm dev",
     "dev:web": "cd packages/web && pnpm dev",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",

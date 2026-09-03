@@ -5,7 +5,7 @@ import { TenantRequest } from '../../common/middleware/tenant-context.middleware
 
 @ApiTags('Fuel & Downtime')
 @ApiBearerAuth('tenant-auth')
-@Controller('v1')
+@Controller('fuel-downtime')
 export class FuelDowntimeController {
   constructor(private service: FuelDowntimeService) {}
 

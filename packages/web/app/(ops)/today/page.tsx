@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { authFetch } from '@/lib/api/auth-fetch';
 
 interface TodayData {
   machines: { id: string; code: string; status_flag: string; type: string }[];
@@ -19,11 +19,11 @@ export default function OpsToday() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/v1/machines').then(r => r.json()),
-      fetch('/v1/work-sessions?status=active').then(r => r.json()).catch(() => []),
-      fetch('/v1/fuel-logs?pending=true').then(r => r.json()).catch(() => []),
-      fetch('/v1/expenses?pending=true').then(r => r.json()).catch(() => []),
-      fetch('/v1/alerts?status=unread').then(r => r.json()).catch(() => []),
+      authFetch('/api/v1/machines').then(r => r.json()),
+      authFetch('/api/v1/work-sessions?status=active').then(r => r.json()).catch(() => []),
+      authFetch('/api/v1/fuel-downtime/fuel-logs?pending=true').then(r => r.json()).catch(() => []),
+      authFetch('/api/v1/expenses?pending=true').then(r => r.json()).catch(() => []),
+      authFetch('/api/v1/alerts?status=unread').then(r => r.json()).catch(() => []),
     ]).then(([machines, activeSessions, fuel, expenses, alerts]) => {
       setData({
         machines: machines || [],
@@ -46,12 +46,11 @@ export default function OpsToday() {
         <p className="text-muted-foreground">Loading...</p>
       ) : (
         <>
-          {/* Quick Actions */}
           <div className="grid gap-4 md:grid-cols-4">
             <Link href="/work-session/new">
               <Card className="hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="pt-6 text-center">
-                  <p className="text-2xl mb-2">📋</p>
+                  <p className="text-2xl mb-2">Start Session</p>
                   <p className="font-medium">Start Session</p>
                   <p className="text-sm text-muted-foreground">{availableMachines.length} machines free</p>
                 </CardContent>
@@ -60,7 +59,7 @@ export default function OpsToday() {
             <Link href="/fuel/new">
               <Card className="hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="pt-6 text-center">
-                  <p className="text-2xl mb-2">⛽</p>
+                  <p className="text-2xl mb-2">Log Fuel</p>
                   <p className="font-medium">Log Fuel</p>
                   {data.pendingFuel > 0 && <p className="text-sm text-orange-600">{data.pendingFuel} pending</p>}
                 </CardContent>
@@ -69,7 +68,7 @@ export default function OpsToday() {
             <Link href="/expense/new">
               <Card className="hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="pt-6 text-center">
-                  <p className="text-2xl mb-2">💰</p>
+                  <p className="text-2xl mb-2">Log Expense</p>
                   <p className="font-medium">Log Expense</p>
                   {data.pendingExpenses > 0 && <p className="text-sm text-orange-600">{data.pendingExpenses} pending</p>}
                 </CardContent>
@@ -78,14 +77,13 @@ export default function OpsToday() {
             <Link href="/cash-count">
               <Card className="hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="pt-6 text-center">
-                  <p className="text-2xl mb-2">💵</p>
+                  <p className="text-2xl mb-2">Cash Count</p>
                   <p className="font-medium">Cash Count</p>
                 </CardContent>
               </Card>
             </Link>
           </div>
 
-          {/* Active Sessions */}
           <Card>
             <CardHeader>
               <CardTitle>Active Sessions ({data.activeSessions.length})</CardTitle>
@@ -106,7 +104,6 @@ export default function OpsToday() {
             </CardContent>
           </Card>
 
-          {/* Alerts */}
           {data.alerts.length > 0 && (
             <Card>
               <CardHeader>

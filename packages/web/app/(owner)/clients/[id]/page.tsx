@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { authFetch } from '@/lib/api/auth-fetch';
 
 export default function ClientDetail() {
   const params = useParams();
@@ -17,9 +18,9 @@ export default function ClientDetail() {
   useEffect(() => {
     if (!id) return;
     Promise.all([
-      fetch(`/v1/clients/${id}`).then(r => r.json()),
-      fetch('/v1/deployments').then(r => r.json()).catch(() => []),
-      fetch('/v1/billing/receivables').then(r => r.json()).catch(() => []),
+      authFetch(`/api/v1/clients/${id}`).then(r => r.json()),
+      authFetch('/api/v1/deployments').then(r => r.json()).catch(() => []),
+      authFetch('/api/v1/billing/receivables').then(r => r.json()).catch(() => []),
     ]).then(([c, d, r]) => {
       setClient(c);
       setDeployments((d || []).filter((dep: Record<string, unknown>) => dep.client_id === id));

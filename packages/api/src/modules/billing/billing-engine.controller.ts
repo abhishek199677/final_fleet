@@ -5,7 +5,7 @@ import { TenantRequest } from '../../common/middleware/tenant-context.middleware
 
 @ApiTags('Billing Engine')
 @ApiBearerAuth('tenant-auth')
-@Controller('v1/billing')
+@Controller('billing')
 export class BillingEngineController {
   constructor(private service: BillingEngineService) {}
 

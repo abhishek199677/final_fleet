@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { authFetch } from '@/lib/api/auth-fetch';
 
 export default function OwnerMachines() {
   const [machines, setMachines] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/v1/machines')
+    authFetch('/api/v1/machines')
       .then((r) => r.json())
       .then(setMachines)
       .catch(() => setMachines([]))

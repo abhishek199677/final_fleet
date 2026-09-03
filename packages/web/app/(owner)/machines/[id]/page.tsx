@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { authFetch } from '@/lib/api/auth-fetch';
 
 export default function MachineDetail() {
   const params = useParams();
@@ -17,9 +18,9 @@ export default function MachineDetail() {
   useEffect(() => {
     if (!id) return;
     Promise.all([
-      fetch(`/v1/machines/${id}`).then(r => r.json()),
-      fetch(`/v1/maintenance/machines/${id}/status`).then(r => r.json()).catch(() => []),
-      fetch(`/v1/work-sessions?machine_id=${id}`).then(r => r.json()).catch(() => []),
+      authFetch(`/api/v1/machines/${id}`).then(r => r.json()),
+      authFetch(`/api/v1/maintenance/machines/${id}/status`).then(r => r.json()).catch(() => []),
+      authFetch(`/api/v1/work-sessions?machine_id=${id}`).then(r => r.json()).catch(() => []),
     ]).then(([m, mt, s]) => {
       setMachine(m);
       setMaintenance(mt || []);

@@ -9,9 +9,9 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     const config: PoolConfig = {
       host: process.env.DB_HOST || 'localhost',
       port: parseInt(process.env.DB_PORT || '5432', 10),
-      database: process.env.DB_NAME || 'fleetos_test',
+      database: process.env.DB_NAME || 'fleetos',
       user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || 'test',
+      password: process.env.DB_PASSWORD || 'postgres',
       max: 10,
     };
 

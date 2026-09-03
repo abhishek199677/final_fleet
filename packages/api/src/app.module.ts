@@ -26,6 +26,8 @@ import { PlatformJwtStrategy } from './common/strategies/platform-jwt.strategy';
 import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware';
 import { SecurityMiddleware } from './common/middleware/security.middleware';
 import { RateLimitMiddleware } from './common/middleware/rate-limit.middleware';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -52,10 +54,20 @@ import { RateLimitMiddleware } from './common/middleware/rate-limit.middleware';
     NotifyModule,
     DatabaseModule,
   ],
-  providers: [TenantJwtStrategy, PlatformJwtStrategy],
+  providers: [
+    TenantJwtStrategy,
+    PlatformJwtStrategy,
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(SecurityMiddleware, RateLimitMiddleware, TenantContextMiddleware).forRoutes('*');
+    consumer
+      .apply(SecurityMiddleware, RateLimitMiddleware)
+      .forRoutes('*');
+    consumer
+      .apply(TenantContextMiddleware)
+      .exclude('auth/(.*)', 'health(.*)')
+      .forRoutes('*');
   }
 }
