@@ -96,11 +96,57 @@ export class NotifyService {
   private async getTemplate(templateName: string, tenantId: string): Promise<{ name: string; body: string }> {
     // Load template from DB or default templates
     const templates: Record<string, { name: string; body: string }> = {
-      session_started: { name: 'session_started', body: 'Work session started for {machine_code}' },
-      session_ended: { name: 'session_ended', body: 'Work session ended. Duration: {duration}h' },
-      alert_created: { name: 'alert_created', body: 'Alert: {alert_message}' },
-      maintenance_due: { name: 'maintenance_due', body: 'Maintenance due for {machine_code}: {task_name}' },
-      payment_received: { name: 'payment_received', body: 'Payment received: {amount} from {client_name}' },
+      // Session templates
+      session_started: {
+        name: 'session_started',
+        body: '🚛 Work session started\nMachine: {machine_code}\nOperator: {operator_name}\nMeter: {start_meter} {meter_unit}\nTime: {start_time}'
+      },
+      session_ended: {
+        name: 'session_ended',
+        body: '✅ Work session ended\nMachine: {machine_code}\nDuration: {duration}h\nDistance: {distance} {meter_unit}\nFuel: {fuel_liters}L'
+      },
+      // Alert templates
+      alert_created: {
+        name: 'alert_created',
+        body: '⚠️ Alert: {alert_message}\nMachine: {machine_code}\nSeverity: {severity}'
+      },
+      alert_critical: {
+        name: 'alert_critical',
+        body: '🚨 CRITICAL: {alert_message}\nMachine: {machine_code}\nImmediate attention required!'
+      },
+      // Maintenance templates
+      maintenance_due: {
+        name: 'maintenance_due',
+        body: '🔧 Maintenance due\nMachine: {machine_code}\nTask: {task_name}\nDue at: {due_value} {meter_unit}\nCurrent: {current_meter} {meter_unit}'
+      },
+      maintenance_overdue: {
+        name: 'maintenance_overdue',
+        body: '🚨 MAINTENANCE OVERDUE\nMachine: {machine_code}\nTask: {task_name}\nOverdue by: {overdue_amount} {meter_unit}'
+      },
+      // Financial templates
+      payment_received: {
+        name: 'payment_received',
+        body: '💰 Payment received\nClient: {client_name}\nAmount: {currency} {amount}\nReference: {reference}'
+      },
+      payment_due: {
+        name: 'payment_due',
+        body: '📅 Payment due\nClient: {client_name}\nAmount: {currency} {amount}\nDue date: {due_date}'
+      },
+      // Daily summary
+      daily_summary: {
+        name: 'daily_summary',
+        body: '📊 Daily Summary - {date}\nSessions: {session_count}\nActive machines: {active_machines}\nFuel logged: {fuel_liters}L\nExpenses: {currency} {expense_amount}'
+      },
+      // Fuel alert
+      fuel_anomaly: {
+        name: 'fuel_anomaly',
+        body: '⛽ Fuel anomaly detected\nMachine: {machine_code}\nExpected: {expected_liters}L\nActual: {actual_liters}L\nDifference: {difference}L'
+      },
+      // Cash variance
+      cash_variance: {
+        name: 'cash_variance',
+        body: '💵 Cash variance detected\nAccount: {account_name}\nExpected: {currency} {expected}\nActual: {currency} {actual}\nVariance: {currency} {variance}'
+      },
     };
     return templates[templateName] || { name: templateName, body: templateName };
   }
