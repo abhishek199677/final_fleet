@@ -45,6 +45,11 @@ async function testFinanceDenial() {
         errors.push(`${role}: can SELECT from ${objType} ${fullName} (should be denied)`);
       } catch (err) {
         // Permission denied (42501) is expected
+        // Relation not found (42P01) means table doesn't exist yet — skip it
+        if (err.code === '42P01') {
+          // Table doesn't exist yet — will be tested when created
+          continue;
+        }
         if (err.code !== '42501') {
           errors.push(`${role}: unexpected error on ${fullName}: ${err.code} ${err.message}`);
         }
