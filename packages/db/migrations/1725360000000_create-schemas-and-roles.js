@@ -11,9 +11,17 @@ exports.up = (pgm) => {
 
   // Roles (non-superuser, no BYPASSRLS)
   pgm.sql(`
-    CREATE ROLE app_owner NOLOGIN NOINHERIT;
-    CREATE ROLE app_ops NOLOGIN NOINHERIT;
-    CREATE ROLE app_platform NOLOGIN NOINHERIT;
+    DO $$ BEGIN
+      IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'app_owner') THEN
+        CREATE ROLE app_owner NOLOGIN NOINHERIT;
+      END IF;
+      IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'app_ops') THEN
+        CREATE ROLE app_ops NOLOGIN NOINHERIT;
+      END IF;
+      IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'app_platform') THEN
+        CREATE ROLE app_platform NOLOGIN NOINHERIT;
+      END IF;
+    END $$;
   `);
 
   // Grant usage on schemas

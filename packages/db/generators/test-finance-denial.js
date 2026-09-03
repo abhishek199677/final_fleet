@@ -1,13 +1,11 @@
 #!/usr/bin/env node
 /**
  * Finance denial test — verifies app_ops and app_platform cannot access finance tables/views.
- * Reads tables.json and runs against a live test database.
+ * Runs against a live test database.
  * Run: pnpm test:finance-denial
  */
 
 const { Client } = require('pg');
-const fs = require('fs');
-const path = require('path');
 
 const FINANCE_OBJECTS = [
   'rate_cards',
@@ -29,6 +27,13 @@ async function testFinanceDenial() {
   const client = new Client({ connectionString: process.env.DATABASE_URL });
   await client.connect();
 
+  // Create a test tenant for RLS
+  await client.query(`
+    INSERT INTO platform.tenants (id, name, slug, country, base_currency, timezone, status)
+    VALUES ('00000000-0000-0000-0000-000000000001', 'Test', 'test', 'US', 'USD', 'UTC', 'active')
+    ON CONFLICT (id) DO NOTHING
+  `);
+
   const errors = [];
   const roles = ['app_ops', 'app_platform'];
 
@@ -39,25 +44,22 @@ async function testFinanceDenial() {
       const fullName = `tenant.${obj}`;
 
       try {
-        // Try to SELECT from the finance object as the restricted role
+        // Run everything in a single transaction
+        await client.query('BEGIN');
         await client.query(`SET LOCAL ROLE ${role}`);
+        await client.query(`SET LOCAL app.tenant_id = '00000000-0000-0000-0000-000000000001'`);
         await client.query(`SELECT 1 FROM ${fullName} LIMIT 0`);
+        await client.query('ROLLBACK');
         errors.push(`${role}: can SELECT from ${objType} ${fullName} (should be denied)`);
       } catch (err) {
+        await client.query('ROLLBACK');
         // Permission denied (42501) is expected
         // Relation not found (42P01) means table doesn't exist yet — skip it
         if (err.code === '42P01') {
-          // Table doesn't exist yet — will be tested when created
           continue;
         }
         if (err.code !== '42501') {
           errors.push(`${role}: unexpected error on ${fullName}: ${err.code} ${err.message}`);
-        }
-      } finally {
-        try {
-          await client.query('SET LOCAL ROLE postgres');
-        } catch {
-          // ignore
         }
       }
     }

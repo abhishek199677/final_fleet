@@ -1,7 +1,32 @@
 [
-  {
-    "name": "audit_log",
-    "kind": "operational",
-    "transactional": true
-  }
+  {"name": "audit_log", "kind": "operational", "transactional": true},
+  {"name": "users", "kind": "operational", "transactional": false},
+  {"name": "operators", "kind": "operational", "transactional": false},
+  {"name": "machines", "kind": "operational", "transactional": false},
+  {"name": "clients", "kind": "operational", "transactional": false},
+  {"name": "sites", "kind": "operational", "transactional": false},
+  {"name": "deployments", "kind": "operational", "transactional": false},
+  {"name": "work_sessions", "kind": "operational", "transactional": true},
+  {"name": "fuel_logs", "kind": "operational", "transactional": true},
+  {"name": "downtime_segments", "kind": "operational", "transactional": true},
+  {"name": "maintenance_tasks", "kind": "operational", "transactional": false},
+  {"name": "maintenance_visits", "kind": "operational", "transactional": true},
+  {"name": "maintenance_visit_tasks", "kind": "operational", "transactional": false},
+  {"name": "maintenance_parts", "kind": "operational", "transactional": false},
+  {"name": "expense_categories", "kind": "operational", "transactional": false},
+  {"name": "expenses", "kind": "operational", "transactional": true},
+  {"name": "cash_accounts", "kind": "operational", "transactional": false},
+  {"name": "cash_transfers", "kind": "operational", "transactional": false},
+  {"name": "cash_counts", "kind": "operational", "transactional": true},
+  {"name": "photos", "kind": "operational", "transactional": false},
+  {"name": "alerts", "kind": "operational", "transactional": false},
+  {"name": "notifications", "kind": "operational", "transactional": false},
+  {"name": "insight_notes", "kind": "operational", "transactional": false},
+  {"name": "rate_cards", "kind": "finance", "transactional": false},
+  {"name": "extra_charges", "kind": "finance", "transactional": true},
+  {"name": "billing_ledger", "kind": "finance", "transactional": false},
+  {"name": "client_money_events", "kind": "finance", "transactional": true},
+  {"name": "advance_consumptions", "kind": "finance", "transactional": false},
+  {"name": "machine_financials", "kind": "finance", "transactional": false},
+  {"name": "client_credit", "kind": "finance", "transactional": false}
 ]
