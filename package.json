@@ -1,0 +1,31 @@
+{
+  "name": "fleetos",
+  "private": true,
+  "scripts": {
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:boundaries": "eslint . --rule 'import/no-restricted-paths: error' --quiet",
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:isolation": "node packages/db/generators/test-isolation.js",
+    "test:finance-denial": "node packages/db/generators/test-finance-denial.js",
+    "test:append-only": "node packages/db/generators/test-append-only.js",
+    "test:e2e": "playwright test",
+    "db:migrate": "node-pg-migrate up --migrations-dir packages/db/migrations --database-url-env-var DATABASE_URL",
+    "db:lint": "node packages/db/linters/migration-linter.js",
+    "openapi:gen": "openapi-generator-cli generate -i packages/api/openapi.json -o packages/shared/src/generated -g typescript-axios"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-import": "^2.31.0",
+    "prettier": "^3.4.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=9"
+  }
+}

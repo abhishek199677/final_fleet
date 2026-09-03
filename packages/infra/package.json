@@ -1,0 +1,22 @@
+{
+  "name": "@fleetos/infra",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "cdk": "cdk",
+    "typecheck": "tsc --noEmit",
+    "diff": "cdk diff FleetOS-dev",
+    "deploy": "cdk deploy FleetOS-dev --require-approval never"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.175.0",
+    "constructs": "^10.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "ts-node": "^10.9.0",
+    "aws-cdk": "^2.175.0",
+    "@types/node": "^22.0.0"
+  }
+}

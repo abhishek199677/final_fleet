@@ -1,0 +1,93 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: test, POSTGRES_DB: fleetos_test }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:test@localhost:5432/fleetos_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Lint and typecheck
+        run: pnpm lint && pnpm typecheck
+      - name: Migration linter (tenant_id + RLS + no finance grants to ops)
+        run: pnpm db:lint
+      - name: Migrate test DB
+        run: pnpm db:migrate
+      - name: Generated RLS isolation suite
+        run: pnpm test:isolation
+      - name: Finance denial suite (app_ops must be denied on every finance object)
+        run: pnpm test:finance-denial
+      - name: Append-only and edit-window suite
+        run: pnpm test:append-only
+      - name: Unit and integration
+        run: pnpm test
+      - name: OpenAPI drift
+        run: pnpm openapi:gen && git diff --exit-code packages/shared/src/generated
+      - name: Ops/finance import boundary
+        run: pnpm lint:boundaries
+      - name: Web build
+        run: pnpm --filter web build
+  e2e:
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter web exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+  cdk-diff:
+    needs: checks
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions: { id-token: write, contents: read, pull-requests: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - uses: aws-actions/configure-aws-credentials@v4
+        with: { role-to-assume: ${{ secrets.AWS_DEV_ROLE_ARN }}, aws-region: ap-south-1 }
+      - name: CDK diff (dev only)
+        run: pnpm --filter infra cdk diff FleetOS-dev > cdk-diff.txt || true
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs'); const body = '```\n' + fs.readFileSync('cdk-diff.txt','utf8').slice(0, 60000) + '\n```';
+            github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body: 'CDK diff (dev):\n' + body });
+  deploy-dev:
+    needs: [checks, e2e]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions: { id-token: write, contents: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - uses: aws-actions/configure-aws-credentials@v4
+        with: { role-to-assume: ${{ secrets.AWS_DEV_ROLE_ARN }}, aws-region: ap-south-1 }
+      - run: pnpm --filter infra cdk deploy FleetOS-dev --require-approval never
+  # prod deploy is a separate manual workflow (deploy-prod.yml) with an environment approval gate.

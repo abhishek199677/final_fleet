@@ -1,0 +1,21 @@
+{
+  "name": "@fleetos/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./ops": "./dist/ops/index.js",
+    "./finance": "./dist/finance/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "openapi:gen": "openapi-generator-cli generate -i ../api/openapi.json -o src/generated -g typescript-axios"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

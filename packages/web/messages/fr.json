@@ -1,0 +1,23 @@
+{
+  "owner": {
+    "home": "Accueil",
+    "machines": "Machines",
+    "billing": "Facturation",
+    "clients": "Clients",
+    "cash": "Cash",
+    "projections": "Projections",
+    "audit": "Audit",
+    "settings": "Paramètres"
+  },
+  "ops": {
+    "today": "Aujourd'hui",
+    "workSession": "Session de travail",
+    "downtime": "Arrêt",
+    "fuel": "Carburant",
+    "expense": "Dépense",
+    "receipt": "Reçu/Avance",
+    "cashCount": "Comptage de caisse",
+    "maintenance": "Maintenance",
+    "history": "Mon historique"
+  }
+}
