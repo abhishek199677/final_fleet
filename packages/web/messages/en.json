@@ -19,5 +19,119 @@
     "cashCount": "Cash Count",
     "maintenance": "Maintenance",
     "history": "My History"
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "back": "Back",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "search": "Search...",
+    "noData": "No data",
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending",
+    "completed": "Completed"
+  },
+  "dashboard": {
+    "revenue": "Revenue",
+    "expenses": "Expenses",
+    "activeMachines": "Active Machines",
+    "clients": "Clients",
+    "pendingCollections": "Pending Collections",
+    "avgUtilisation": "Avg Utilisation",
+    "machineFleet": "Machine Fleet",
+    "topReceivables": "Top Receivables"
+  },
+  "today": {
+    "startSession": "Start Session",
+    "machinesFree": "machines free",
+    "logFuel": "Log Fuel",
+    "logExpense": "Log Expense",
+    "cashCount": "Cash Count",
+    "activeSessions": "Active Sessions",
+    "alerts": "Alerts",
+    "noActiveSessions": "No active sessions"
+  },
+  "workSession": {
+    "new": "Start Work Session",
+    "machine": "Machine",
+    "operator": "Operator",
+    "startMeter": "Start Meter",
+    "endMeter": "End Meter",
+    "notes": "Notes",
+    "startSession": "Start Session",
+    "endSession": "End Session",
+    "selectMachine": "Select machine...",
+    "selectOperator": "Select operator..."
+  },
+  "fuel": {
+    "logFuel": "Log Fuel",
+    "date": "Date",
+    "liters": "Liters",
+    "amount": "Amount",
+    "odometer": "Odometer",
+    "vendor": "Vendor",
+    "saveFuelLog": "Save Fuel Log"
+  },
+  "expense": {
+    "logExpense": "Log Expense",
+    "category": "Category",
+    "date": "Date",
+    "amount": "Amount",
+    "description": "Description",
+    "notes": "Notes",
+    "saveExpense": "Save Expense",
+    "selectCategory": "Select category..."
+  },
+  "cashCount": {
+    "title": "Cash Count",
+    "blindCount": "Blind Count",
+    "account": "Account",
+    "selectAccount": "Select account...",
+    "submitCount": "Submit Count"
+  },
+  "clients": {
+    "new": "Add Client",
+    "name": "Name",
+    "contact": "Contact",
+    "phone": "Phone",
+    "currency": "Currency",
+    "paymentTerms": "Payment Terms",
+    "balance": "Balance",
+    "activeDeployments": "Active Deployments"
+  },
+  "machines": {
+    "new": "Add Machine",
+    "code": "Code",
+    "type": "Type",
+    "make": "Make",
+    "model": "Model",
+    "year": "Year",
+    "status": "Status",
+    "meter": "Meter"
+  },
+  "settings": {
+    "title": "Settings",
+    "users": "Users",
+    "machines": "Machines",
+    "categories": "Categories",
+    "fx": "FX",
+    "email": "Email",
+    "role": "Role"
+  },
+  "alerts": {
+    "title": "Alerts",
+    "acknowledge": "Acknowledge",
+    "rules": "Alert Rules",
+    "createRule": "Create Rule",
+    "type": "Type",
+    "threshold": "Threshold"
   }
 }

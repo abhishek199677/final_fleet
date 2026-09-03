@@ -14,6 +14,7 @@ import { ExpensesModule } from './modules/expenses/expenses.module';
 import { CashModule } from './modules/cash/cash.module';
 import { ClientMoneyModule } from './modules/client-money/client-money.module';
 import { BillingEngineModule } from './modules/billing/billing-engine.module';
+import { AlertsModule } from './modules/alerts/alerts.module';
 import { DatabaseModule } from './common/database/database.module';
 import { TenantJwtStrategy } from './common/strategies/tenant-jwt.strategy';
 import { PlatformJwtStrategy } from './common/strategies/platform-jwt.strategy';
@@ -36,6 +37,7 @@ import { TenantContextMiddleware } from './common/middleware/tenant-context.midd
     CashModule,
     ClientMoneyModule,
     BillingEngineModule,
+    AlertsModule,
     DatabaseModule,
   ],
   providers: [TenantJwtStrategy, PlatformJwtStrategy],

@@ -19,5 +19,119 @@
     "cashCount": "Comptage de caisse",
     "maintenance": "Maintenance",
     "history": "Mon historique"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "back": "Retour",
+    "submit": "Soumettre",
+    "confirm": "Confirmer",
+    "yes": "Oui",
+    "no": "Non",
+    "search": "Rechercher...",
+    "noData": "Aucune donnée",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "pending": "En attente",
+    "completed": "Terminé"
+  },
+  "dashboard": {
+    "revenue": "Revenus",
+    "expenses": "Dépenses",
+    "activeMachines": "Machines actives",
+    "clients": "Clients",
+    "pendingCollections": "Encaissements en attente",
+    "avgUtilisation": "Utilisation moyenne",
+    "machineFleet": "Parc machines",
+    "topReceivables": "Principaux créances"
+  },
+  "today": {
+    "startSession": "Démarrer session",
+    "machinesFree": "machines disponibles",
+    "logFuel": "Enregistrer carburant",
+    "logExpense": "Enregistrer dépense",
+    "cashCount": "Comptage de caisse",
+    "activeSessions": "Sessions actives",
+    "alerts": "Alertes",
+    "noActiveSessions": "Aucune session active"
+  },
+  "workSession": {
+    "new": "Démarrer une session de travail",
+    "machine": "Machine",
+    "operator": "Opérateur",
+    "startMeter": "Compteur début",
+    "endMeter": "Compteur fin",
+    "notes": "Notes",
+    "startSession": "Démarrer la session",
+    "endSession": "Terminer la session",
+    "selectMachine": "Sélectionner machine...",
+    "selectOperator": "Sélectionner opérateur..."
+  },
+  "fuel": {
+    "logFuel": "Enregistrer carburant",
+    "date": "Date",
+    "liters": "Litres",
+    "amount": "Montant",
+    "odometer": "Compteur kilométrique",
+    "vendor": "Fournisseur",
+    "saveFuelLog": "Enregistrer le carburant"
+  },
+  "expense": {
+    "logExpense": "Enregistrer dépense",
+    "category": "Catégorie",
+    "date": "Date",
+    "amount": "Montant",
+    "description": "Description",
+    "notes": "Notes",
+    "saveExpense": "Enregistrer la dépense",
+    "selectCategory": "Sélectionner catégorie..."
+  },
+  "cashCount": {
+    "title": "Comptage de caisse",
+    "blindCount": "Comptage à l'aveugle",
+    "account": "Compte",
+    "selectAccount": "Sélectionner compte...",
+    "submitCount": "Soumettre le comptage"
+  },
+  "clients": {
+    "new": "Ajouter client",
+    "name": "Nom",
+    "contact": "Contact",
+    "phone": "Téléphone",
+    "currency": "Devise",
+    "paymentTerms": "Conditions de paiement",
+    "balance": "Solde",
+    "activeDeployments": "Déploiements actifs"
+  },
+  "machines": {
+    "new": "Ajouter machine",
+    "code": "Code",
+    "type": "Type",
+    "make": "Marque",
+    "model": "Modèle",
+    "year": "Année",
+    "status": "Statut",
+    "meter": "Compteur"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "users": "Utilisateurs",
+    "machines": "Machines",
+    "categories": "Catégories",
+    "fx": "Devises",
+    "email": "E-mail",
+    "role": "Rôle"
+  },
+  "alerts": {
+    "title": "Alertes",
+    "acknowledge": "Accuser réception",
+    "rules": "Règles d'alerte",
+    "createRule": "Créer règle",
+    "type": "Type",
+    "threshold": "Seuil"
   }
 }
