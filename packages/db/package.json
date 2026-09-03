@@ -5,7 +5,11 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "migrate": "node-pg-migrate up --migrations-dir migrations --database-url-env-var DATABASE_URL",
-    "lint": "node linters/migration-linter.js"
+    "seed": "node seed.js",
+    "lint": "node linters/migration-linter.js",
+    "test:isolation": "DATABASE_URL=\"postgresql:///fleetos_test\" node generators/test-isolation.js fleetos_test",
+    "test:finance": "DATABASE_URL=\"postgresql:///fleetos_test\" node generators/test-finance-denial.js fleetos_test",
+    "test:append": "DATABASE_URL=\"postgresql:///fleetos_test\" node generators/test-append-only.js fleetos_test"
   },
   "dependencies": {
     "node-pg-migrate": "^7.8.0",
