@@ -58,11 +58,13 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter web exec playwright install --with-deps chromium
-      - run: pnpm test:e2e
+      - run: pnpm --filter web exec playwright test
   cdk-diff:
     needs: checks
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    # Informational until AWS_DEV_ROLE_ARN is configured; never block merges.
+    continue-on-error: true
     permissions: { id-token: write, contents: read, pull-requests: write }
     steps:
       - uses: actions/checkout@v4
