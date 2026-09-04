@@ -22,7 +22,7 @@ async function testIsolation() {
     process.exit(0);
   }
 
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  const client = new Client({ connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/fleetos' });
   await client.connect();
 
   const tenantA = '00000000-0000-0000-0000-000000000001';

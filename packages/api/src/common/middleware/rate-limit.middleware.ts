@@ -40,7 +40,7 @@ export class RateLimitMiddleware implements NestMiddleware {
 
   private getKey(req: Request): string {
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
-    const userId = (req as any).user?.id || '';
+    const userId = (req as Request & { user?: { id?: string } }).user?.id || '';
     return `${ip}:${userId}`;
   }
 }

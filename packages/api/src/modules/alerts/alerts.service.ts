@@ -6,21 +6,21 @@ export class AlertsService {
   constructor(private db: DatabaseService) {}
 
   async findAll(tenantId: string, status?: string) {
-    const query = status
-      ? `SELECT a.*, m.code AS machine_code FROM tenant.alerts a
+    const clauses: string[] = [];
+    const params: unknown[] = [];
+    if (status === 'unread' || status === 'active') clauses.push(`a.is_resolved = false`);
+    else if (status === 'resolved' || status === 'acknowledged') clauses.push(`a.is_resolved = true`);
+    const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
+    const query = `SELECT a.*, m.code AS machine_code FROM tenant.alerts a
          LEFT JOIN tenant.machines m ON m.id = a.machine_id
-         WHERE a.status = $1 ORDER BY a.created_at DESC`
-      : `SELECT a.*, m.code AS machine_code FROM tenant.alerts a
-         LEFT JOIN tenant.machines m ON m.id = a.machine_id
-         ORDER BY a.created_at DESC`;
-    const params = status ? [status] : [];
+         ${where} ORDER BY a.created_at DESC`;
     const result = await this.db.queryWithTenant(tenantId, 'ops', query, params);
     return result.rows;
   }
 
   async acknowledge(tenantId: string, id: string, userId: string) {
     const result = await this.db.queryWithTenant(tenantId, 'ops',
-      `UPDATE tenant.alerts SET status = 'acknowledged', acknowledged_by = $2, acknowledged_at = NOW()
+      `UPDATE tenant.alerts SET is_resolved = true, resolved_by = $2, resolved_at = NOW()
        WHERE id = $1 RETURNING *`, [id, userId]);
     return result.rows[0];
   }

@@ -1,8 +1,8 @@
 const API_BASE = '/api';
 
-async function getToken(): Promise<string | null> {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('fleetos_token');
+function getToken(): Promise<string | null> {
+  if (typeof window === 'undefined') return Promise.resolve(null);
+  return Promise.resolve(localStorage.getItem('fleetos_token'));
 }
 
 async function fetchApi(path: string, options: RequestInit = {}) {

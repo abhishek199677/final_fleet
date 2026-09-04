@@ -24,7 +24,7 @@ const FINANCE_OBJECTS = [
 ];
 
 async function testFinanceDenial() {
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  const client = new Client({ connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/fleetos' });
   await client.connect();
 
   // Create a test tenant for RLS
@@ -36,6 +36,9 @@ async function testFinanceDenial() {
 
   const errors = [];
   const roles = ['app_ops', 'app_platform'];
+  // Documented exception (TSD §6, BIL-04, S22): app_ops may SELECT/INSERT
+  // client_money_events (own receipts/advances). All finance VIEWS stay denied.
+  const OPS_ALLOWED_SELECT = { app_ops: ['tenant.client_money_events'] };
 
   for (const role of roles) {
     for (const obj of FINANCE_OBJECTS) {
@@ -50,7 +53,9 @@ async function testFinanceDenial() {
         await client.query(`SET LOCAL app.tenant_id = '00000000-0000-0000-0000-000000000001'`);
         await client.query(`SELECT 1 FROM ${fullName} LIMIT 0`);
         await client.query('ROLLBACK');
-        errors.push(`${role}: can SELECT from ${objType} ${fullName} (should be denied)`);
+        if (!(OPS_ALLOWED_SELECT[role] || []).includes(fullName)) {
+          errors.push(`${role}: can SELECT from ${objType} ${fullName} (should be denied)`);
+        }
       } catch (err) {
         await client.query('ROLLBACK');
         // Permission denied (42501) is expected

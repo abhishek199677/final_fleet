@@ -1,11 +1,14 @@
-import { Controller, Get, Param, Req } from '@nestjs/common';
+import { Controller, Get, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { BillingService } from './billing.service';
+import { Roles, RolesGuard } from '../../common/guards/roles.guard';
 import { TenantRequest } from '../../common/middleware/tenant-context.middleware';
 
 @ApiTags('Billing')
 @ApiBearerAuth('tenant-auth')
 @Controller('billing')
+@UseGuards(RolesGuard)
+@Roles('owner')
 export class BillingController {
   constructor(private service: BillingService) {}
 
@@ -20,14 +23,4 @@ export class BillingController {
   @Get('contribution')
   @ApiOperation({ summary: 'Get machine contribution' })
   getMachineContribution(@Req() req: TenantRequest) { return this.service.getMachineContribution(req.tenant!.tenantId); }
-
-  @Get('kpis')
-  @ApiOperation({ summary: 'Get tenant KPIs' })
-  getKPIs(@Req() req: TenantRequest) { return this.service.getKPIs(req.tenant!.tenantId); }
-
-  @Get('ledger/:deploymentId')
-  @ApiOperation({ summary: 'Get billing ledger for a deployment' })
-  getLedger(@Req() req: TenantRequest, @Param('deploymentId') deploymentId: string) {
-    return this.service.getLedger(req.tenant!.tenantId, deploymentId);
-  }
 }

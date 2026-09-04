@@ -42,7 +42,7 @@ export function Reveal({ className, delay = 0, as = 'div', children, ...props }:
 
   return (
     <Tag
-      ref={ref as React.Ref<HTMLDivElement>}
+      ref={ref}
       data-in={inView ? 'true' : 'false'}
       data-testid="fleet-reveal"
       className={cn('fleet-reveal', className)}

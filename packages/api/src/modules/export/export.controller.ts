@@ -1,8 +1,7 @@
-import { Controller, Get, Query, Req, Res } from '@nestjs/common';
+import { Controller, Get, Query, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ExportService, ExportOptions } from './export.service';
 import { TenantRequest } from '../../common/middleware/tenant-context.middleware';
-import { Response } from 'express';
 
 @ApiTags('Export')
 @ApiBearerAuth('tenant-auth')

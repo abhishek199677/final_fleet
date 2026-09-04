@@ -28,7 +28,7 @@ export class ClientsRepository {
       `INSERT INTO tenant.clients (tenant_id, name, contact, phone, whatsapp, address, currency, payment_terms_days, client_uuid)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
        ON CONFLICT (tenant_id, client_uuid) DO NOTHING RETURNING *`,
-      [tenantId, data.name, data.contact, data.phone, data.whatsapp, data.address, data.currency, data.payment_terms_days || 30, clientUuid]);
+      [tenantId, data.name, data.contact ?? null, data.phone ?? null, data.whatsapp ?? null, data.address ?? null, data.currency || 'INR', data.payment_terms_days || 30, clientUuid]);
     if (result.rows.length === 0) return this.findById(tenantId, clientUuid);
     return result.rows[0];
   }

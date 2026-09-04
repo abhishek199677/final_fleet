@@ -8,18 +8,37 @@ export interface BillingInput {
   period_end: string;
 }
 
+interface LedgerEntry {
+  deployment_id: string;
+  work_session_id?: string;
+  rate_card_id?: string;
+  entry_date: string;
+  kind: 'work' | 'minimum_topup' | 'standby' | 'monthly_hire' | 'extra_charge' | 'adjustment';
+  units: number;
+  currency: string;
+  amount_minor: number;
+}
+
 export interface BillingResult {
-  entries: {
-    deployment_id: string;
-    kind: string;
-    label: string;
-    amount_minor: number;
-    currency: string;
-    rate_card_id?: string;
-  }[];
+  entries: LedgerEntry[];
   total_minor: number;
 }
 
+interface DayUnits {
+  day: string;
+  units: number;
+  billableSessions: number;
+}
+
+/**
+ * Billing engine v1 (TSD §5, BIL-01/02).
+ * - Hourly: units × rate per day; minimum_topup entry for the min_units shortfall.
+ * - Daily fixed: one work entry per day with ≥ 1 billable session.
+ * - Monthly hire: prorated by days deployed in the period month.
+ * - Standby: one standby entry per day with no billable session (if configured).
+ * - Extra charges copied as extra_charge entries on their date.
+ * - Same-currency v1: fx = 1, base_minor = amount_minor.
+ */
 @Injectable()
 export class BillingEngine {
   private readonly logger = new Logger(BillingEngine.name);
@@ -29,193 +48,204 @@ export class BillingEngine {
   async calculateBilling(tenantId: string, input: BillingInput): Promise<BillingResult> {
     this.logger.log(`Calculating billing for deployment ${input.deployment_id}`);
 
-    // Get deployment details
-    const deployment = await this.db.queryWithTenant(tenantId, 'owner',
-      `SELECT d.*, m.type AS machine_type, cl.currency
+    const depRes = await this.db.queryWithTenant(tenantId, 'owner',
+      `SELECT d.*, s.client_id
        FROM tenant.deployments d
-       JOIN tenant.machines m ON m.id = d.machine_id
-       JOIN tenant.clients cl ON cl.id = d.client_id
+       JOIN tenant.sites s ON s.id = d.site_id
        WHERE d.id = $1`,
       [input.deployment_id]);
+    if (depRes.rows.length === 0) throw new Error('Deployment not found');
+    const dep = depRes.rows[0];
 
-    if (deployment.rows.length === 0) {
-      throw new Error('Deployment not found');
-    }
-
-    const dep = deployment.rows[0];
-
-    // Find applicable rate card
-    const rateCard = await this.db.queryWithTenant(tenantId, 'owner',
+    // Latest rate card effective on period end (rate changes = new dated version).
+    const rcRes = await this.db.queryWithTenant(tenantId, 'owner',
       `SELECT * FROM tenant.rate_cards
-       WHERE client_id = $1
-       AND machine_type = $2
-       AND effective_from <= $3
-       AND (effective_to IS NULL OR effective_to >= $3)
+       WHERE deployment_id = $1 AND effective_from <= $2
        ORDER BY effective_from DESC LIMIT 1`,
-      [dep.client_id, dep.machine_type, input.period_end]);
+      [input.deployment_id, input.period_end]);
 
-    const entries: BillingResult['entries'] = [];
+    const entries: LedgerEntry[] = [];
     let total_minor = 0;
+    const push = (e: LedgerEntry) => {
+      e.amount_minor = Math.round(e.amount_minor);
+      entries.push(e);
+      total_minor += e.amount_minor;
+    };
 
-    if (rateCard.rows.length > 0) {
-      const rc = rateCard.rows[0];
-      const hours = await this.getHoursWorked(tenantId, input.deployment_id, input.period_start, input.period_end);
+    if (rcRes.rows.length > 0) {
+      const rc = rcRes.rows[0];
+      const currency = rc.currency as string;
+      const minUnits = Number(rc.min_units_per_day ?? 0);
+      const days = await this.getDailyUnits(tenantId, input.deployment_id, input.period_start, input.period_end);
 
-      switch (rc.strategy) {
-        case 'hourly': {
-          const amount = Math.max(hours * rc.rate_minor, rc.min_charge_minor || 0);
-          entries.push({
-            deployment_id: input.deployment_id,
-            kind: 'work',
-            label: `Hourly billing: ${hours}h × $${rc.rate_minor / 100}`,
-            amount_minor: amount,
-            currency: dep.currency,
-            rate_card_id: rc.id,
-          });
-          total_minor += amount;
-          break;
-        }
-        case 'daily': {
-          const days = Math.ceil(hours / 8);
-          const amount = days * rc.rate_minor;
-          entries.push({
-            deployment_id: input.deployment_id,
-            kind: 'work',
-            label: `Daily billing: ${days} days × $${rc.rate_minor / 100}`,
-            amount_minor: amount,
-            currency: dep.currency,
-            rate_card_id: rc.id,
-          });
-          total_minor += amount;
-          break;
-        }
-        case 'monthly': {
-          entries.push({
-            deployment_id: input.deployment_id,
-            kind: 'monthly_hire',
-            label: `Monthly hire: $${rc.rate_minor / 100}`,
-            amount_minor: rc.rate_minor,
-            currency: dep.currency,
-            rate_card_id: rc.id,
-          });
-          total_minor += rc.rate_minor;
-          break;
-        }
-        case 'standby': {
-          // Standby rate when machine is not working
-          const standbyHours = await this.getStandbyHours(tenantId, input.deployment_id, input.period_start, input.period_end);
-          if (standbyHours > 0 && rc.standby_rate_minor) {
-            const amount = standbyHours * rc.standby_rate_minor;
-            entries.push({
-              deployment_id: input.deployment_id,
-              kind: 'standby',
-              label: `Standby: ${standbyHours}h × $${rc.standby_rate_minor / 100}`,
-              amount_minor: amount,
-              currency: dep.currency,
-              rate_card_id: rc.id,
-            });
-            total_minor += amount;
+      if (rc.strategy === 'hourly') {
+        for (const d of days) {
+          if (d.billableSessions === 0 && d.units === 0) {
+            if (rc.standby_rate_minor) {
+              push({ deployment_id: input.deployment_id, rate_card_id: rc.id, entry_date: d.day, kind: 'standby', units: 1, currency, amount_minor: Number(rc.standby_rate_minor) });
+            }
+            continue;
           }
-          break;
+          const billable = Math.max(d.units, minUnits);
+          push({ deployment_id: input.deployment_id, rate_card_id: rc.id, entry_date: d.day, kind: 'work', units: billable, currency, amount_minor: billable * Number(rc.rate_minor) });
+          if (d.units < minUnits) {
+            push({ deployment_id: input.deployment_id, rate_card_id: rc.id, entry_date: d.day, kind: 'minimum_topup', units: minUnits - d.units, currency, amount_minor: (minUnits - d.units) * Number(rc.rate_minor) });
+          }
         }
-      }
-
-      // Check minimum top-up
-      if (rc.min_charge_minor && total_minor < rc.min_charge_minor) {
-        const topUp = rc.min_charge_minor - total_minor;
-        entries.push({
-          deployment_id: input.deployment_id,
-          kind: 'minimum_topup',
-          label: `Minimum top-up: $${topUp / 100}`,
-          amount_minor: topUp,
-          currency: dep.currency,
-          rate_card_id: rc.id,
-        });
-        total_minor += topUp;
+      } else if (rc.strategy === 'daily') {
+        for (const d of days) {
+          if (d.billableSessions > 0) {
+            push({ deployment_id: input.deployment_id, rate_card_id: rc.id, entry_date: d.day, kind: 'work', units: 1, currency, amount_minor: Number(rc.rate_minor) });
+          } else if (rc.standby_rate_minor) {
+            push({ deployment_id: input.deployment_id, rate_card_id: rc.id, entry_date: d.day, kind: 'standby', units: 1, currency, amount_minor: Number(rc.standby_rate_minor) });
+          }
+        }
+      } else if (rc.strategy === 'monthly') {
+        const start = new Date(input.period_start);
+        const end = new Date(input.period_end);
+        const monthEnd = new Date(end.getFullYear(), end.getMonth() + 1, 0);
+        const daysInMonth = monthEnd.getDate();
+        const depStart = new Date(dep.start_date);
+        const depEnd = dep.end_date ? new Date(dep.end_date) : end;
+        const overlapDays = Math.max(0, Math.round((Math.min(end.getTime(), depEnd.getTime()) - Math.max(start.getTime(), depStart.getTime())) / 86_400_000) + 1);
+        const amount = (overlapDays / daysInMonth) * Number(rc.rate_minor);
+        push({ deployment_id: input.deployment_id, rate_card_id: rc.id, entry_date: input.period_end, kind: 'monthly_hire', units: overlapDays, currency, amount_minor: amount });
       }
     }
 
-    // Add extra charges
+    // Extra charges copied into the ledger on their date.
     const extras = await this.db.queryWithTenant(tenantId, 'owner',
       `SELECT * FROM tenant.extra_charges
-       WHERE deployment_id = $1
-       AND created_at >= $2 AND created_at <= $3
-       AND is_current = true`,
+       WHERE deployment_id = $1 AND date >= $2 AND date <= $3 AND is_current = true`,
       [input.deployment_id, input.period_start, input.period_end]);
-
     for (const extra of extras.rows) {
-      let amount = extra.amount_minor;
-      if (extra.taxable && extra.tax_rate_bps) {
-        amount += Math.round(extra.amount_minor * extra.tax_rate_bps / 10000);
-      }
-      entries.push({
+      push({
         deployment_id: input.deployment_id,
+        entry_date: extra.date,
         kind: 'extra_charge',
-        label: extra.label,
-        amount_minor: amount,
-        currency: dep.currency,
+        units: 1,
+        currency: extra.currency,
+        amount_minor: Number(extra.base_minor ?? extra.amount_minor),
       });
-      total_minor += amount;
     }
 
     return { entries, total_minor };
   }
 
-  async postBilling(tenantId: string, result: BillingResult, periodEnd: string): Promise<void> {
-    this.logger.log(`Posting ${result.entries.length} billing entries`);
-
+  /**
+   * Idempotent posting (TSD §5): recomputation never mutates. The day's
+   * computed work total is netted against what is already posted and the
+   * difference lands as a single `adjustment` entry referencing the original.
+   * Extra charges post once per (day, amount).
+   */
+  async postBilling(tenantId: string, result: BillingResult): Promise<void> {
+    const byDay = new Map<string, { work: LedgerEntry[]; extras: LedgerEntry[] }>();
     for (const entry of result.entries) {
-      await this.db.queryWithTenant(tenantId, 'owner',
-        `INSERT INTO tenant.billing_ledger (tenant_id, deployment_id, entry_date, kind, label, amount_minor, currency, rate_card_id, client_uuid)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, gen_random_uuid())`,
-        [tenantId, entry.deployment_id, periodEnd, entry.kind, entry.label,
-         entry.amount_minor, entry.currency, entry.rate_card_id]);
+      if (!byDay.has(entry.entry_date)) byDay.set(entry.entry_date, { work: [], extras: [] });
+      const bucket = byDay.get(entry.entry_date)!;
+      if (entry.kind === 'extra_charge') bucket.extras.push(entry);
+      else bucket.work.push(entry);
     }
 
-    // Process advance consumptions if any
-    await this.processAdvanceConsumptions(tenantId, result);
+    for (const [day, bucket] of byDay) {
+      const deploymentId = bucket.work[0]?.deployment_id ?? bucket.extras[0]?.deployment_id;
+      if (!deploymentId) continue;
+      const existing = await this.db.queryWithTenant(tenantId, 'owner',
+        `SELECT id, kind, amount_minor FROM tenant.billing_ledger
+         WHERE deployment_id = $1 AND entry_date = $2 AND kind != 'adjustment'`,
+        [deploymentId, day]);
+
+      const postedWork = existing.rows
+        .filter((r) => r.kind !== 'extra_charge')
+        .reduce((a, r) => a + Number(r.amount_minor), 0);
+      const computedWork = bucket.work.reduce((a, e) => a + e.amount_minor, 0);
+      const delta = Math.round(computedWork - postedWork);
+      const hasWork = existing.rows.some((r) => r.kind !== 'extra_charge');
+      const firstId = existing.rows.find((r) => r.kind !== 'extra_charge')?.id ?? null;
+
+      if (!hasWork) {
+        // First run for this day: post the computed work entries directly.
+        for (const entry of bucket.work) {
+          const inserted = await this.db.queryWithTenant(tenantId, 'owner',
+            `INSERT INTO tenant.billing_ledger (tenant_id, deployment_id, work_session_id, rate_card_id, entry_date, kind, units, currency, amount_minor, fx, base_minor)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,1,$9) RETURNING id`,
+            [tenantId, entry.deployment_id, entry.work_session_id ?? null, entry.rate_card_id ?? null,
+             entry.entry_date, entry.kind, entry.units, entry.currency, entry.amount_minor]);
+          if (entry.amount_minor > 0) await this.consumeAdvances(tenantId, entry.deployment_id, inserted.rows[0].id as string, entry.amount_minor);
+        }
+      } else if (delta !== 0 && bucket.work.length > 0) {
+        // Recompute: net the difference as a single adjustment referencing the original.
+        const ref = bucket.work[0];
+        const inserted = await this.db.queryWithTenant(tenantId, 'owner',
+          `INSERT INTO tenant.billing_ledger (tenant_id, deployment_id, rate_card_id, entry_date, kind, units, currency, amount_minor, fx, base_minor, adjusts_id)
+           VALUES ($1,$2,$3,$4,'adjustment',1,$5,$6,1,$6,$7) RETURNING id`,
+          [tenantId, deploymentId, ref.rate_card_id ?? null, day, ref.currency, delta, firstId]);
+        if (delta > 0) await this.consumeAdvances(tenantId, deploymentId, inserted.rows[0].id as string, delta);
+      }
+
+      const postedExtras = new Set(
+        existing.rows.filter((r) => r.kind === 'extra_charge').map((r) => Number(r.amount_minor)),
+      );
+      for (const entry of bucket.extras) {
+        if (postedExtras.has(entry.amount_minor)) continue;
+        await this.db.queryWithTenant(tenantId, 'owner',
+          `INSERT INTO tenant.billing_ledger (tenant_id, deployment_id, entry_date, kind, units, currency, amount_minor, fx, base_minor)
+           VALUES ($1,$2,$3,'extra_charge',1,$4,$5,1,$5)`,
+          [tenantId, entry.deployment_id, entry.entry_date, entry.currency, entry.amount_minor]);
+        postedExtras.add(entry.amount_minor);
+      }
+    }
+    this.logger.log(`Posted billing for ${byDay.size} day(s)`);
   }
 
-  private async getHoursWorked(tenantId: string, deploymentId: string, start: string, end: string): Promise<number> {
-    const result = await this.db.queryWithTenant(tenantId, 'owner',
-      `SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(end_at, NOW()) - start_at)) / 3600), 0) AS hours
-       FROM tenant.work_sessions
-       WHERE deployment_id = $1
-       AND start_at >= $2 AND start_at <= $3
-       AND is_current = true`,
-      [deploymentId, start, end]);
-    return parseFloat(result.rows[0]?.hours || '0');
-  }
-
-  private async getStandbyHours(tenantId: string, deploymentId: string, start: string, end: string): Promise<number> {
-    // Hours in period minus hours worked
-    const totalHours = (new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60);
-    const workedHours = await this.getHoursWorked(tenantId, deploymentId, start, end);
-    return Math.max(0, totalHours - workedHours);
-  }
-
-  private async processAdvanceConsumptions(tenantId: string, result: BillingResult): Promise<void> {
-    // Find unused advances for this client
+  /** Consume the deployment client's oldest unused advances first (BIL-05). */
+  private async consumeAdvances(tenantId: string, deploymentId: string, ledgerId: string, amount: number): Promise<void> {
+    let remaining = amount;
     const advances = await this.db.queryWithTenant(tenantId, 'owner',
       `SELECT cme.id, cme.amount_minor,
-        COALESCE((SELECT SUM(ac.base_minor) FROM tenant.advance_consumptions ac WHERE ac.advance_id = cme.id), 0) AS consumed
+         COALESCE((SELECT SUM(ac.base_minor) FROM tenant.advance_consumptions ac WHERE ac.advance_id = cme.id), 0) AS consumed
        FROM tenant.client_money_events cme
-       WHERE cme.event_type = 'advance' AND cme.is_current = true
-       AND cme.amount_minor > COALESCE((SELECT SUM(ac.base_minor) FROM tenant.advance_consumptions ac WHERE ac.advance_id = cme.id), 0)
-       ORDER BY cme.event_date`);
-
-    let remaining = result.total_minor;
+       JOIN tenant.deployments d ON d.id = $1
+       JOIN tenant.sites s ON s.id = d.site_id
+       WHERE cme.client_id = s.client_id AND cme.event_type = 'advance' AND cme.is_current = true
+       ORDER BY cme.event_date`,
+      [deploymentId]);
+    const today = new Date().toISOString().slice(0, 10);
     for (const advance of advances.rows) {
       if (remaining <= 0) break;
-      const available = advance.amount_minor - advance.consumed;
+      const available = Number(advance.amount_minor) - Number(advance.consumed);
       const toConsume = Math.min(available, remaining);
-
+      if (toConsume <= 0) continue;
       await this.db.queryWithTenant(tenantId, 'owner',
-        `INSERT INTO tenant.advance_consumptions (tenant_id, advance_id, deployment_id, base_minor, client_uuid)
-         VALUES ($1, $2, $3, $4, gen_random_uuid())`,
-        [tenantId, advance.id, result.entries[0]?.deployment_id, toConsume]);
-
+        `INSERT INTO tenant.advance_consumptions (advance_id, billing_ledger_id, base_minor, date)
+         VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING`,
+        [advance.id, ledgerId, Math.round(toConsume), today]);
       remaining -= toConsume;
     }
+  }
+
+  private async getDailyUnits(tenantId: string, deploymentId: string, start: string, end: string): Promise<DayUnits[]> {
+    const result = await this.db.queryWithTenant(tenantId, 'owner',
+      `SELECT DATE(start_at) AS day,
+         COALESCE(SUM(units_run), 0) AS units,
+         COUNT(*) FILTER (WHERE billable = true) AS billable_sessions
+       FROM tenant.work_sessions
+       WHERE deployment_id = $1 AND start_at >= $2::date AND start_at < ($3::date + INTERVAL '1 day')
+         AND is_current = true
+       GROUP BY DATE(start_at) ORDER BY day`,
+      [deploymentId, start, end]);
+    // pg returns DATE columns as JS Dates — normalise keys to YYYY-MM-DD.
+    const toDay = (v: unknown): string => new Date(v as string).toISOString().slice(0, 10);
+    const byDay = new Map(result.rows.map((r) => [toDay(r.day), r]));
+    const out: DayUnits[] = [];
+    const cursor = new Date(`${start}T00:00:00Z`);
+    const last = new Date(`${end}T00:00:00Z`);
+    while (cursor <= last) {
+      const key = cursor.toISOString().slice(0, 10);
+      const row = byDay.get(key);
+      out.push({ day: key, units: Number(row?.units ?? 0), billableSessions: Number(row?.billable_sessions ?? 0) });
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+    return out;
   }
 }

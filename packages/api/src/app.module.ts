@@ -14,12 +14,16 @@ import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { CashModule } from './modules/cash/cash.module';
 import { ClientMoneyModule } from './modules/client-money/client-money.module';
+import { BillingModule } from './modules/billing/billing.module';
 import { BillingEngineModule } from './modules/billing/billing-engine.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
 import { PhotosModule } from './modules/photos/photos.module';
 import { ImportModule } from './modules/import/import.module';
 import { ExportModule } from './modules/export/export.module';
 import { NotifyModule } from './modules/notify/notify.module';
+import { AuditModule } from './modules/audit/audit.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { SupportModule } from './modules/support/support.module';
 import { DatabaseModule } from './common/database/database.module';
 import { TenantJwtStrategy } from './common/strategies/tenant-jwt.strategy';
 import { PlatformJwtStrategy } from './common/strategies/platform-jwt.strategy';
@@ -28,6 +32,7 @@ import { SecurityMiddleware } from './common/middleware/security.middleware';
 import { RateLimitMiddleware } from './common/middleware/rate-limit.middleware';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
 
 @Module({
   imports: [
@@ -46,18 +51,23 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     ExpensesModule,
     CashModule,
     ClientMoneyModule,
+    BillingModule,
     BillingEngineModule,
     AlertsModule,
     PhotosModule,
     ImportModule,
     ExportModule,
     NotifyModule,
+    AuditModule,
+    ReportsModule,
+    SupportModule,
     DatabaseModule,
   ],
   providers: [
     TenantJwtStrategy,
     PlatformJwtStrategy,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AppModule implements NestModule {

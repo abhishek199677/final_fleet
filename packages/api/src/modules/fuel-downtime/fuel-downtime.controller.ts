@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { FuelDowntimeService } from './fuel-downtime.service';
 import { TenantRequest } from '../../common/middleware/tenant-context.middleware';

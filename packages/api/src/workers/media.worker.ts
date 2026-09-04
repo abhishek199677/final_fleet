@@ -9,9 +9,12 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 interface MediaJob {
   tenant_id: string;
   photo_id: string;
-  key: string;
 }
 
+/**
+ * Media worker (TSD §7 media): server-side SHA-256 + size for committed
+ * photos. Thumbnails/EXIF stay TODO until the S3 + sharp pipeline lands.
+ */
 @Injectable()
 export class MediaWorker {
   private readonly logger = new Logger(MediaWorker.name);
@@ -22,18 +25,18 @@ export class MediaWorker {
     this.logger.log(`Processing photo ${job.photo_id} for tenant ${job.tenant_id}`);
 
     try {
-      const filePath = join(UPLOAD_DIR, job.key);
-      const buffer = await fs.readFile(filePath);
+      const photo = await this.db.queryWithTenant(job.tenant_id, 'owner',
+        `SELECT s3_key_original FROM tenant.photos WHERE id = $1`, [job.photo_id]);
+      if (photo.rows.length === 0) {
+        this.logger.warn(`Photo ${job.photo_id} not found`);
+        return { success: false };
+      }
+      const buffer = await fs.readFile(join(UPLOAD_DIR, photo.rows[0].s3_key_original as string));
       const sha256 = createHash('sha256').update(buffer).digest('hex');
 
-      // Update photo with SHA-256 and metadata
       await this.db.queryWithTenant(job.tenant_id, 'owner',
-        `UPDATE tenant.photos SET sha256 = $2, file_size = $3, committed_at = COALESCE(committed_at, NOW())
-         WHERE id = $1`,
+        `UPDATE tenant.photos SET sha256_server = $2, size_bytes = $3 WHERE id = $1`,
         [job.photo_id, sha256, buffer.length]);
-
-      // TODO: Extract EXIF data, generate thumbnail, validate GPS accuracy
-      // This would use sharp or similar library in production
 
       this.logger.log(`Photo ${job.photo_id} processed: sha256=${sha256.slice(0, 16)}...`);
       return { success: true, sha256 };
@@ -41,24 +44,5 @@ export class MediaWorker {
       this.logger.error(`Failed to process photo ${job.photo_id}: ${error}`);
       throw error;
     }
-  }
-
-  async enforceEvidencePolicy(tenantId: string, entityType: string, entityId: string): Promise<boolean> {
-    // Check if evidence is required for this entity type
-    const settings = await this.db.queryWithTenant(tenantId, 'owner',
-      `SELECT setting_value FROM tenant.tenant_settings
-       WHERE setting_key = 'evidence_policy' AND tenant_id = $1`, [tenantId]);
-
-    const policy = settings.rows[0]?.setting_value as Record<string, unknown> || {};
-    const required = policy[entityType] as boolean;
-
-    if (!required) return true;
-
-    // Check if photo exists
-    const photos = await this.db.queryWithTenant(tenantId, 'ops',
-      `SELECT id FROM tenant.photos WHERE entity_type = $1 AND entity_id = $2 AND sha256 IS NOT NULL`,
-      [entityType, entityId]);
-
-    return photos.rows.length > 0;
   }
 }

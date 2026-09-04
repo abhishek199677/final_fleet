@@ -7,8 +7,12 @@ import { cn } from '@/lib/utils';
 const opsNav = [
   { href: '/today', label: 'Today' },
   { href: '/work-session', label: 'Work Session' },
+  { href: '/downtime', label: 'Downtime' },
   { href: '/fuel', label: 'Fuel' },
   { href: '/expense', label: 'Expense' },
+  { href: '/receipt', label: 'Receipt' },
+  { href: '/maintenance', label: 'Maintenance' },
+  { href: '/history', label: 'History' },
 ];
 
 export function OpsNav() {

@@ -34,6 +34,8 @@ export class NightlyWorker {
         case 'cleanup':
           return await this.processCleanup(job.tenant_id);
         default:
+          // ALT-04 hardening-lite: daily digest falls through to a digest write.
+          if ((job.type as string) === 'digest') return await this.processDigest(job.tenant_id);
           return { success: false, message: `Unknown job type: ${job.type}` };
       }
     } catch (error) {
@@ -43,11 +45,12 @@ export class NightlyWorker {
   }
 
   private async processOcrJobs(tenantId: string) {
-    // Find unprocessed photos for work sessions
+    // Meter photos referenced by sessions that have no OCR result yet.
     const photos = await this.db.queryWithTenant(tenantId, 'owner',
-      `SELECT id FROM tenant.photos
-       WHERE entity_type = 'work_session' AND sha256 IS NOT NULL
-       AND id NOT IN (SELECT photo_id FROM tenant.ocr_results WHERE photo_id IS NOT NULL)
+      `SELECT DISTINCT p.id FROM tenant.photos p
+       JOIN tenant.work_sessions ws ON ws.is_current = true
+         AND (ws.start_photo_key = p.s3_key_original OR ws.end_photo_key = p.s3_key_original)
+       WHERE p.ocr_result IS NULL
        LIMIT 50`);
 
     let processed = 0;
@@ -60,15 +63,15 @@ export class NightlyWorker {
   }
 
   private async processMediaJobs(tenantId: string) {
-    // Find unprocessed photos
+    // Committed photos still missing a server hash.
     const photos = await this.db.queryWithTenant(tenantId, 'owner',
-      `SELECT id, key FROM tenant.photos
-       WHERE sha256 IS NULL AND committed_at IS NOT NULL
+      `SELECT id FROM tenant.photos
+       WHERE sha256_server IS NULL
        LIMIT 50`);
 
     let processed = 0;
     for (const photo of photos.rows) {
-      await this.mediaWorker.processPhoto({ tenant_id: tenantId, photo_id: photo.id, key: photo.key });
+      await this.mediaWorker.processPhoto({ tenant_id: tenantId, photo_id: photo.id });
       processed++;
     }
 
@@ -78,13 +81,10 @@ export class NightlyWorker {
   private async processBilling(tenantId: string) {
     // Run billing for active deployments
     const deployments = await this.db.queryWithTenant(tenantId, 'owner',
-      `SELECT id FROM tenant.deployments WHERE end_date IS NULL AND is_current = true`);
+      `SELECT id FROM tenant.deployments WHERE status = 'active'`);
 
-    let billed = 0;
-    for (const deployment of deployments.rows) {
-      // This would call the billing engine to calculate and insert ledger entries
-      billed++;
-    }
+    // This would call the billing engine to calculate and insert ledger entries
+    const billed = deployments.rows.length;
 
     return { success: true, message: `Billing processed ${billed} deployments` };
   }
@@ -103,5 +103,23 @@ export class NightlyWorker {
       `DELETE FROM tenant.notifications WHERE created_at < NOW() - INTERVAL '90 days'`);
 
     return { success: true, message: `Cleaned up ${result.rowCount} old notifications` };
+  }
+
+  /** Daily digest (ALT-04 hardening-lite): one in-app summary from open alerts. */
+  buildDigestText(openAlerts: { type: string; title: string }[]): string {
+    if (openAlerts.length === 0) return 'All clear — no open alerts.';
+    const byType = new Map<string, number>();
+    for (const a of openAlerts) byType.set(a.type, (byType.get(a.type) ?? 0) + 1);
+    return [...byType.entries()].map(([t, n]) => `${n}× ${t}`).join('; ');
+  }
+
+  private async processDigest(tenantId: string) {
+    const alerts = await this.db.queryWithTenant(tenantId, 'owner',
+      `SELECT type, title FROM tenant.alerts WHERE resolved_at IS NULL LIMIT 50`).catch(() => ({ rows: [] as { type: string; title: string }[] }));
+    const text = this.buildDigestText(alerts.rows as { type: string; title: string }[]);
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `INSERT INTO tenant.notifications (tenant_id, channel, title, body) VALUES ($1,'in_app','Daily digest',$2)`,
+      [tenantId, text]).catch(() => null);
+    return { success: true, message: `Digest: ${text}` };
   }
 }

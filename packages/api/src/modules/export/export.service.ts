@@ -79,7 +79,7 @@ export class ExportService {
 
   private async exportMachines(tenantId: string) {
     const result = await this.db.queryWithTenant(tenantId, 'owner',
-      `SELECT code, type, make, model, year, vin_serial, current_meter, meter_unit_label, status_flag, maintenance_group
+      `SELECT code, type, make, model, year, chassis_no, current_meter, meter_unit_label, status_flag
        FROM tenant.machines ORDER BY code`);
     return result.rows;
   }
@@ -89,7 +89,8 @@ export class ExportService {
        FROM tenant.billing_ledger bl
        JOIN tenant.deployments d ON d.id = bl.deployment_id
        JOIN tenant.machines m ON m.id = d.machine_id
-       JOIN tenant.clients cl ON cl.id = d.client_id
+       JOIN tenant.sites s ON s.id = d.site_id
+       JOIN tenant.clients cl ON cl.id = s.client_id
        WHERE 1=1`;
     const params: string[] = [];
 

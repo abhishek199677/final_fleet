@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { entitlementExceeded } from '../../common/domain/hardening.js';
 import { TenantsRepository } from './tenants.repository';
 
 @Injectable()
@@ -25,5 +26,12 @@ export class TenantsService {
 
   async archive(id: string) {
     return this.repo.updateStatus(id, 'archived');
+  }
+
+  /** Hard entitlement enforcement (TEN-02 hardening; pilot used warnings). */
+  assertWithinLimit(used: number, limit: number | null | undefined): void {
+    if (entitlementExceeded(used, limit)) {
+      throw new ForbiddenException({ code: 'ENTITLEMENT_LIMIT', message: 'Entitlement limit reached' });
+    }
   }
 }

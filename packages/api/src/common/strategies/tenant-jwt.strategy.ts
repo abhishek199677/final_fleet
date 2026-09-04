@@ -26,7 +26,7 @@ export class TenantJwtStrategy extends PassportStrategy(Strategy, 'tenant-jwt') 
     });
   }
 
-  async validate(payload: JwtPayload) {
+  validate(payload: JwtPayload) {
     const tenantId = payload['custom:tenant_id'] || payload.tenant_id;
     const role = payload['custom:role'] || payload.role;
 
@@ -34,11 +34,11 @@ export class TenantJwtStrategy extends PassportStrategy(Strategy, 'tenant-jwt') 
       throw new UnauthorizedException('Missing tenant_id or role in token');
     }
 
-    return {
+    return Promise.resolve({
       id: payload.sub,
       email: payload.email,
       tenantId,
       role,
-    };
+    });
   }
 }

@@ -7,7 +7,7 @@ export class MachinesRepository {
 
   async findAll(tenantId: string) {
     const result = await this.db.queryWithTenant(tenantId, 'owner',
-      `SELECT * FROM tenant.machines WHERE is_current = true OR is_current IS NULL ORDER BY code`,
+      `SELECT * FROM tenant.machines ORDER BY code`,
     );
     return result.rows;
   }

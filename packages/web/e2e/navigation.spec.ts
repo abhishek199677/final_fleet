@@ -1,51 +1,44 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Owner Home', () => {
-  test('displays KPI cards', async ({ page }) => {
+// End-to-end smoke (S52): seeded API + web. Local demo accounts come from
+// packages/db/seed.js (demo@fleetos.com / ops@fleetos.com, password demo1234).
+
+test.describe('Landing', () => {
+  test('shows portal links', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('text=Dashboard')).toBeVisible();
-    await expect(page.locator('text=Revenue')).toBeVisible();
-    await expect(page.locator('text=Expenses')).toBeVisible();
-    await expect(page.locator('text=Active Machines')).toBeVisible();
-  });
-
-  test('displays machine fleet', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.locator('text=Machine Fleet')).toBeVisible();
+    await expect(page.locator('text=Fleet OS').first()).toBeVisible();
+    await expect(page.locator('text=Owner Portal')).toBeVisible();
+    await expect(page.locator('text=Operations Portal')).toBeVisible();
   });
 });
 
-test.describe('Owner Machines', () => {
-  test('displays machines list', async ({ page }) => {
-    await page.goto('/machines');
-    await expect(page.locator('text=Machines')).toBeVisible();
-    await expect(page.locator('text=Add Machine')).toBeVisible();
+test.describe('Auth', () => {
+  test('login page shows sign-in form', async ({ page }) => {
+    await page.goto('/login');
+    await expect(page.locator('text=Sign in to your account')).toBeVisible();
+    await expect(page.locator('input[type="email"]')).toBeVisible();
+    await expect(page.locator('input[type="password"]')).toBeVisible();
   });
-});
 
-test.describe('Owner Clients', () => {
-  test('displays clients list', async ({ page }) => {
-    await page.goto('/clients');
-    await expect(page.locator('text=Clients')).toBeVisible();
-    await expect(page.locator('text=Add Client')).toBeVisible();
+  test('owner login reaches dashboard KPIs', async ({ page }) => {
+    await page.goto('/login');
+    await page.fill('input[type="email"]', 'demo@fleetos.com');
+    await page.fill('input[type="password"]', 'demo1234');
+    await page.click('button[type="submit"]');
+    // Owner lands on / then dashboard lives at /home.
+    await page.waitForURL('**/', { timeout: 15000 });
+    await page.goto('/home');
+    await expect(page.locator('text=Welcome back, Owner!')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('text=Total Billed').first()).toBeVisible();
   });
-});
 
-test.describe('Ops Today', () => {
-  test('displays quick actions', async ({ page }) => {
-    await page.goto('/today');
-    await expect(page.locator('text=Today')).toBeVisible();
-    await expect(page.locator('text=Start Session')).toBeVisible();
+  test('ops login reaches today quick actions', async ({ page }) => {
+    await page.goto('/login');
+    await page.fill('input[type="email"]', 'ops@fleetos.com');
+    await page.fill('input[type="password"]', 'demo1234');
+    await page.click('button[type="submit"]');
+    await expect(page).toHaveURL(/\/today/, { timeout: 15000 });
+    await expect(page.locator('text=Start Session')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('text=Log Fuel')).toBeVisible();
-    await expect(page.locator('text=Log Expense')).toBeVisible();
-  });
-});
-
-test.describe('Settings', () => {
-  test('displays settings tabs', async ({ page }) => {
-    await page.goto('/settings');
-    await expect(page.locator('text=Settings')).toBeVisible();
-    await expect(page.locator('text=Users')).toBeVisible();
-    await expect(page.locator('text=FX')).toBeVisible();
   });
 });

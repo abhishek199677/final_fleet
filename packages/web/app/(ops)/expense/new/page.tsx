@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authFetch } from '@/lib/api/auth-fetch';
+import { fetchList } from '@/lib/api/fetch-list';
 
 export default function NewExpense() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function NewExpense() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    authFetch('/api/v1/expenses/categories').then(r => r.json()).then(setCategories).catch(() => setCategories([]));
+    void fetchList<Record<string, unknown>>('/api/v1/expenses/categories').then(setCategories);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,7 +48,7 @@ export default function NewExpense() {
       <h1 className="text-3xl font-bold">Log Expense</h1>
       <Card>
         <CardContent className="pt-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
             <div>
               <label className="text-sm font-medium">Category *</label>
               <select className="w-full border rounded-md p-2" value={formData.category_id} onChange={e => setFormData({ ...formData, category_id: e.target.value })} required>

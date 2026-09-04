@@ -53,7 +53,7 @@ async function lint() {
     process.exit(0);
   }
 
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  const client = new Client({ connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/fleetos' });
   await client.connect();
 
   const errors = [];
@@ -107,7 +107,12 @@ async function lint() {
       errors.push(`${fullName}: missing RLS policy on current_setting('app.tenant_id')::uuid`);
     }
 
-    // 4. Check no finance grants to app_ops or app_platform
+    // 4. Check no finance grants to app_ops or app_platform.
+    // Documented exception (TSD §6, BIL-04, S22): app_ops may INSERT/SELECT
+    // client_money_events (receipts/advances with evidence, own entries only
+    // via service filter). Balances stay protected — all finance VIEWS
+    // remain fully revoked for app_ops (check 5 below).
+    const OPS_WRITABLE_FINANCE = { client_money_events: ['INSERT', 'SELECT'] };
     if (kind === 'finance') {
       for (const role of ['app_ops', 'app_platform']) {
         const grantRes = await client.query(
@@ -115,10 +120,13 @@ async function lint() {
            WHERE grantee = $1 AND table_schema = 'tenant' AND table_name = $2`,
           [role, name],
         );
+        const allowed = role === 'app_ops' ? (OPS_WRITABLE_FINANCE[name] || []) : [];
+        const denied = grantRes.rows
+          .map((r) => r.privilege_type)
+          .filter((p) => !allowed.includes(p));
 
-        if (grantRes.rows.length > 0) {
-          const privs = grantRes.rows.map((r) => r.privilege_type).join(', ');
-          errors.push(`${fullName}: FINANCE table has grants to ${role}: ${privs}`);
+        if (denied.length > 0) {
+          errors.push(`${fullName}: FINANCE table has grants to ${role}: ${denied.join(', ')}`);
         }
       }
     }

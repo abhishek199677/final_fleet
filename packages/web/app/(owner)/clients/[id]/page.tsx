@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { authFetch } from '@/lib/api/auth-fetch';
+import { fetchList } from '@/lib/api/fetch-list';
 
 export default function ClientDetail() {
   const params = useParams();
@@ -17,14 +18,26 @@ export default function ClientDetail() {
 
   useEffect(() => {
     if (!id) return;
-    Promise.all([
-      authFetch(`/api/v1/clients/${id}`).then(r => r.json()),
-      authFetch('/api/v1/deployments').then(r => r.json()).catch(() => []),
-      authFetch('/api/v1/billing/receivables').then(r => r.json()).catch(() => []),
+    const getClient = async (): Promise<Record<string, unknown> | null> => {
+      try {
+        const res = await authFetch(`/api/v1/clients/${id}`);
+        if (!res.ok) return null;
+        const j = await res.json();
+        return j && typeof j === 'object' && !Array.isArray(j)
+          ? (j as Record<string, unknown>)
+          : null;
+      } catch {
+        return null;
+      }
+    };
+    void Promise.all([
+      getClient(),
+      fetchList<Record<string, unknown>>('/api/v1/deployments'),
+      fetchList<Record<string, unknown>>('/api/v1/billing/receivables'),
     ]).then(([c, d, r]) => {
       setClient(c);
-      setDeployments((d || []).filter((dep: Record<string, unknown>) => dep.client_id === id));
-      setReceivable((r || []).find((rec: Record<string, unknown>) => rec.client_id === id) || null);
+      setDeployments(d.filter((dep) => dep.client_id === id));
+      setReceivable(r.find((rec) => rec.client_id === id) || null);
     }).finally(() => setLoading(false));
   }, [id]);
 

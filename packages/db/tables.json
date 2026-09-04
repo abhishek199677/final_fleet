@@ -22,6 +22,8 @@
   {"name": "alerts", "kind": "operational", "transactional": false},
   {"name": "notifications", "kind": "operational", "transactional": false},
   {"name": "insight_notes", "kind": "operational", "transactional": false},
+  {"name": "approval_requests", "kind": "operational", "transactional": false},
+  {"name": "period_closes", "kind": "operational", "transactional": false},
   {"name": "rate_cards", "kind": "finance", "transactional": false},
   {"name": "extra_charges", "kind": "finance", "transactional": true},
   {"name": "billing_ledger", "kind": "finance", "transactional": false},

@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authFetch } from '@/lib/api/auth-fetch';
+import { fetchList } from '@/lib/api/fetch-list';
 
 export default function NewFuelLog() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function NewFuelLog() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    authFetch('/api/v1/machines').then(r => r.json()).then(setMachines).catch(() => setMachines([]));
+    void fetchList<Record<string, unknown>>('/api/v1/machines').then(setMachines);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,7 +52,7 @@ export default function NewFuelLog() {
       <h1 className="text-3xl font-bold">Log Fuel</h1>
       <Card>
         <CardContent className="pt-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
             <div>
               <label className="text-sm font-medium">Machine *</label>
               <select className="w-full border rounded-md p-2" value={formData.machine_id} onChange={e => setFormData({ ...formData, machine_id: e.target.value })} required>

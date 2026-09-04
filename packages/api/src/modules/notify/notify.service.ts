@@ -61,7 +61,7 @@ export class NotifyService {
       return;
     }
 
-    const template = await this.getTemplate(message.template, message.tenant_id);
+    await this.getTemplate(message.template, message.tenant_id);
 
     // In production, this would call the WhatsApp Business API
     // const response = await fetch(`https://graph.facebook.com/v17.0/${phoneNumberId}/messages`, {
@@ -78,9 +78,10 @@ export class NotifyService {
     this.logger.log(`WhatsApp message sent to ${message.phone}`);
   }
 
-  private async sendSMS(message: NotifyMessage): Promise<void> {
+  private sendSMS(message: NotifyMessage): Promise<void> {
     // SMS provider integration (e.g., Twilio, AWS SNS)
     this.logger.log(`SMS sent to ${message.phone}`);
+    return Promise.resolve();
   }
 
   private async createInAppNotification(message: NotifyMessage): Promise<void> {
@@ -93,7 +94,7 @@ export class NotifyService {
       [message.tenant_id, message.user_id, message.template, JSON.stringify(message.variables)]);
   }
 
-  private async getTemplate(templateName: string, tenantId: string): Promise<{ name: string; body: string }> {
+  private getTemplate(templateName: string, _tenantId: string): Promise<{ name: string; body: string }> {
     // Load template from DB or default templates
     const templates: Record<string, { name: string; body: string }> = {
       // Session templates
@@ -148,6 +149,6 @@ export class NotifyService {
         body: '💵 Cash variance detected\nAccount: {account_name}\nExpected: {currency} {expected}\nActual: {currency} {actual}\nVariance: {currency} {variance}'
       },
     };
-    return templates[templateName] || { name: templateName, body: templateName };
+    return Promise.resolve(templates[templateName] || { name: templateName, body: templateName });
   }
 }

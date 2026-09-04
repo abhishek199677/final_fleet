@@ -7,8 +7,13 @@ import { cn } from '@/lib/utils';
 const ownerNav = [
   { href: '/home', label: 'Home' },
   { href: '/machines', label: 'Machines' },
+  { href: '/operators', label: 'Operators' },
   { href: '/billing', label: 'Billing' },
   { href: '/clients', label: 'Clients' },
+  { href: '/cash', label: 'Cash' },
+  { href: '/projections', label: 'Projections' },
+  { href: '/audit', label: 'Audit' },
+  { href: '/support', label: 'Support' },
   { href: '/settings', label: 'Settings' },
 ];
 
