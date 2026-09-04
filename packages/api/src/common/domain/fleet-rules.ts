@@ -76,7 +76,7 @@ export function isDuplicateSuspect(a: {
   if (a.dateYmd.slice(0, 7) !== b.dateYmd.slice(0, 7)) return false;
   const diff = Math.abs(a.amountMinor - b.amountMinor) / Math.max(1, Math.abs(b.amountMinor));
   if (diff > 0.01) return false;
-  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const norm = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]/g, '');
   const na = norm(a.description);
   const nb = norm(b.description);
   if (na.length < 8 || nb.length < 8) return false;
