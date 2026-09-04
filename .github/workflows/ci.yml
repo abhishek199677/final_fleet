@@ -77,10 +77,9 @@ jobs:
       - run: pnpm --filter web exec playwright test
   cdk-diff:
     needs: checks
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && secrets.AWS_DEV_ROLE_ARN != ''
     runs-on: ubuntu-latest
-    # Informational until AWS_DEV_ROLE_ARN is configured; never block merges.
-    continue-on-error: true
+    # Skipped (not failed) until AWS_DEV_ROLE_ARN is configured.
     permissions: { id-token: write, contents: read, pull-requests: write }
     steps:
       - uses: actions/checkout@v4
