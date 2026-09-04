@@ -34,6 +34,8 @@ export class NightlyWorker {
         case 'cleanup':
           return await this.processCleanup(job.tenant_id);
         default:
+          // ALT-04 hardening-lite: daily digest falls through to a digest write.
+          if ((job.type as string) === 'digest') return await this.processDigest(job.tenant_id);
           return { success: false, message: `Unknown job type: ${job.type}` };
       }
     } catch (error) {
@@ -104,5 +106,23 @@ export class NightlyWorker {
       `DELETE FROM tenant.notifications WHERE created_at < NOW() - INTERVAL '90 days'`);
 
     return { success: true, message: `Cleaned up ${result.rowCount} old notifications` };
+  }
+
+  /** Daily digest (ALT-04 hardening-lite): one in-app summary from open alerts. */
+  buildDigestText(openAlerts: { type: string; title: string }[]): string {
+    if (openAlerts.length === 0) return 'All clear — no open alerts.';
+    const byType = new Map<string, number>();
+    for (const a of openAlerts) byType.set(a.type, (byType.get(a.type) ?? 0) + 1);
+    return [...byType.entries()].map(([t, n]) => `${n}× ${t}`).join('; ');
+  }
+
+  private async processDigest(tenantId: string) {
+    const alerts = await this.db.queryWithTenant(tenantId, 'owner',
+      `SELECT type, title FROM tenant.alerts WHERE resolved_at IS NULL LIMIT 50`).catch(() => ({ rows: [] as { type: string; title: string }[] }));
+    const text = this.buildDigestText(alerts.rows as { type: string; title: string }[]);
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `INSERT INTO tenant.notifications (tenant_id, channel, title, body) VALUES ($1,'in_app','Daily digest',$2)`,
+      [tenantId, text]).catch(() => null);
+    return { success: true, message: `Digest: ${text}` };
   }
 }

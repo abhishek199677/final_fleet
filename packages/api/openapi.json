@@ -1234,6 +1234,26 @@
         ]
       }
     },
+    "/maintenance/tasks": {
+      "post": {
+        "operationId": "MaintenanceController_createTask",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create a maintenance task (owner only)",
+        "tags": [
+          "Maintenance"
+        ]
+      }
+    },
     "/expenses": {
       "get": {
         "operationId": "ExpensesController_findAll",
@@ -1336,6 +1356,26 @@
           }
         ],
         "summary": "List cash accounts",
+        "tags": [
+          "Cash"
+        ]
+      }
+    },
+    "/cash/expected": {
+      "get": {
+        "operationId": "CashController_getExpected",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Expected balance, last count and variance per account (owner only)",
         "tags": [
           "Cash"
         ]
@@ -1739,7 +1779,7 @@
             "tenant-auth": []
           }
         ],
-        "summary": "Commit an uploaded photo with SHA-256",
+        "summary": "Commit an uploaded photo with device SHA-256",
         "tags": [
           "Photos"
         ]
@@ -1751,7 +1791,7 @@
         "parameters": [
           {
             "name": "entity_type",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "type": "string"
@@ -1759,7 +1799,7 @@
           },
           {
             "name": "entity_id",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "type": "string"
@@ -1776,7 +1816,7 @@
             "tenant-auth": []
           }
         ],
-        "summary": "List photos for an entity",
+        "summary": "List photos (optionally for a work session)",
         "tags": [
           "Photos"
         ]
@@ -1835,35 +1875,6 @@
           }
         ],
         "summary": "Get photo download URL",
-        "tags": [
-          "Photos"
-        ]
-      }
-    },
-    "/photos/{id}/delete": {
-      "post": {
-        "operationId": "PhotosController_delete",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "tenant-auth": []
-          }
-        ],
-        "summary": "Delete a photo",
         "tags": [
           "Photos"
         ]
@@ -2166,6 +2177,93 @@
         "summary": "List this tenant's support tickets",
         "tags": [
           "Support"
+        ]
+      }
+    },
+    "/admin/support/tickets": {
+      "get": {
+        "operationId": "AdminSupportController_tickets",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "platform-auth": []
+          }
+        ],
+        "summary": "List all support tickets with tenant names",
+        "tags": [
+          "Admin - Support"
+        ]
+      }
+    },
+    "/admin/support/tickets/{id}": {
+      "patch": {
+        "operationId": "AdminSupportController_updateTicket",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "platform-auth": []
+          }
+        ],
+        "summary": "Update a ticket status",
+        "tags": [
+          "Admin - Support"
+        ]
+      }
+    },
+    "/admin/support/announcements": {
+      "get": {
+        "operationId": "AdminSupportController_announcements",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "platform-auth": []
+          }
+        ],
+        "summary": "List announcements",
+        "tags": [
+          "Admin - Support"
+        ]
+      },
+      "post": {
+        "operationId": "AdminSupportController_announce",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "platform-auth": []
+          }
+        ],
+        "summary": "Broadcast an announcement (ADM-05)",
+        "tags": [
+          "Admin - Support"
         ]
       }
     }

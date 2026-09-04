@@ -186,8 +186,8 @@ async function seedDemoHistory(client) {
       const startMeter = d.meter;
       d.meter += units;
       await q(
-        `INSERT INTO tenant.work_sessions (tenant_id, machine_id, deployment_id, operator_id, start_at, end_at, start_meter, end_meter, units_run, start_evidence, end_evidence, billable, created_by, client_uuid, source)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'manual','manual',true,$10,gen_random_uuid(),'seed')`,
+        `INSERT INTO tenant.work_sessions (tenant_id, machine_id, deployment_id, operator_id, start_at, end_at, start_meter, end_meter, units_run, start_evidence, end_evidence, billable, created_by, client_uuid, source, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'manual','manual',true,$10,gen_random_uuid(),'seed',$5)`,
         [TENANT, d.machine_id, d.deployment_id, operators[i % operators.length].id,
          start.toISOString(), end.toISOString(), startMeter, d.meter, units, OWNER],
       );
