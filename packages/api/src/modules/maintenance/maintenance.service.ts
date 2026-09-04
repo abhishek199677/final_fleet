@@ -28,6 +28,51 @@ export class MaintenanceService {
       [tenantId, data.machine_id, data.visit_date, data.visit_type, data.mechanic, data.meter_at_visit,
        data.checklist, data.labour_cost_txn, data.labour_currency, data.labour_fx, data.labour_base,
        data.notes, userId, clientUuid]);
+    const visit = result.rows[0];
+
+    // Ticked tasks: link + advance next-due (MNT-04 — meter never resets).
+    const taskIds: string[] = Array.isArray(data.task_ids) ? data.task_ids as string[] : [];
+    for (const taskId of taskIds) {
+      await this.db.queryWithTenant(tenantId, 'ops',
+        `INSERT INTO tenant.maintenance_visit_tasks (visit_id, task_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+        [visit.id, taskId]);
+      const t = await this.db.queryWithTenant(tenantId, 'ops',
+        `SELECT trigger, interval_value FROM tenant.maintenance_tasks WHERE id = $1`, [taskId]);
+      const task = t.rows[0];
+      if (!task) continue;
+      const meter = Number(data.meter_at_visit ?? NaN);
+      if (task.trigger === 'meter' && Number.isFinite(meter)) {
+        await this.db.queryWithTenant(tenantId, 'ops',
+          `UPDATE tenant.maintenance_tasks SET last_done_value = $1, last_done_date = $2::date,
+            next_due_value = $1 + interval_value WHERE id = $3`,
+          [meter, data.visit_date, taskId]);
+      } else if (task.trigger === 'calendar') {
+        await this.db.queryWithTenant(tenantId, 'ops',
+          `UPDATE tenant.maintenance_tasks SET last_done_date = $1::date,
+            next_due_date = ($1::date + (interval_value || ' days')::interval)::date WHERE id = $2`,
+          [data.visit_date, taskId]);
+      }
+    }
+
+    // Parts and consumables on the visit (MNT-03).
+    const parts: Record<string, unknown>[] = Array.isArray(data.parts) ? data.parts as Record<string, unknown>[] : [];
+    for (const p of parts) {
+      await this.db.queryWithTenant(tenantId, 'ops',
+        `INSERT INTO tenant.maintenance_parts (visit_id, item, qty, unit_cost_txn, currency, fx, base, is_consumable, meter_at_change)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        [visit.id, p.item, p.qty ?? 1, p.unit_cost_txn ?? 0, p.currency || 'INR', p.fx ?? null,
+         p.base ?? null, p.is_consumable ?? true, data.meter_at_visit ?? null]);
+    }
+    return visit;
+  }
+
+  async createTask(tenantId: string, data: Record<string, unknown>, clientUuid: string) {
+    const result = await this.db.queryWithTenant(tenantId, 'ops',
+      `INSERT INTO tenant.maintenance_tasks (tenant_id, machine_id, name, trigger, interval_value, warning_value, last_done_value, last_done_date, next_due_value, next_due_date, client_uuid)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+      [tenantId, data.machine_id, data.name, data.trigger, data.interval_value, data.warning_value ?? null,
+       data.last_done_value ?? null, data.last_done_date ?? null, data.next_due_value ?? null,
+       data.next_due_date ?? null, clientUuid]);
     return result.rows[0];
   }
 

@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Param, Body, Req } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MaintenanceService } from './maintenance.service';
+import { Roles, RolesGuard } from '../../common/guards/roles.guard';
 import { TenantRequest } from '../../common/middleware/tenant-context.middleware';
 
 @ApiTags('Maintenance')
@@ -31,5 +32,13 @@ export class MaintenanceController {
   @ApiOperation({ summary: 'Create a maintenance visit' })
   createVisit(@Req() req: TenantRequest, @Body() dto: Record<string, unknown>) {
     return this.service.createVisit(req.tenant!.tenantId, dto, dto.client_uuid as string, req.user!.id as string);
+  }
+
+  @Post('tasks')
+  @ApiOperation({ summary: 'Create a maintenance task (owner only)' })
+  @UseGuards(RolesGuard)
+  @Roles('owner')
+  createTask(@Req() req: TenantRequest, @Body() dto: Record<string, unknown>) {
+    return this.service.createTask(req.tenant!.tenantId, dto, dto.client_uuid as string);
   }
 }

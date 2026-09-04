@@ -5,23 +5,24 @@
 /*
  * Fleet OS — Chat Bucket motion / glare / background system
  * TSD §8 (Web). Cross-cutting, no BRD functional change.
- * Dark-first ambient layer. All values are semantic tokens (no raw hex in components).
+ * Light-first ambient layer. All values are semantic tokens (no raw hex in components).
  */
 
 :root {
-  /* ---- Chat Bucket mapped to semantic tokens ---- */
-  --fleet-text-primary: #ffffff;
-  --fleet-text-secondary: #878ea4;
-  --fleet-text-tertiary: #d6d8de;
-  --fleet-text-inverse: rgba(255, 255, 255, 0.8);
-  --fleet-surface-base: #000000;
-  --fleet-surface-muted: rgba(255, 255, 255, 0.08);
-  --fleet-surface-raised: rgba(255, 255, 255, 0.05);
-  --fleet-surface-strong: #141518;
-  --fleet-line: rgba(255, 255, 255, 0.1);
-  --fleet-glow-a: rgba(99, 102, 241, 0.35);
-  --fleet-glow-b: rgba(34, 211, 238, 0.22);
-  --fleet-glow-c: rgba(168, 85, 247, 0.25);
+  /* ---- Chat Bucket mapped to semantic tokens (light theme) ---- */
+  --fleet-text-primary: #101828;
+  --fleet-text-secondary: #475467;
+  --fleet-text-tertiary: #667085;
+  --fleet-text-inverse: rgba(255, 255, 255, 0.92);
+  --fleet-surface-base: #f6f8fb;
+  --fleet-surface-muted: rgba(16, 24, 40, 0.06);
+  --fleet-surface-raised: #ffffff;
+  --fleet-surface-strong: #ffffff;
+  --fleet-line: rgba(16, 24, 40, 0.1);
+  --fleet-glare: rgba(16, 24, 40, 0.07);
+  --fleet-glow-a: rgba(99, 102, 241, 0.14);
+  --fleet-glow-b: rgba(34, 211, 238, 0.12);
+  --fleet-glow-c: rgba(168, 85, 247, 0.12);
 
   /* ---- Type ---- */
   --fleet-font-primary: ui-sans-serif, -apple-system, 'SF Pro Text', 'SF Pro Display',
@@ -60,22 +61,30 @@
   --fleet-motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --fleet-motion-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
-  /* ---- shadcn compat (dark-first) ---- */
-  --background: 0 0% 0%;
-  --foreground: 0 0% 100%;
-  --card: 240 4% 8%;
-  --card-foreground: 0 0% 100%;
-  --primary: 0 0% 100%;
-  --primary-foreground: 0 0% 0%;
-  --secondary: 240 4% 10%;
-  --secondary-foreground: 0 0% 100%;
-  --muted: 240 4% 10%;
-  --muted-foreground: 231 12% 59%;
-  --accent: 240 4% 12%;
-  --accent-foreground: 0 0% 100%;
-  --border: 0 0% 100% / 0.1;
-  --input: 0 0% 100% / 0.12;
-  --ring: 231 12% 65%;
+  /* ---- Night dashboard surface (machine detail) ---- */
+  --fleet-night-base: #101014;
+  --fleet-night-card: #1b1b21;
+  --fleet-night-raised: #26262e;
+  --fleet-night-line: rgba(255, 255, 255, 0.08);
+  --fleet-night-text: #f4f4f5;
+  --fleet-night-muted: #a1a1aa;
+
+  /* ---- shadcn compat (light-first) ---- */
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --primary: 222 47% 11%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 220 14% 96%;
+  --muted-foreground: 220 9% 38%;
+  --accent: 220 14% 94%;
+  --accent-foreground: 222 47% 11%;
+  --border: 220 13% 91%;
+  --input: 220 13% 82%;
+  --ring: 222 47% 30%;
 }
 
 @layer base {
@@ -92,7 +101,7 @@
     overflow-x: clip;
   }
   ::selection {
-    background: rgba(255, 255, 255, 0.22);
+    background: rgba(99, 102, 241, 0.22);
   }
   /* Must: always-visible focus, never hidden */
   :focus-visible {
@@ -124,8 +133,8 @@
     position: absolute;
     inset: 0;
     background-image:
-      linear-gradient(to right, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+      linear-gradient(to right, rgba(16, 24, 40, 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(16, 24, 40, 0.06) 1px, transparent 1px);
     background-size: 56px 56px;
     mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 35%, transparent 78%);
     -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 35%, transparent 78%);
@@ -135,13 +144,13 @@
     inset-inline: 0;
     top: -220px;
     height: 480px;
-    background: radial-gradient(ellipse 55% 60% at 50% 40%, rgba(255, 255, 255, 0.14), transparent 70%);
+    background: radial-gradient(ellipse 55% 60% at 50% 40%, rgba(255, 255, 255, 0.9), transparent 70%);
   }
   .fleet-ambient-orb {
     position: absolute;
     border-radius: 9999px;
     filter: blur(90px);
-    opacity: 0.55;
+    opacity: 0.5;
     will-change: transform;
     animation: fleet-drift var(--fleet-motion-drift) var(--fleet-motion-ease-in-out) infinite alternate;
   }
@@ -180,7 +189,7 @@
     inset-inline: 10%;
     top: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+    background: linear-gradient(90deg, transparent, rgba(16, 24, 40, 0.3), transparent);
   }
 
   /* Glare card: mouse / touch / keyboard-driven specular highlight */
@@ -191,10 +200,12 @@
     background: var(--fleet-surface-raised);
     border: 1px solid var(--fleet-line);
     border-radius: var(--fleet-radius-md);
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
     transition:
       border-color var(--fleet-motion-fast) var(--fleet-motion-ease-out),
       transform var(--fleet-motion-fast) var(--fleet-motion-ease-out),
-      background-color var(--fleet-motion-instant) var(--fleet-motion-ease-out);
+      background-color var(--fleet-motion-instant) var(--fleet-motion-ease-out),
+      box-shadow var(--fleet-motion-fast) var(--fleet-motion-ease-out);
   }
   .fleet-glare::before {
     content: '';
@@ -205,7 +216,7 @@
     transition: opacity var(--fleet-motion-fast) var(--fleet-motion-ease-out);
     background: radial-gradient(
       420px circle at var(--gx) var(--gy),
-      rgba(255, 255, 255, 0.14),
+      var(--fleet-glare),
       transparent 65%
     );
     pointer-events: none;
@@ -216,7 +227,8 @@
     opacity: 1;
   }
   .fleet-glare:hover {
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(16, 24, 40, 0.22);
+    box-shadow: 0 4px 12px rgba(16, 24, 40, 0.08);
   }
 
   /* Reveal on scroll (paired with <Reveal/>) */
@@ -248,7 +260,7 @@
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
-    background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.12) 50%, transparent 80%);
+    background: linear-gradient(100deg, transparent 20%, rgba(16, 24, 40, 0.08) 50%, transparent 80%);
     animation: fleet-shimmer 1.6s linear infinite;
   }
 }

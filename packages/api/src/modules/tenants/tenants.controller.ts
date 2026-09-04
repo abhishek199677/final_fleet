@@ -1,11 +1,13 @@
-import { Controller, Get, Post, Patch, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TenantsService } from './tenants.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
+import { PlatformGuard } from '../../common/guards/platform.guard';
 
 @ApiTags('Admin - Tenants')
 @ApiBearerAuth('platform-auth')
 @Controller('admin/tenants')
+@UseGuards(PlatformGuard)
 export class TenantsController {
   constructor(private service: TenantsService) {}
 

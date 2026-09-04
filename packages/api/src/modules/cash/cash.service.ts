@@ -11,6 +11,13 @@ export class CashService {
     return result.rows;
   }
 
+  /** Expected balance, last count and variance per account (CSH-04, owner only). */
+  async getExpected(tenantId: string) {
+    const result = await this.db.queryWithTenant(tenantId, 'owner',
+      `SELECT * FROM tenant.v_cash_expected ORDER BY account_name`);
+    return result.rows;
+  }
+
   async getTransfers(tenantId: string) {
     const result = await this.db.queryWithTenant(tenantId, 'ops',
       `SELECT ct.*, fa.name AS from_name, ta.name AS to_name

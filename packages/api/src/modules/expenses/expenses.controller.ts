@@ -22,4 +22,10 @@ export class ExpensesController {
   create(@Req() req: TenantRequest, @Body() dto: Record<string, unknown>) {
     return this.service.create(req.tenant!.tenantId, dto, dto.client_uuid as string, req.user!.id as string);
   }
+
+  @Post(':id/corrections')
+  @ApiOperation({ summary: 'Correct an expense (creates new version, e.g. void with reason)' })
+  correct(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: Record<string, unknown>) {
+    return this.service.correct(req.tenant!.tenantId, id, dto, req.user!.id as string);
+  }
 }

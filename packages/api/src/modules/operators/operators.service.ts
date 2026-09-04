@@ -19,17 +19,25 @@ export class OperatorsService {
 
   async create(tenantId: string, data: Record<string, unknown>, clientUuid: string) {
     const result = await this.db.queryWithTenant(tenantId, 'ops',
-      `INSERT INTO tenant.operators (tenant_id, name, phone, whatsapp, license_class, license_expiry, active, client_uuid)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-      [tenantId, data.name, data.phone, data.whatsapp, data.license_class, data.license_expiry, data.active !== false, clientUuid]);
+      `INSERT INTO tenant.operators (tenant_id, name, phone, is_active, client_uuid)
+       VALUES ($1,$2,$3,$4,$5)
+       ON CONFLICT (tenant_id, client_uuid) DO NOTHING RETURNING *`,
+      [tenantId, data.name, data.phone ?? null, data.is_active !== false, clientUuid]);
+    if (result.rows.length === 0) return this.findByClientUuid(tenantId, clientUuid);
+    return result.rows[0];
+  }
+
+  async findByClientUuid(tenantId: string, clientUuid: string) {
+    const result = await this.db.queryWithTenant(tenantId, 'ops',
+      `SELECT * FROM tenant.operators WHERE client_uuid = $1`, [clientUuid]);
     return result.rows[0];
   }
 
   async update(tenantId: string, id: string, data: Record<string, unknown>) {
     const result = await this.db.queryWithTenant(tenantId, 'ops',
-      `UPDATE tenant.operators SET name = COALESCE($2, name), phone = COALESCE($3, phone), whatsapp = COALESCE($4, whatsapp),
-       license_class = COALESCE($5, license_class), license_expiry = COALESCE($6, license_expiry), active = COALESCE($7, active)
-       WHERE id = $1 RETURNING *`, [id, data.name, data.phone, data.whatsapp, data.license_class, data.license_expiry, data.active]);
+      `UPDATE tenant.operators SET name = COALESCE($2, name), phone = COALESCE($3, phone),
+       is_active = COALESCE($4, is_active)
+       WHERE id = $1 RETURNING *`, [id, data.name, data.phone, data.is_active]);
     return result.rows[0];
   }
 }

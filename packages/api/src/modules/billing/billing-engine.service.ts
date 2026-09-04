@@ -5,50 +5,58 @@ import { DatabaseService } from '../../common/database/database.service';
 export class BillingEngineService {
   constructor(private db: DatabaseService) {}
 
-  async getRateCards(tenantId: string, clientId?: string) {
-    const query = clientId
-      ? `SELECT rc.*, cl.name AS client_name FROM tenant.rate_cards rc
-         JOIN tenant.clients cl ON cl.id = rc.client_id
-         WHERE rc.client_id = $1 ORDER BY rc.effective_from DESC`
-      : `SELECT rc.*, cl.name AS client_name FROM tenant.rate_cards rc
-         JOIN tenant.clients cl ON cl.id = rc.client_id
-         ORDER BY rc.effective_from DESC`;
-    const params = clientId ? [clientId] : [];
-    const result = await this.db.queryWithTenant(tenantId, 'owner', query, params);
-    return result.rows;
-  }
-
-  async createRateCard(tenantId: string, data: Record<string, unknown>, clientUuid: string) {
-    const result = await this.db.queryWithTenant(tenantId, 'owner',
-      `INSERT INTO tenant.rate_cards (tenant_id, client_id, machine_type, strategy, rate_minor, currency, min_hours, min_charge_minor, standby_rate_minor, effective_from, effective_to, client_uuid)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
-      [tenantId, data.client_id, data.machine_type, data.strategy, data.rate_minor,
-       data.currency, data.min_hours, data.min_charge_minor, data.standby_rate_minor,
-       data.effective_from, data.effective_to, clientUuid]);
-    return result.rows[0];
-  }
-
-  async getExtraCharges(tenantId: string, deploymentId?: string) {
+  async getRateCards(tenantId: string, deploymentId?: string) {
     const query = deploymentId
-      ? `SELECT ec.*, cl.name AS client_name FROM tenant.extra_charges ec
-         JOIN tenant.deployments d ON d.id = ec.deployment_id
-         JOIN tenant.clients cl ON cl.id = d.client_id
-         WHERE ec.deployment_id = $1 ORDER BY ec.created_at DESC`
-      : `SELECT ec.*, cl.name AS client_name FROM tenant.extra_charges ec
-         JOIN tenant.deployments d ON d.id = ec.deployment_id
-         JOIN tenant.clients cl ON cl.id = d.client_id
-         ORDER BY ec.created_at DESC`;
+      ? `SELECT rc.*, d.machine_id, m.code AS machine_code, s.name AS site_name, cl.name AS client_name
+         FROM tenant.rate_cards rc
+         JOIN tenant.deployments d ON d.id = rc.deployment_id
+         JOIN tenant.machines m ON m.id = d.machine_id
+         JOIN tenant.sites s ON s.id = d.site_id
+         JOIN tenant.clients cl ON cl.id = s.client_id
+         WHERE rc.deployment_id = $1 ORDER BY rc.effective_from DESC`
+      : `SELECT rc.*, d.machine_id, m.code AS machine_code, s.name AS site_name, cl.name AS client_name
+         FROM tenant.rate_cards rc
+         JOIN tenant.deployments d ON d.id = rc.deployment_id
+         JOIN tenant.machines m ON m.id = d.machine_id
+         JOIN tenant.sites s ON s.id = d.site_id
+         JOIN tenant.clients cl ON cl.id = s.client_id
+         ORDER BY rc.effective_from DESC`;
     const params = deploymentId ? [deploymentId] : [];
     const result = await this.db.queryWithTenant(tenantId, 'owner', query, params);
     return result.rows;
   }
 
-  async createExtraCharge(tenantId: string, data: Record<string, unknown>, clientUuid: string) {
+  async createRateCard(tenantId: string, data: Record<string, unknown>, _clientUuid: string) {
     const result = await this.db.queryWithTenant(tenantId, 'owner',
-      `INSERT INTO tenant.extra_charges (tenant_id, deployment_id, label, currency, amount_minor, fx_rate, base_minor, taxable, tax_rate_bps, client_uuid)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
-      [tenantId, data.deployment_id, data.label, data.currency, data.amount_minor,
-       data.fx_rate, data.base_minor, data.taxable, data.tax_rate_bps, clientUuid]);
+      `INSERT INTO tenant.rate_cards (tenant_id, deployment_id, effective_from, strategy, rate_minor, currency, min_units_per_day, standby_rate_minor)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [tenantId, data.deployment_id, data.effective_from, data.strategy, data.rate_minor,
+       data.currency || 'INR', data.min_units_per_day ?? 0, data.standby_rate_minor ?? null]);
+    return result.rows[0];
+  }
+
+  async getExtraCharges(tenantId: string, deploymentId?: string) {
+    const join = `JOIN tenant.deployments d ON d.id = ec.deployment_id
+         JOIN tenant.sites s ON s.id = d.site_id
+         JOIN tenant.clients cl ON cl.id = s.client_id`;
+    const query = deploymentId
+      ? `SELECT ec.*, cl.name AS client_name FROM tenant.extra_charges ec
+         ${join}
+         WHERE ec.deployment_id = $1 ORDER BY ec.date DESC`
+      : `SELECT ec.*, cl.name AS client_name FROM tenant.extra_charges ec
+         ${join}
+         ORDER BY ec.date DESC`;
+    const params = deploymentId ? [deploymentId] : [];
+    const result = await this.db.queryWithTenant(tenantId, 'owner', query, params);
+    return result.rows;
+  }
+
+  async createExtraCharge(tenantId: string, data: Record<string, unknown>, clientUuid: string, userId: string) {
+    const result = await this.db.queryWithTenant(tenantId, 'owner',
+      `INSERT INTO tenant.extra_charges (tenant_id, deployment_id, kind, date, currency, amount_minor, fx, base_minor, note, created_by, client_uuid)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+      [tenantId, data.deployment_id, data.kind ?? 'other', data.date, data.currency || 'INR', data.amount_minor,
+       data.fx ?? data.fx_rate ?? null, data.base_minor ?? null, data.note ?? null, userId, clientUuid]);
     return result.rows[0];
   }
 
@@ -62,13 +70,15 @@ export class BillingEngineService {
   }
 
   async getAdvanceConsumptions(tenantId: string, clientId?: string) {
+    const join = `JOIN tenant.client_money_events cme ON cme.id = ac.advance_id
+         JOIN tenant.clients cl ON cl.id = cme.client_id`;
     const query = clientId
       ? `SELECT ac.*, cl.name AS client_name FROM tenant.advance_consumptions ac
-         JOIN tenant.clients cl ON cl.id = ac.client_id
-         WHERE ac.client_id = $1 ORDER BY ac.consumed_at DESC`
+         ${join}
+         WHERE cme.client_id = $1 ORDER BY ac.date DESC`
       : `SELECT ac.*, cl.name AS client_name FROM tenant.advance_consumptions ac
-         JOIN tenant.clients cl ON cl.id = ac.client_id
-         ORDER BY ac.consumed_at DESC`;
+         ${join}
+         ORDER BY ac.date DESC`;
     const params = clientId ? [clientId] : [];
     const result = await this.db.queryWithTenant(tenantId, 'owner', query, params);
     return result.rows;

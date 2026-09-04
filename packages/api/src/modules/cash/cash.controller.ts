@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Param, Body, Req } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CashService } from './cash.service';
+import { Roles, RolesGuard } from '../../common/guards/roles.guard';
 import { TenantRequest } from '../../common/middleware/tenant-context.middleware';
 
 @ApiTags('Cash')
@@ -12,6 +13,12 @@ export class CashController {
   @Get('accounts')
   @ApiOperation({ summary: 'List cash accounts' })
   getAccounts(@Req() req: TenantRequest) { return this.service.getAccounts(req.tenant!.tenantId); }
+
+  @Get('expected')
+  @ApiOperation({ summary: 'Expected balance, last count and variance per account (owner only)' })
+  @UseGuards(RolesGuard)
+  @Roles('owner')
+  getExpected(@Req() req: TenantRequest) { return this.service.getExpected(req.tenant!.tenantId); }
 
   @Get('transfers')
   @ApiOperation({ summary: 'List cash transfers' })

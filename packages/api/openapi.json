@@ -1,0 +1,2330 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Health check",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Sign in with email/password",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Register a new tenant and owner user",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/admin/tenants": {
+      "get": {
+        "operationId": "TenantsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "platform-auth": []
+          }
+        ],
+        "summary": "List all tenants",
+        "tags": [
+          "Admin - Tenants"
+        ]
+      },
+      "post": {
+        "operationId": "TenantsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTenantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "platform-auth": []
+          }
+        ],
+        "summary": "Create a new tenant",
+        "tags": [
+          "Admin - Tenants"
+        ]
+      }
+    },
+    "/admin/tenants/{id}": {
+      "get": {
+        "operationId": "TenantsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "platform-auth": []
+          }
+        ],
+        "summary": "Get tenant by ID",
+        "tags": [
+          "Admin - Tenants"
+        ]
+      }
+    },
+    "/admin/tenants/{id}/suspend": {
+      "patch": {
+        "operationId": "TenantsController_suspend",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "platform-auth": []
+          }
+        ],
+        "summary": "Suspend a tenant",
+        "tags": [
+          "Admin - Tenants"
+        ]
+      }
+    },
+    "/admin/tenants/{id}/archive": {
+      "patch": {
+        "operationId": "TenantsController_archive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "platform-auth": []
+          }
+        ],
+        "summary": "Archive a tenant",
+        "tags": [
+          "Admin - Tenants"
+        ]
+      }
+    },
+    "/machines": {
+      "get": {
+        "operationId": "MachinesController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List all machines",
+        "tags": [
+          "Machines"
+        ]
+      },
+      "post": {
+        "operationId": "MachinesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMachineDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create a machine",
+        "tags": [
+          "Machines"
+        ]
+      }
+    },
+    "/machines/{id}": {
+      "get": {
+        "operationId": "MachinesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get machine by ID",
+        "tags": [
+          "Machines"
+        ]
+      }
+    },
+    "/machines/{id}/meter": {
+      "patch": {
+        "operationId": "MachinesController_updateMeter",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Update machine meter reading",
+        "tags": [
+          "Machines"
+        ]
+      }
+    },
+    "/clients": {
+      "get": {
+        "operationId": "ClientsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List clients",
+        "tags": [
+          "Clients"
+        ]
+      },
+      "post": {
+        "operationId": "ClientsController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create a client",
+        "tags": [
+          "Clients"
+        ]
+      }
+    },
+    "/clients/{id}": {
+      "get": {
+        "operationId": "ClientsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get client by ID",
+        "tags": [
+          "Clients"
+        ]
+      }
+    },
+    "/deployments": {
+      "get": {
+        "operationId": "DeploymentsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List deployments",
+        "tags": [
+          "Deployments"
+        ]
+      },
+      "post": {
+        "operationId": "DeploymentsController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create a deployment",
+        "tags": [
+          "Deployments"
+        ]
+      }
+    },
+    "/deployments/{id}": {
+      "get": {
+        "operationId": "DeploymentsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get deployment by ID",
+        "tags": [
+          "Deployments"
+        ]
+      }
+    },
+    "/deployments/machine/{machineId}/active": {
+      "get": {
+        "operationId": "DeploymentsController_findActive",
+        "parameters": [
+          {
+            "name": "machineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get active deployment for a machine",
+        "tags": [
+          "Deployments"
+        ]
+      }
+    },
+    "/deployments/{id}/hold": {
+      "post": {
+        "operationId": "DeploymentsController_hold",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Put a deployment on payment hold (owner only)",
+        "tags": [
+          "Deployments"
+        ]
+      }
+    },
+    "/deployments/{id}/release": {
+      "post": {
+        "operationId": "DeploymentsController_release",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Release a deployment from payment hold (owner only)",
+        "tags": [
+          "Deployments"
+        ]
+      }
+    },
+    "/operators": {
+      "get": {
+        "operationId": "OperatorsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List operators",
+        "tags": [
+          "Operators"
+        ]
+      },
+      "post": {
+        "operationId": "OperatorsController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create an operator",
+        "tags": [
+          "Operators"
+        ]
+      }
+    },
+    "/operators/{id}": {
+      "get": {
+        "operationId": "OperatorsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get operator by ID",
+        "tags": [
+          "Operators"
+        ]
+      },
+      "put": {
+        "operationId": "OperatorsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Update an operator",
+        "tags": [
+          "Operators"
+        ]
+      }
+    },
+    "/sites": {
+      "get": {
+        "operationId": "SitesController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List sites",
+        "tags": [
+          "Sites"
+        ]
+      },
+      "post": {
+        "operationId": "SitesController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create a site",
+        "tags": [
+          "Sites"
+        ]
+      }
+    },
+    "/sites/{id}": {
+      "get": {
+        "operationId": "SitesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get site by ID",
+        "tags": [
+          "Sites"
+        ]
+      }
+    },
+    "/work-sessions": {
+      "get": {
+        "operationId": "WorkSessionsController_findAll",
+        "parameters": [
+          {
+            "name": "machine_id",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List work sessions",
+        "tags": [
+          "Work Sessions"
+        ]
+      },
+      "post": {
+        "operationId": "WorkSessionsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorkSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create a work session",
+        "tags": [
+          "Work Sessions"
+        ]
+      }
+    },
+    "/work-sessions/{id}": {
+      "get": {
+        "operationId": "WorkSessionsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get work session by ID",
+        "tags": [
+          "Work Sessions"
+        ]
+      }
+    },
+    "/work-sessions/{id}/corrections": {
+      "post": {
+        "operationId": "WorkSessionsController_correct",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Correct a work session (creates new version)",
+        "tags": [
+          "Work Sessions"
+        ]
+      }
+    },
+    "/work-sessions/daily/{machineId}/{date}": {
+      "get": {
+        "operationId": "WorkSessionsController_getDailyRollup",
+        "parameters": [
+          {
+            "name": "machineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get daily rollup for a machine",
+        "tags": [
+          "Work Sessions"
+        ]
+      }
+    },
+    "/billing/rate-cards": {
+      "get": {
+        "operationId": "BillingEngineController_getRateCards",
+        "parameters": [
+          {
+            "name": "deployment_id",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List rate cards",
+        "tags": [
+          "Billing Engine"
+        ]
+      },
+      "post": {
+        "operationId": "BillingEngineController_createRateCard",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create a rate card",
+        "tags": [
+          "Billing Engine"
+        ]
+      }
+    },
+    "/billing/extra-charges": {
+      "get": {
+        "operationId": "BillingEngineController_getExtraCharges",
+        "parameters": [
+          {
+            "name": "deployment_id",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List extra charges",
+        "tags": [
+          "Billing Engine"
+        ]
+      },
+      "post": {
+        "operationId": "BillingEngineController_createExtraCharge",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create an extra charge",
+        "tags": [
+          "Billing Engine"
+        ]
+      }
+    },
+    "/billing/ledger/{deploymentId}": {
+      "get": {
+        "operationId": "BillingEngineController_getLedger",
+        "parameters": [
+          {
+            "name": "deploymentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get billing ledger for a deployment",
+        "tags": [
+          "Billing Engine"
+        ]
+      }
+    },
+    "/billing/advance-consumptions": {
+      "get": {
+        "operationId": "BillingEngineController_getAdvanceConsumptions",
+        "parameters": [
+          {
+            "name": "client_id",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List advance consumptions",
+        "tags": [
+          "Billing Engine"
+        ]
+      }
+    },
+    "/billing/kpis": {
+      "get": {
+        "operationId": "BillingEngineController_getKPIs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get tenant KPIs",
+        "tags": [
+          "Billing Engine"
+        ]
+      }
+    },
+    "/billing/contribution": {
+      "get": {
+        "operationId": "BillingController_getMachineContribution",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get machine contribution",
+        "tags": [
+          "Billing"
+        ]
+      }
+    },
+    "/billing/run": {
+      "post": {
+        "operationId": "BillingEngineController_run",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Run the billing engine for a deployment and period (owner only)",
+        "tags": [
+          "Billing Engine"
+        ]
+      }
+    },
+    "/fuel-downtime/fuel-logs": {
+      "get": {
+        "operationId": "FuelDowntimeController_getFuelLogs",
+        "parameters": [
+          {
+            "name": "machine_id",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List fuel logs",
+        "tags": [
+          "Fuel & Downtime"
+        ]
+      },
+      "post": {
+        "operationId": "FuelDowntimeController_createFuelLog",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create a fuel log",
+        "tags": [
+          "Fuel & Downtime"
+        ]
+      }
+    },
+    "/fuel-downtime/downtime": {
+      "get": {
+        "operationId": "FuelDowntimeController_getDowntime",
+        "parameters": [
+          {
+            "name": "machine_id",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List downtime segments",
+        "tags": [
+          "Fuel & Downtime"
+        ]
+      },
+      "post": {
+        "operationId": "FuelDowntimeController_createDowntime",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create a downtime segment",
+        "tags": [
+          "Fuel & Downtime"
+        ]
+      }
+    },
+    "/maintenance/machines/{machineId}/tasks": {
+      "get": {
+        "operationId": "MaintenanceController_getTasks",
+        "parameters": [
+          {
+            "name": "machineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get maintenance tasks for a machine",
+        "tags": [
+          "Maintenance"
+        ]
+      }
+    },
+    "/maintenance/machines/{machineId}/status": {
+      "get": {
+        "operationId": "MaintenanceController_getStatus",
+        "parameters": [
+          {
+            "name": "machineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get maintenance status for a machine",
+        "tags": [
+          "Maintenance"
+        ]
+      }
+    },
+    "/maintenance/machines/{machineId}/visits": {
+      "get": {
+        "operationId": "MaintenanceController_getVisits",
+        "parameters": [
+          {
+            "name": "machineId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get maintenance visits for a machine",
+        "tags": [
+          "Maintenance"
+        ]
+      }
+    },
+    "/maintenance/visits": {
+      "post": {
+        "operationId": "MaintenanceController_createVisit",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create a maintenance visit",
+        "tags": [
+          "Maintenance"
+        ]
+      }
+    },
+    "/expenses": {
+      "get": {
+        "operationId": "ExpensesController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List expenses",
+        "tags": [
+          "Expenses"
+        ]
+      },
+      "post": {
+        "operationId": "ExpensesController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create an expense",
+        "tags": [
+          "Expenses"
+        ]
+      }
+    },
+    "/expenses/categories": {
+      "get": {
+        "operationId": "ExpensesController_getCategories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List expense categories",
+        "tags": [
+          "Expenses"
+        ]
+      }
+    },
+    "/expenses/{id}/corrections": {
+      "post": {
+        "operationId": "ExpensesController_correct",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Correct an expense (creates new version, e.g. void with reason)",
+        "tags": [
+          "Expenses"
+        ]
+      }
+    },
+    "/cash/accounts": {
+      "get": {
+        "operationId": "CashController_getAccounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List cash accounts",
+        "tags": [
+          "Cash"
+        ]
+      }
+    },
+    "/cash/transfers": {
+      "get": {
+        "operationId": "CashController_getTransfers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List cash transfers",
+        "tags": [
+          "Cash"
+        ]
+      },
+      "post": {
+        "operationId": "CashController_createTransfer",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create a cash transfer",
+        "tags": [
+          "Cash"
+        ]
+      }
+    },
+    "/cash/accounts/{accountId}/counts": {
+      "get": {
+        "operationId": "CashController_getCounts",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List cash counts for an account",
+        "tags": [
+          "Cash"
+        ]
+      }
+    },
+    "/cash/counts": {
+      "post": {
+        "operationId": "CashController_createCount",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create a cash count",
+        "tags": [
+          "Cash"
+        ]
+      }
+    },
+    "/client-money/events": {
+      "get": {
+        "operationId": "ClientMoneyController_getEvents",
+        "parameters": [
+          {
+            "name": "client_id",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List client money events",
+        "tags": [
+          "Client Money"
+        ]
+      },
+      "post": {
+        "operationId": "ClientMoneyController_createEvent",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create a client money event (receipt/advance/credit note)",
+        "tags": [
+          "Client Money"
+        ]
+      }
+    },
+    "/client-money/receivables": {
+      "get": {
+        "operationId": "ClientMoneyController_getReceivables",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get client receivables",
+        "tags": [
+          "Client Money"
+        ]
+      }
+    },
+    "/client-money/unused-advances": {
+      "get": {
+        "operationId": "ClientMoneyController_getUnusedAdvances",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get unused advances",
+        "tags": [
+          "Client Money"
+        ]
+      }
+    },
+    "/billing/receivables": {
+      "get": {
+        "operationId": "BillingController_getReceivables",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get client receivables",
+        "tags": [
+          "Billing"
+        ]
+      }
+    },
+    "/billing/unused-advances": {
+      "get": {
+        "operationId": "BillingController_getUnusedAdvances",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get unused advances",
+        "tags": [
+          "Billing"
+        ]
+      }
+    },
+    "/alerts": {
+      "get": {
+        "operationId": "AlertsController_findAll",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List alerts",
+        "tags": [
+          "Alerts"
+        ]
+      }
+    },
+    "/alerts/{id}/acknowledge": {
+      "post": {
+        "operationId": "AlertsController_acknowledge",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Acknowledge an alert",
+        "tags": [
+          "Alerts"
+        ]
+      }
+    },
+    "/alerts/rules": {
+      "get": {
+        "operationId": "AlertsController_getRules",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List alert rules",
+        "tags": [
+          "Alerts"
+        ]
+      },
+      "post": {
+        "operationId": "AlertsController_createRule",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create an alert rule",
+        "tags": [
+          "Alerts"
+        ]
+      }
+    },
+    "/photos/presign": {
+      "post": {
+        "operationId": "PhotosController_presign",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get an upload URL/path",
+        "tags": [
+          "Photos"
+        ]
+      }
+    },
+    "/photos/{id}/upload": {
+      "post": {
+        "operationId": "PhotosController_upload",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Upload a photo file",
+        "tags": [
+          "Photos"
+        ]
+      }
+    },
+    "/photos/{id}/commit": {
+      "post": {
+        "operationId": "PhotosController_commit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Commit an uploaded photo with SHA-256",
+        "tags": [
+          "Photos"
+        ]
+      }
+    },
+    "/photos": {
+      "get": {
+        "operationId": "PhotosController_getPhotos",
+        "parameters": [
+          {
+            "name": "entity_type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entity_id",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List photos for an entity",
+        "tags": [
+          "Photos"
+        ]
+      }
+    },
+    "/photos/{id}": {
+      "get": {
+        "operationId": "PhotosController_getPhoto",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Download a photo",
+        "tags": [
+          "Photos"
+        ]
+      }
+    },
+    "/photos/{id}/url": {
+      "get": {
+        "operationId": "PhotosController_getUrl",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get photo download URL",
+        "tags": [
+          "Photos"
+        ]
+      }
+    },
+    "/photos/{id}/delete": {
+      "post": {
+        "operationId": "PhotosController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Delete a photo",
+        "tags": [
+          "Photos"
+        ]
+      }
+    },
+    "/import/machines": {
+      "post": {
+        "operationId": "ImportController_importMachines",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Import machines from CSV",
+        "tags": [
+          "Import"
+        ]
+      }
+    },
+    "/import/expenses": {
+      "post": {
+        "operationId": "ImportController_importExpenses",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Import expenses from CSV",
+        "tags": [
+          "Import"
+        ]
+      }
+    },
+    "/import/clients": {
+      "post": {
+        "operationId": "ImportController_importClients",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Import clients from CSV",
+        "tags": [
+          "Import"
+        ]
+      }
+    },
+    "/export": {
+      "get": {
+        "operationId": "ExportController_export",
+        "parameters": [
+          {
+            "name": "client_id",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "machine_id",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date_from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date_to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "machines",
+                "billing",
+                "expenses",
+                "sessions",
+                "receivables"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Export data to Excel",
+        "tags": [
+          "Export"
+        ]
+      }
+    },
+    "/audit": {
+      "get": {
+        "operationId": "AuditController_findAll",
+        "parameters": [
+          {
+            "name": "user_id",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "table",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "machine_id",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Owner audit list with filters (SEC-04)",
+        "tags": [
+          "Audit"
+        ]
+      }
+    },
+    "/reports/projection-inputs": {
+      "get": {
+        "operationId": "ReportsController_getInputs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Projection defaults for this tenant (RPT-05)",
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/reports/projections": {
+      "get": {
+        "operationId": "ReportsController_project",
+        "parameters": [
+          {
+            "name": "working_days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "units_per_day",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rate_minor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "currency",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Project billing and contribution from working days × units × rate",
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/support/tickets": {
+      "post": {
+        "operationId": "SupportController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "File a support ticket (ADM-04)",
+        "tags": [
+          "Support"
+        ]
+      },
+      "get": {
+        "operationId": "SupportController_findMine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List this tenant's support tickets",
+        "tags": [
+          "Support"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Fleet OS API",
+    "description": "Multi-tenant SaaS for heavy-equipment operators",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "CreateTenantDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Acme Equipment"
+          },
+          "slug": {
+            "type": "string",
+            "example": "acme"
+          },
+          "country": {
+            "type": "string",
+            "example": "NG"
+          },
+          "base_currency": {
+            "type": "string",
+            "example": "NGN"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "Africa/Lagos"
+          }
+        },
+        "required": [
+          "name",
+          "slug",
+          "country",
+          "base_currency"
+        ]
+      },
+      "CreateMachineDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "EXC-001"
+          },
+          "type": {
+            "type": "string",
+            "example": "excavator"
+          },
+          "make": {
+            "type": "string",
+            "example": "Caterpillar"
+          },
+          "model": {
+            "type": "string",
+            "example": "320F"
+          },
+          "year": {
+            "type": "number",
+            "example": 2020
+          },
+          "chassis_no": {
+            "type": "string"
+          },
+          "primary_meter_type": {
+            "type": "string",
+            "example": "hours"
+          },
+          "meter_unit_label": {
+            "type": "string",
+            "example": "hours"
+          },
+          "client_uuid": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "type",
+          "primary_meter_type",
+          "meter_unit_label",
+          "client_uuid"
+        ]
+      },
+      "CreateWorkSessionDto": {
+        "type": "object",
+        "properties": {
+          "machine_id": {
+            "type": "string"
+          },
+          "deployment_id": {
+            "type": "string"
+          },
+          "operator_id": {
+            "type": "string"
+          },
+          "helper_id": {
+            "type": "string"
+          },
+          "start_at": {
+            "type": "string"
+          },
+          "end_at": {
+            "type": "string"
+          },
+          "start_meter": {
+            "type": "number"
+          },
+          "end_meter": {
+            "type": "number"
+          },
+          "units_run": {
+            "type": "number"
+          },
+          "start_photo_key": {
+            "type": "string"
+          },
+          "end_photo_key": {
+            "type": "string"
+          },
+          "start_evidence": {
+            "type": "string"
+          },
+          "end_evidence": {
+            "type": "string"
+          },
+          "activity": {
+            "type": "string"
+          },
+          "billable": {
+            "type": "boolean",
+            "default": true
+          },
+          "override_reason": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "client_uuid": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "machine_id",
+          "deployment_id",
+          "operator_id",
+          "start_at",
+          "start_meter",
+          "client_uuid"
+        ]
+      }
+    }
+  }
+}

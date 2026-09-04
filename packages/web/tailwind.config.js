@@ -26,6 +26,13 @@ module.exports = {
           'surface-raised': 'var(--fleet-surface-raised)',
           'surface-strong': 'var(--fleet-surface-strong)',
         },
+        night: {
+          base: 'var(--fleet-night-base)',
+          card: 'var(--fleet-night-card)',
+          raised: 'var(--fleet-night-raised)',
+          line: 'var(--fleet-night-line)',
+          muted: 'var(--fleet-night-muted)',
+        },
       },
       fontFamily: {
         sans: ['var(--fleet-font-primary)'],

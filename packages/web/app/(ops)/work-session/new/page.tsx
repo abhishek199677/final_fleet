@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authFetch } from '@/lib/api/auth-fetch';
+import { fetchList } from '@/lib/api/fetch-list';
 
 export default function NewWorkSession() {
   const router = useRouter();
@@ -21,11 +22,11 @@ export default function NewWorkSession() {
 
   useEffect(() => {
     Promise.all([
-      authFetch('/api/v1/machines').then(r => r.json()),
-      authFetch('/api/v1/operators').then(r => r.json()),
+      fetchList<Record<string, unknown>>('/api/v1/machines'),
+      fetchList<Record<string, unknown>>('/api/v1/operators'),
     ]).then(([m, o]) => {
-      setMachines(m || []);
-      setOperators(o || []);
+      setMachines(m);
+      setOperators(o);
     });
   }, []);
 

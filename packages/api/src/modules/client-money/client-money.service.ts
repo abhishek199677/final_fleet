@@ -1,32 +1,43 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
+import { assertEvidence } from '../../common/policy/evidence-policy';
 
 @Injectable()
 export class ClientMoneyService {
   constructor(private db: DatabaseService) {}
 
-  async getEvents(tenantId: string, clientId?: string) {
-    const query = clientId
-      ? `SELECT cme.*, cl.name AS client_name FROM tenant.client_money_events cme
-         JOIN tenant.clients cl ON cl.id = cme.client_id
-         WHERE cme.client_id = $1 ORDER BY cme.event_date DESC`
-      : `SELECT cme.*, cl.name AS client_name FROM tenant.client_money_events cme
-         JOIN tenant.clients cl ON cl.id = cme.client_id
-         ORDER BY cme.event_date DESC`;
-    const params = clientId ? [clientId] : [];
-    const result = await this.db.queryWithTenant(tenantId, 'ops', query, params);
+  async getEvents(tenantId: string, clientId?: string, role?: string, userId?: string) {
+    const clauses: string[] = [];
+    const params: unknown[] = [];
+    if (clientId) {
+      params.push(clientId);
+      clauses.push(`cme.client_id = $${params.length}`);
+    }
+    // Ops users see only their own entries; owners see all. Balances stay
+    // hidden behind the finance views, which app_ops cannot access (TSD §2.2).
+    if (role === 'ops' && userId) {
+      params.push(userId);
+      clauses.push(`cme.created_by = $${params.length}`);
+    }
+    const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
+    const result = await this.db.queryWithTenant(tenantId, 'ops',
+      `SELECT cme.*, cl.name AS client_name FROM tenant.client_money_events cme
+       JOIN tenant.clients cl ON cl.id = cme.client_id
+       ${where} ORDER BY cme.event_date DESC`, params);
     return result.rows;
   }
 
   async createEvent(tenantId: string, data: Record<string, unknown>, clientUuid: string, userId: string) {
+    await assertEvidence(this.db, tenantId, 'slip', {
+      hasPhoto: !!data.slip_photo_key,
+      amountMinor: Number(data.amount_minor ?? 0),
+    });
     const result = await this.db.queryWithTenant(tenantId, 'ops',
-      `INSERT INTO tenant.client_money_events (tenant_id, client_id, event_type, event_date, currency, amount_minor, fx_rate, base_minor, exchange_currency, exchange_amount_minor, exchange_fx_rate, exchange_base_minor, deployment_id, work_session_id, reference, note, evidence_policy, created_by, client_uuid)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
-      [tenantId, data.client_id, data.event_type, data.event_date, data.currency,
-       data.amount_minor, data.fx_rate, data.base_minor, data.exchange_currency,
-       data.exchange_amount_minor, data.exchange_fx_rate, data.exchange_base_minor,
-       data.deployment_id, data.work_session_id, data.reference, data.note,
-       data.evidence_policy, userId, clientUuid]);
+      `INSERT INTO tenant.client_money_events (tenant_id, client_id, site_id, event_type, currency, amount_minor, fx_rate, base_minor, mode, reference, slip_photo_key, event_date, created_by, client_uuid)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+      [tenantId, data.client_id, data.site_id ?? null, data.event_type, data.currency || 'INR',
+       data.amount_minor, data.fx_rate ?? null, data.base_minor ?? null, data.mode ?? null,
+       data.reference ?? null, data.slip_photo_key ?? null, data.event_date, userId, clientUuid]);
     return result.rows[0];
   }
 

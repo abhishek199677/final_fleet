@@ -14,7 +14,7 @@ export class PhotosController {
   @Post('presign')
   @ApiOperation({ summary: 'Get an upload URL/path' })
   presign(@Req() req: TenantRequest, @Body() dto: Record<string, unknown>) {
-    return this.service.presignUpload(req.tenant!.tenantId, dto, dto.client_uuid as string);
+    return this.service.presignUpload(req.tenant!.tenantId, dto, dto.client_uuid as string, req.user!.id as string);
   }
 
   @Post(':id/upload')
@@ -31,16 +31,16 @@ export class PhotosController {
   }
 
   @Post(':id/commit')
-  @ApiOperation({ summary: 'Commit an uploaded photo with SHA-256' })
-  commit(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: { sha256: string }) {
-    return this.service.commitUpload(req.tenant!.tenantId, id, dto.sha256);
+  @ApiOperation({ summary: 'Commit an uploaded photo with device SHA-256' })
+  commit(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: { sha256_device?: string; sha256?: string }) {
+    return this.service.commitUpload(req.tenant!.tenantId, id, dto.sha256_device ?? dto.sha256);
   }
 
   @Get()
-  @ApiOperation({ summary: 'List photos for an entity' })
-  @ApiQuery({ name: 'entity_type', required: true })
-  @ApiQuery({ name: 'entity_id', required: true })
-  getPhotos(@Req() req: TenantRequest, @Query('entity_type') entityType: string, @Query('entity_id') entityId: string) {
+  @ApiOperation({ summary: 'List photos (optionally for a work session)' })
+  @ApiQuery({ name: 'entity_type', required: false })
+  @ApiQuery({ name: 'entity_id', required: false })
+  getPhotos(@Req() req: TenantRequest, @Query('entity_type') entityType?: string, @Query('entity_id') entityId?: string) {
     return this.service.getPhotos(req.tenant!.tenantId, entityType, entityId);
   }
 
@@ -60,11 +60,5 @@ export class PhotosController {
   @ApiOperation({ summary: 'Get photo download URL' })
   getUrl(@Req() req: TenantRequest, @Param('id') id: string) {
     return { url: `/api/v1/photos/${id}` };
-  }
-
-  @Post(':id/delete')
-  @ApiOperation({ summary: 'Delete a photo' })
-  delete(@Req() req: TenantRequest, @Param('id') id: string) {
-    return this.service.deletePhoto(id, req.tenant!.tenantId);
   }
 }

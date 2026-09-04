@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../common/database/database.service';
 import { promises as fs } from 'fs';
-import { join } from 'path';
-import { createHash } from 'crypto';
+import { join, extname } from 'path';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const MISMATCH_PCT = Number(process.env.OCR_MISMATCH_PCT ?? 10);
 
 export interface OcrResult {
   value: number;
@@ -14,6 +14,12 @@ export interface OcrResult {
   raw_text: string;
 }
 
+/**
+ * OCR worker (WRK-03, TSD §7 ocr): reads meter photos referenced by work
+ * sessions, stores the adapter result on photos.ocr_result, patches the
+ * session start/end OCR values and flags ocr_mismatch beyond threshold.
+ * Without GEMINI_API_KEY the worker logs and skips (never fabricates data).
+ */
 @Injectable()
 export class OcrWorker {
   private readonly logger = new Logger(OcrWorker.name);
@@ -24,52 +30,63 @@ export class OcrWorker {
     this.logger.log(`Processing OCR for photo ${photoId}`);
 
     try {
-      // Get photo details
       const photoResult = await this.db.queryWithTenant(tenantId, 'owner',
-        `SELECT key, entity_type, entity_id FROM tenant.photos WHERE id = $1`, [photoId]);
+        `SELECT id, s3_key_original FROM tenant.photos WHERE id = $1`, [photoId]);
       if (photoResult.rows.length === 0) {
         this.logger.warn(`Photo ${photoId} not found`);
         return null;
       }
-
       const photo = photoResult.rows[0];
+      const key = photo.s3_key_original as string;
 
-      // Read image from local filesystem
-      const filePath = join(UPLOAD_DIR, photo.key);
-      const buffer = await fs.readFile(filePath);
-      const base64 = buffer.toString('base64');
-      const mimeType = photo.key.endsWith('.png') ? 'image/png' : 'image/jpeg';
+      // Which session side references this photo?
+      const ses = await this.db.queryWithTenant(tenantId, 'owner',
+        `SELECT id, machine_id, start_meter, end_meter,
+           CASE WHEN start_photo_key = $1 THEN 'start'
+                WHEN end_photo_key = $1 THEN 'end' ELSE NULL END AS side
+         FROM tenant.work_sessions
+         WHERE is_current = true AND (start_photo_key = $1 OR end_photo_key = $1)
+         ORDER BY start_at DESC LIMIT 1`,
+        [key]);
+      if (ses.rows.length === 0 || !ses.rows[0].side) {
+        this.logger.log(`Photo ${photoId} is not referenced by any session — skipping OCR`);
+        return null;
+      }
+      const session = ses.rows[0];
+      const side = session.side as 'start' | 'end';
 
-      // Call Gemini API for OCR
-      const ocrResult = await this.callGeminiApi(base64, mimeType, photo.entity_type);
-
-      if (ocrResult && ocrResult.confidence > 0.7) {
-        // Update work session with OCR value
-        if (photo.entity_type === 'work_session') {
-          await this.db.queryWithTenant(tenantId, 'owner',
-            `UPDATE tenant.work_sessions SET ocr_meter_value = $2, ocr_confidence = $3 WHERE id = $1`,
-            [photo.entity_id, ocrResult.value, ocrResult.confidence]);
-
-          // Check for mismatch with manual entry
-          const session = await this.db.queryWithTenant(tenantId, 'owner',
-            `SELECT start_meter, end_meter FROM tenant.work_sessions WHERE id = $1`, [photo.entity_id]);
-          if (session.rows.length > 0) {
-            const s = session.rows[0];
-            const manualValue = s.end_meter || s.start_meter;
-            if (manualValue && Math.abs(ocrResult.value - manualValue) > manualValue * 0.1) {
-              this.logger.warn(`OCR mismatch: OCR=${ocrResult.value}, Manual=${manualValue}`);
-              // Create alert for mismatch
-              await this.db.queryWithTenant(tenantId, 'owner',
-                `INSERT INTO tenant.alerts (tenant_id, machine_id, alert_type, message, severity, client_uuid)
-                 SELECT $1, ws.machine_id, 'ocr_mismatch', $3, 'warning', gen_random_uuid()
-                 FROM tenant.work_sessions ws WHERE ws.id = $2`,
-                [tenantId, photo.entity_id, `OCR mismatch: detected ${ocrResult.value}, manual entry ${manualValue}`]);
-            }
-          }
-        }
+      if (!GEMINI_API_KEY) {
+        this.logger.warn('GEMINI_API_KEY not configured — OCR skipped (set it to enable WRK-03)');
+        return null;
       }
 
-      this.logger.log(`OCR result: value=${ocrResult?.value}, confidence=${ocrResult?.confidence}`);
+      const buffer = await fs.readFile(join(UPLOAD_DIR, key));
+      const ext = extname(key).toLowerCase();
+      const mimeType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+      const ocrResult = await this.callGeminiApi(buffer.toString('base64'), mimeType);
+      if (!ocrResult) return null;
+
+      await this.db.queryWithTenant(tenantId, 'owner',
+        `UPDATE tenant.photos SET ocr_result = $2 WHERE id = $1`,
+        [photoId, JSON.stringify({ reading: ocrResult.value, confidence: ocrResult.confidence, raw_text: ocrResult.raw_text, meter_side: side })]);
+
+      const ocrCol = side === 'start' ? 'start_ocr_value' : 'end_ocr_value';
+      await this.db.queryWithTenant(tenantId, 'owner',
+        `UPDATE tenant.work_sessions SET ${ocrCol} = $2 WHERE id = $1`, [session.id, ocrResult.value]);
+
+      const manualValue = Number(side === 'start' ? session.start_meter : session.end_meter);
+      if (Number.isFinite(manualValue) && manualValue > 0 && Math.abs(ocrResult.value - manualValue) > (manualValue * MISMATCH_PCT) / 100) {
+        await this.db.queryWithTenant(tenantId, 'owner',
+          `UPDATE tenant.work_sessions SET ocr_mismatch = true WHERE id = $1`, [session.id]);
+        await this.db.queryWithTenant(tenantId, 'owner',
+          `INSERT INTO tenant.alerts (tenant_id, type, machine_id, severity, title, detail)
+           VALUES ($1, 'ocr_mismatch', $2, 'warning', 'OCR mismatch needs review', $3)
+           ON CONFLICT DO NOTHING`,
+          [tenantId, session.machine_id, `Photo reads ${ocrResult.value}, manual entry ${manualValue} (${side} meter)`]);
+        this.logger.warn(`OCR mismatch on session ${session.id}: photo=${ocrResult.value} manual=${manualValue}`);
+      }
+
+      this.logger.log(`OCR result: value=${ocrResult.value}, confidence=${ocrResult.confidence}`);
       return ocrResult;
     } catch (error) {
       this.logger.error(`OCR processing failed: ${error}`);
@@ -77,56 +94,22 @@ export class OcrWorker {
     }
   }
 
-  private async callGeminiApi(base64Image: string, mimeType: string, entityType: string): Promise<OcrResult | null> {
-    if (!GEMINI_API_KEY) {
-      this.logger.warn('Gemini API key not configured, using mock');
-      return this.mockOcrResult();
-    }
-
-    const prompt = entityType === 'work_session'
-      ? 'Read the meter/hour reading from this equipment dashboard. Return ONLY a JSON object with fields: value (number), confidence (0-1), raw_text (string). No other text.'
-      : 'Read any numerical values from this image. Return ONLY a JSON object with fields: value (number), confidence (0-1), raw_text (string). No other text.';
-
+  private async callGeminiApi(base64Image: string, mimeType: string): Promise<OcrResult | null> {
+    const prompt = 'Read the meter/hour reading from this heavy-equipment dashboard. Return ONLY a JSON object with fields: value (number), confidence (0-1), raw_text (string). No other text.';
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: prompt },
-            { inline_data: { mime_type: mimeType, data: base64Image } }
-          ]
-        }],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 200,
-        }
+        contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mimeType, data: base64Image } }] }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 200 },
       }),
     });
-
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Gemini API error: ${response.status} - ${error}`);
+      throw new Error(`Gemini API error: ${response.status} - ${await response.text()}`);
     }
-
-    const data = await response.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-    const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    // Parse JSON from response
-    const jsonMatch = content?.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]) as OcrResult;
-    }
-
+    const data = (await response.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+    const jsonMatch = data.candidates?.[0]?.content?.parts?.[0]?.text?.match(/\{[\s\S]*\}/);
+    if (jsonMatch) return JSON.parse(jsonMatch[0]) as OcrResult;
     return null;
-  }
-
-  private mockOcrResult(): OcrResult {
-    // Mock for testing without API key
-    return {
-      value: Math.floor(Math.random() * 10000) + 1000,
-      confidence: 0.85 + Math.random() * 0.15,
-      raw_text: 'MOCK_OCR_VALUE',
-    };
   }
 }

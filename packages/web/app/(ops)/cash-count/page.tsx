@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { authFetch } from '@/lib/api/auth-fetch';
+import { fetchList } from '@/lib/api/fetch-list';
 
 export default function CashCount() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function CashCount() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    authFetch('/api/v1/cash/accounts').then(r => r.json()).then(setAccounts).catch(() => setAccounts([]));
+    fetchList<Record<string, unknown>>('/api/v1/cash/accounts').then(setAccounts);
   }, []);
 
   const total = Object.entries(denominations).reduce((sum, [val, qty]) => {

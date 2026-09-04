@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authFetch } from '@/lib/api/auth-fetch';
+import { fetchList } from '@/lib/api/fetch-list';
 
 export default function NewFuelLog() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function NewFuelLog() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    authFetch('/api/v1/machines').then(r => r.json()).then(setMachines).catch(() => setMachines([]));
+    fetchList<Record<string, unknown>>('/api/v1/machines').then(setMachines);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

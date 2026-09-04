@@ -43,11 +43,12 @@ export class NightlyWorker {
   }
 
   private async processOcrJobs(tenantId: string) {
-    // Find unprocessed photos for work sessions
+    // Meter photos referenced by sessions that have no OCR result yet.
     const photos = await this.db.queryWithTenant(tenantId, 'owner',
-      `SELECT id FROM tenant.photos
-       WHERE entity_type = 'work_session' AND sha256 IS NOT NULL
-       AND id NOT IN (SELECT photo_id FROM tenant.ocr_results WHERE photo_id IS NOT NULL)
+      `SELECT DISTINCT p.id FROM tenant.photos p
+       JOIN tenant.work_sessions ws ON ws.is_current = true
+         AND (ws.start_photo_key = p.s3_key_original OR ws.end_photo_key = p.s3_key_original)
+       WHERE p.ocr_result IS NULL
        LIMIT 50`);
 
     let processed = 0;
@@ -60,15 +61,15 @@ export class NightlyWorker {
   }
 
   private async processMediaJobs(tenantId: string) {
-    // Find unprocessed photos
+    // Committed photos still missing a server hash.
     const photos = await this.db.queryWithTenant(tenantId, 'owner',
-      `SELECT id, key FROM tenant.photos
-       WHERE sha256 IS NULL AND committed_at IS NOT NULL
+      `SELECT id FROM tenant.photos
+       WHERE sha256_server IS NULL
        LIMIT 50`);
 
     let processed = 0;
     for (const photo of photos.rows) {
-      await this.mediaWorker.processPhoto({ tenant_id: tenantId, photo_id: photo.id, key: photo.key });
+      await this.mediaWorker.processPhoto({ tenant_id: tenantId, photo_id: photo.id });
       processed++;
     }
 
@@ -78,7 +79,7 @@ export class NightlyWorker {
   private async processBilling(tenantId: string) {
     // Run billing for active deployments
     const deployments = await this.db.queryWithTenant(tenantId, 'owner',
-      `SELECT id FROM tenant.deployments WHERE end_date IS NULL AND is_current = true`);
+      `SELECT id FROM tenant.deployments WHERE status = 'active'`);
 
     let billed = 0;
     for (const deployment of deployments.rows) {

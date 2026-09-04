@@ -1,0 +1,15 @@
+/**
+ * API-side mirror of @fleetos/shared ERROR_CODES.
+ * The API is CommonJS and cannot statically import the shared ESM package;
+ * `error-codes.test.ts` asserts this map stays identical to the shared source.
+ */
+export const API_ERROR_CODES = {
+  SESSION_OVERLAP: 'SESSION_OVERLAP',
+  EDIT_WINDOW_CLOSED: 'EDIT_WINDOW_CLOSED',
+  EVIDENCE_REQUIRED: 'EVIDENCE_REQUIRED',
+  OCR_MISMATCH_REVIEW: 'OCR_MISMATCH_REVIEW',
+  EXPENSE_DUPLICATE_SUSPECT: 'EXPENSE_DUPLICATE_SUSPECT',
+  FX_RATE_REQUIRED: 'FX_RATE_REQUIRED',
+  ENTITLEMENT_LIMIT: 'ENTITLEMENT_LIMIT',
+  PAYMENT_HOLD: 'PAYMENT_HOLD',
+} as const;

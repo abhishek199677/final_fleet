@@ -4,15 +4,14 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { authFetch } from '@/lib/api/auth-fetch';
+import { fetchList } from '@/lib/api/fetch-list';
 
 export default function OwnerClients() {
   const [clients, setClients] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    authFetch('/api/v1/clients')
-      .then((r) => r.json())
+    fetchList<Record<string, unknown>>('/api/v1/clients')
       .then(setClients)
       .catch(() => setClients([]))
       .finally(() => setLoading(false));

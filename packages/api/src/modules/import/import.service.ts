@@ -34,7 +34,7 @@ export class ImportService {
         if (!row.code || !row.type) throw new Error('code and type are required');
 
         await this.db.queryWithTenant(tenantId, 'owner',
-          `INSERT INTO tenant.machines (tenant_id, code, type, make, model, year, vin_serial, primary_meter_type, meter_unit_label, status_flag, client_uuid)
+          `INSERT INTO tenant.machines (tenant_id, code, type, make, model, year, chassis_no, primary_meter_type, meter_unit_label, status_flag, client_uuid)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
            ON CONFLICT (tenant_id, code) DO NOTHING`,
           [tenantId, row.code, row.type, row.make || null, row.model || null, row.year || null,

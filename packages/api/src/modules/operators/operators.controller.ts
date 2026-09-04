@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Put, Param, Body, Req } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Body, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { OperatorsService } from './operators.service';
+import { Roles, RolesGuard } from '../../common/guards/roles.guard';
 import { TenantRequest } from '../../common/middleware/tenant-context.middleware';
 
 @ApiTags('Operators')
@@ -18,6 +19,8 @@ export class OperatorsController {
   findOne(@Req() req: TenantRequest, @Param('id') id: string) { return this.service.findById(req.tenant!.tenantId, id); }
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles('owner')
   @ApiOperation({ summary: 'Create an operator' })
   create(@Req() req: TenantRequest, @Body() dto: Record<string, unknown>) {
     return this.service.create(req.tenant!.tenantId, dto, dto.client_uuid as string);
@@ -25,6 +28,8 @@ export class OperatorsController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Update an operator' })
+  @UseGuards(RolesGuard)
+  @Roles('owner')
   update(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: Record<string, unknown>) {
     return this.service.update(req.tenant!.tenantId, id, dto);
   }
