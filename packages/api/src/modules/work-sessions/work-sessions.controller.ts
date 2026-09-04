@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Req, Query } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Req, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { WorkSessionsService } from './work-sessions.service';
 import { CreateWorkSessionDto } from './dto/create-work-session.dto';

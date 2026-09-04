@@ -83,11 +83,8 @@ export class NightlyWorker {
     const deployments = await this.db.queryWithTenant(tenantId, 'owner',
       `SELECT id FROM tenant.deployments WHERE status = 'active'`);
 
-    let billed = 0;
-    for (const deployment of deployments.rows) {
-      // This would call the billing engine to calculate and insert ledger entries
-      billed++;
-    }
+    // This would call the billing engine to calculate and insert ledger entries
+    const billed = deployments.rows.length;
 
     return { success: true, message: `Billing processed ${billed} deployments` };
   }

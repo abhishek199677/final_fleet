@@ -18,10 +18,10 @@ export default function SupportPage() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const load = () => fetchList<Row>('/api/v1/support/tickets').then(setTickets).catch(() => undefined);
+  const load = () => void fetchList<Row>('/api/v1/support/tickets').then(setTickets).catch(() => undefined);
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   const submit = async (ev: React.FormEvent) => {
@@ -36,7 +36,7 @@ export default function SupportPage() {
         setSubject('');
         setDescription('');
         setSent(true);
-        load();
+        void load();
         setTimeout(() => setSent(false), 4000);
       }
     } finally {
@@ -57,7 +57,7 @@ export default function SupportPage() {
             <CardTitle>Report a problem</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={submit} className="space-y-3">
+            <form onSubmit={(e) => void submit(e)} className="space-y-3">
               <div>
                 <label className="text-sm font-medium">Subject *</label>
                 <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. Billing total looks off" required />

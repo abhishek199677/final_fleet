@@ -143,7 +143,7 @@ export default function OpsToday() {
   useEffect(() => {
     setMyId(getMyId());
     setLoading(true);
-    Promise.all([
+    void Promise.all([
       fetchList<Row>('/api/v1/machines'),
       fetchList<Row>('/api/v1/work-sessions'),
       fetchList<Row>('/api/v1/fuel-downtime/fuel-logs'),
@@ -158,7 +158,7 @@ export default function OpsToday() {
       setExpenses(e);
       setAlerts(al.slice(0, 4));
       // Maintenance status per machine (shared ops-readable view)
-      Promise.all(m.map((mm) => fetchList<Row>(`/api/v1/maintenance/machines/${mm.id}/status`)))
+      void Promise.all(m.map((mm) => fetchList<Row>(`/api/v1/maintenance/machines/${mm.id}/status`)))
         .then((lists) => {
           const codeById = new Map(m.map((mm) => [String(mm.id), String(mm.code ?? '')]));
           setMaintenance(
@@ -191,7 +191,6 @@ export default function OpsToday() {
       };
     };
     return { cur: calc(winStart, now), prev: calc(prevStart, winStart) };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessions, fuelLogs, downtime, myId, winStart, prevStart, now]);
 
   const dueTasks = useMemo(
@@ -221,7 +220,6 @@ export default function OpsToday() {
           nonBillable: ses.filter((s) => s.billable === false).length,
         };
       }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [machines, sessions, winStart, now],
   );
 
@@ -239,7 +237,6 @@ export default function OpsToday() {
       out.push({ label: dayLabel(new Date(s)), reporting, silent: Math.max(machines.length - reporting, 0) });
     }
     return out;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessions, machines, now]);
 
   // Fuel litres + operating hours per day (current window, daily buckets)
@@ -259,7 +256,6 @@ export default function OpsToday() {
       });
     }
     return out;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessions, fuelLogs, days, now]);
 
   // Downtime by reason (current window)
@@ -275,12 +271,10 @@ export default function OpsToday() {
       .map(([reason, hours]) => ({ reason, hours: Math.round(hours * 10) / 10 }))
       .sort((a, b) => b.hours - a.hours)
       .slice(0, 6);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [downtime, winStart, now]);
 
   const activeIds = useMemo(
     () => new Set(sessions.filter((s) => inWin(ts(s.start_at ?? s.created_at), winStart, now)).map((s) => String(s.machine_id))),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [sessions, winStart, now],
   );
 
@@ -298,7 +292,6 @@ export default function OpsToday() {
           _running: ses.some((s) => !s.end_at),
         };
       }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [machines, sessions, activeIds, winStart, now],
   );
 
@@ -316,7 +309,6 @@ export default function OpsToday() {
         .map((e) => ({ id: String(e.id), text: `Expense · ${String(e.category_name ?? e.category ?? 'Other')}`, t: ts(e.date ?? e.created_at) })),
     ];
     return mine.sort((a, b) => b.t - a.t).slice(0, 5);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessions, fuelLogs, expenses, myId, winStart, now]);
 
   const axisTick = { fontSize: 11, fill: '#6B7280' };

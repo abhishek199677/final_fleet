@@ -49,8 +49,7 @@ export default function AuditPage() {
   };
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    void load();
   }, []);
 
   const voidEntry = async (row: Row) => {
@@ -73,7 +72,7 @@ export default function AuditPage() {
     } finally {
       setVoiding(null);
       setReason('');
-      load();
+      void load();
     }
   };
 
@@ -127,7 +126,7 @@ export default function AuditPage() {
               <Input type="date" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })} />
             </div>
             <div className="flex items-end">
-              <Button onClick={load}>Apply</Button>
+              <Button onClick={() => void load()}>Apply</Button>
             </div>
           </div>
         </CardContent>
@@ -163,7 +162,7 @@ export default function AuditPage() {
                           setReason(e.target.value);
                         }}
                       />
-                      <Button size="sm" variant="destructive" disabled={!reason.trim() || voiding !== String(r.id)} onClick={() => voidEntry(r)}>
+                      <Button size="sm" variant="destructive" disabled={!reason.trim() || voiding !== String(r.id)} onClick={() => void voidEntry(r)}>
                         Void with reason
                       </Button>
                     </div>

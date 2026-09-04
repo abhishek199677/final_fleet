@@ -18,7 +18,7 @@ export default function AdminTickets() {
   const load = () => fetchList<Row>('/api/admin/support/tickets').then(setTickets).catch(() => undefined);
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   const setStatus = async (id: string, status: string) => {
@@ -26,7 +26,7 @@ export default function AdminTickets() {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     }).catch(() => undefined);
-    load();
+    void load();
   };
 
   return (
@@ -58,7 +58,7 @@ export default function AdminTickets() {
                         key={s}
                         size="sm"
                         variant={String(t.status) === s ? 'default' : 'outline'}
-                        onClick={() => setStatus(String(t.id), s)}
+                        onClick={() => void setStatus(String(t.id), s)}
                       >
                         {s.replace('_', ' ')}
                       </Button>

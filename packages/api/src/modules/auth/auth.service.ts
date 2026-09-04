@@ -39,7 +39,7 @@ export class AuthService {
     });
   }
 
-  async login(email: string, password: string) {
+  login(email: string, password: string) {
     const user = localUsers.get(email);
 
     if (!user) {
@@ -64,7 +64,7 @@ export class AuthService {
       { expiresIn: JWT_EXPIRES, issuer: 'fleetos' }
     );
 
-    return {
+    return Promise.resolve({
       token,
       user: {
         id: user.id,
@@ -72,7 +72,7 @@ export class AuthService {
         role: user.role,
         tenant_id: user.tenant_id,
       },
-    };
+    });
   }
 
   async register(email: string, password: string, tenantName: string) {

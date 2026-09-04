@@ -148,7 +148,7 @@ export default function MachineDetail() {
         return null;
       }
     };
-    Promise.all([
+    void Promise.all([
       getOne(`/api/v1/machines/${id}`),
       fetchList<Row>('/api/v1/machines'),
       fetchList<Row>(`/api/v1/work-sessions?machine_id=${id}`),

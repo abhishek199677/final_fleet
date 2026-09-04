@@ -133,7 +133,7 @@ function DashboardInner() {
         return null;
       }
     };
-    Promise.all([
+    void Promise.all([
       getKpis(),
       fetchList<Row>('/api/v1/machines'),
       fetchList<Row>('/api/v1/work-sessions'),
@@ -464,7 +464,7 @@ function DashboardInner() {
                         </div>
                         <p className="ml-9 text-xs text-night-muted">{String(a.message ?? a.machine_code ?? '')}</p>
                         <div className="ml-9 mt-2 flex gap-4 text-xs font-medium">
-                          <button onClick={() => acknowledge(String(a.id))} className="rounded-lg bg-white/10 px-3 py-1.5 hover:bg-white/20">
+                          <button onClick={() => void acknowledge(String(a.id))} className="rounded-lg bg-white/10 px-3 py-1.5 hover:bg-white/20">
                             {t('acknowledge')}
                           </button>
                           <Link href="/machines" className="px-1 py-1.5 text-night-muted hover:text-white">

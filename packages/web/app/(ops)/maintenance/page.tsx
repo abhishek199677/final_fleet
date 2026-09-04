@@ -28,13 +28,13 @@ export default function MaintenanceVisitPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetchList<Row>('/api/v1/machines').then(setMachines);
+    void fetchList<Row>('/api/v1/machines').then(setMachines);
   }, []);
 
   useEffect(() => {
     if (machineId) {
-      fetchList<Row>(`/api/v1/maintenance/machines/${machineId}/visits`).then(setVisits);
-      fetchList<Row>(`/api/v1/maintenance/machines/${machineId}/tasks`).then(setTasks);
+      void fetchList<Row>(`/api/v1/maintenance/machines/${machineId}/visits`).then(setVisits);
+      void fetchList<Row>(`/api/v1/maintenance/machines/${machineId}/tasks`).then(setTasks);
       setTicked([]);
     } else {
       setVisits([]);
@@ -71,7 +71,7 @@ export default function MaintenanceVisitPage() {
         setForm({ ...form, mechanic: '', meter_at_visit: '', notes: '' });
         setTicked([]);
         setParts([]);
-        fetchList<Row>(`/api/v1/maintenance/machines/${machineId}/visits`).then(setVisits);
+        void fetchList<Row>(`/api/v1/maintenance/machines/${machineId}/visits`).then(setVisits);
       }
     } finally {
       setSaving(false);
@@ -101,7 +101,7 @@ export default function MaintenanceVisitPage() {
             <CardTitle>New visit</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={submit} className="space-y-3">
+            <form onSubmit={(e) => void submit(e)} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium">Date *</label>

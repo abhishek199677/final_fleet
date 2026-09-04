@@ -23,7 +23,7 @@ export const GlareCard = React.forwardRef<HTMLDivElement, GlareCardProps>(
       (node: HTMLDivElement | null) => {
         innerRef.current = node;
         if (typeof ref === 'function') ref(node);
-        else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+        else if (ref) (ref).current = node;
       },
       [ref],
     );

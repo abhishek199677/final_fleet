@@ -44,12 +44,11 @@ export default function CashPage() {
   };
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    void load();
   }, []);
 
   useEffect(() => {
-    if (accountId) fetchList<Row>(`/api/v1/cash/accounts/${accountId}/counts`).then(setCounts);
+    if (accountId) void fetchList<Row>(`/api/v1/cash/accounts/${accountId}/counts`).then(setCounts);
   }, [accountId]);
 
   const transfer = async (ev: React.FormEvent) => {
@@ -68,7 +67,7 @@ export default function CashPage() {
     });
     if (res.ok) {
       setForm({ from_account_id: '', to_account_id: '', currency: 'INR', amount: '', reference: '' });
-      load();
+      void load();
     }
   };
 
@@ -119,7 +118,7 @@ export default function CashPage() {
                 <CardTitle>New remittance</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={transfer} className="space-y-3">
+                <form onSubmit={(e) => void transfer(e)} className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-sm font-medium">From *</label>

@@ -19,7 +19,6 @@ export class PhotosService {
   async presignUpload(tenantId: string, data: Record<string, unknown>, clientUuid: string, userId: string) {
     const filename = String(data.filename ?? 'photo.jpg').replace(/[^a-zA-Z0-9._-]/g, '_');
     const key = `tenants/${tenantId}/${clientUuid}-${filename}`;
-    const filePath = join(UPLOAD_DIR, key);
     await fs.mkdir(join(UPLOAD_DIR, `tenants/${tenantId}`), { recursive: true });
 
     const result = await this.db.queryWithTenant(tenantId, 'ops',

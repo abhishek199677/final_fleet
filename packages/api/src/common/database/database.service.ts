@@ -5,7 +5,7 @@ import { Pool, PoolConfig } from 'pg';
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private pools: Map<string, Pool> = new Map();
 
-  async onModuleInit() {
+  onModuleInit(): void {
     const config: PoolConfig = {
       host: process.env.DB_HOST || 'localhost',
       port: parseInt(process.env.DB_PORT || '5432', 10),

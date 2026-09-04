@@ -26,12 +26,12 @@ export default function ReceiptPage() {
   const [saving, setSaving] = useState(false);
 
   const load = () => {
-    fetchList<Row>('/api/v1/clients').then(setClients);
-    fetchList<Row>('/api/v1/client-money/events').then((e) => setMine(e.slice(0, 10)));
+    void fetchList<Row>('/api/v1/clients').then(setClients);
+    void fetchList<Row>('/api/v1/client-money/events').then((e) => setMine(e.slice(0, 10)));
   };
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   const submit = async (ev: React.FormEvent) => {
@@ -53,7 +53,7 @@ export default function ReceiptPage() {
       });
       if (res.ok) {
         setForm({ ...form, amount: '', reference: '' });
-        load();
+        void load();
       }
     } finally {
       setSaving(false);
@@ -73,7 +73,7 @@ export default function ReceiptPage() {
             <CardTitle>New receipt / advance</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={submit} className="space-y-3">
+            <form onSubmit={(e) => void submit(e)} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium">Client *</label>

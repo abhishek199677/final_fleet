@@ -50,4 +50,4 @@ async function bootstrap() {
   console.log(`Fleet OS API running on port ${port}`);
 }
 
-bootstrap();
+void bootstrap();

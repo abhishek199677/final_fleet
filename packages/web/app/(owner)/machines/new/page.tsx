@@ -63,7 +63,7 @@ export default function NewMachine() {
       <h1 className="text-3xl font-bold">Add Machine</h1>
       <Card>
         <CardContent className="pt-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Code *</label>

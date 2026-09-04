@@ -18,7 +18,7 @@ export default function CashCount() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchList<Record<string, unknown>>('/api/v1/cash/accounts').then(setAccounts);
+    void fetchList<Record<string, unknown>>('/api/v1/cash/accounts').then(setAccounts);
   }, []);
 
   const total = Object.entries(denominations).reduce((sum, [val, qty]) => {
@@ -80,7 +80,7 @@ export default function CashCount() {
           </div>
           <div className="text-right text-xl font-bold">Total: ₹{(total / 100).toFixed(2)}</div>
           <div className="flex gap-4">
-            <Button onClick={handleSubmit} disabled={!selectedAccount || loading}>{loading ? 'Saving...' : 'Submit Count'}</Button>
+            <Button onClick={() => void handleSubmit()} disabled={!selectedAccount || loading}>{loading ? 'Saving...' : 'Submit Count'}</Button>
             <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
           </div>
         </CardContent>

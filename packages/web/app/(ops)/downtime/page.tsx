@@ -20,12 +20,12 @@ export default function DowntimePage() {
   const [saving, setSaving] = useState(false);
 
   const load = () => {
-    fetchList<Row>('/api/v1/machines').then(setMachines);
-    fetchList<Row>('/api/v1/fuel-downtime/downtime').then((d) => setRecent(d.slice(0, 10)));
+    void fetchList<Row>('/api/v1/machines').then(setMachines);
+    void fetchList<Row>('/api/v1/fuel-downtime/downtime').then((d) => setRecent(d.slice(0, 10)));
   };
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   const submit = async (ev: React.FormEvent) => {
@@ -45,7 +45,7 @@ export default function DowntimePage() {
       });
       if (res.ok) {
         setForm({ machine_id: '', started_at: '', ended_at: '', reason_code: 'breakdown', note: '' });
-        load();
+        void load();
       }
     } finally {
       setSaving(false);
@@ -65,7 +65,7 @@ export default function DowntimePage() {
             <CardTitle>Log downtime</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={submit} className="space-y-3">
+            <form onSubmit={(e) => void submit(e)} className="space-y-3">
               <div>
                 <label className="text-sm font-medium">Machine *</label>
                 <select className="w-full border rounded-md p-2" value={form.machine_id} onChange={(e) => setForm({ ...form, machine_id: e.target.value })} required>

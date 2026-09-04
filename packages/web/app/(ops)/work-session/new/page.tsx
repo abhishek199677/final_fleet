@@ -21,7 +21,7 @@ export default function NewWorkSession() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    Promise.all([
+    void Promise.all([
       fetchList<Record<string, unknown>>('/api/v1/machines'),
       fetchList<Record<string, unknown>>('/api/v1/operators'),
     ]).then(([m, o]) => {
@@ -54,7 +54,7 @@ export default function NewWorkSession() {
       <h1 className="text-3xl font-bold">Start Work Session</h1>
       <Card>
         <CardContent className="pt-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
             <div>
               <label className="text-sm font-medium">Machine *</label>
               <select

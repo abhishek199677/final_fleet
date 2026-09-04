@@ -41,7 +41,7 @@ export default function HistoryPage() {
       setLoading(false);
       return;
     }
-    Promise.all([
+    void Promise.all([
       fetchList<Row>('/api/v1/work-sessions'),
       fetchList<Row>('/api/v1/fuel-downtime/fuel-logs'),
       fetchList<Row>('/api/v1/fuel-downtime/downtime'),

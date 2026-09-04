@@ -29,7 +29,7 @@ export class ProblemErrorFilter implements ExceptionFilter {
         type: 'about:blank',
         title: exception.name,
         status,
-        ...(typeof body.code === 'string' ? { code: body.code as string } : {}),
+        ...(typeof body.code === 'string' ? { code: body.code } : {}),
         detail: Array.isArray(body.message) ? (body.message as string[]).join('; ') : body.message,
       });
       return;

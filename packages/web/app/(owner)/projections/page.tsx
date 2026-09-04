@@ -75,7 +75,7 @@ export default function ProjectionsPage() {
             <CardTitle>Inputs</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={run} className="space-y-3">
+            <form onSubmit={(e) => void run(e)} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium">Working days *</label>

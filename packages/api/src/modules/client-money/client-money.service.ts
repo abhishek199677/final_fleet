@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { assertEvidence } from '../../common/policy/evidence-policy';
 

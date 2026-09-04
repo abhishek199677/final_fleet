@@ -18,7 +18,7 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
+    void Promise.all([
       fetchList<Record<string, unknown>>('/api/v1/users'),
       fetchList<Record<string, unknown>>('/api/v1/expenses/categories'),
     ]).then(([u, c]) => {
@@ -39,7 +39,7 @@ export default function Settings() {
             className={`px-4 py-2 font-medium ${tab === t2 ? 'border-b-2 border-primary' : 'text-muted-foreground'}`}
             onClick={() => setTab(t2)}
           >
-            {t2 === 'language' ? (locale === 'fr' ? 'Langue' : 'Language') : t(t2 as 'users' | 'machines' | 'categories' | 'fx')}
+            {t2 === 'language' ? (locale === 'fr' ? 'Langue' : 'Language') : t(t2)}
           </button>
         ))}
       </div>

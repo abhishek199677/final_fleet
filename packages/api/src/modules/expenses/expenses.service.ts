@@ -89,7 +89,7 @@ export class ExpensesService {
        data.allocation_type || o.allocation_type, data.site_id || o.site_id, data.machine_id || o.machine_id,
        data.receipt_photo_key ?? o.receipt_photo_key,
        data.note !== undefined ? `${o.note ? `${o.note} | ` : ''}${data.note}` : o.note,
-       userId, data.client_uuid as string, id, Number(o.version) + 1]);
+       userId, data.client_uuid, id, Number(o.version) + 1]);
     return result.rows[0];
   }
 }

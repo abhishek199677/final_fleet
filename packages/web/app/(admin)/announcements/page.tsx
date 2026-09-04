@@ -19,7 +19,7 @@ export default function AdminAnnouncements() {
   const load = () => fetchList<Row>('/api/admin/support/announcements').then(setItems).catch(() => undefined);
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   const submit = async (ev: React.FormEvent) => {
@@ -31,7 +31,7 @@ export default function AdminAnnouncements() {
     if (res && res.ok) {
       setTitle('');
       setBody('');
-      load();
+      void load();
     }
   };
 
@@ -48,7 +48,7 @@ export default function AdminAnnouncements() {
             <CardTitle>New announcement</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={submit} className="space-y-3">
+            <form onSubmit={(e) => void submit(e)} className="space-y-3">
               <div>
                 <label className="text-sm font-medium">Title *</label>
                 <Input value={title} onChange={(e) => setTitle(e.target.value)} required />

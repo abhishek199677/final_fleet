@@ -30,7 +30,7 @@ export default function ClientDetail() {
         return null;
       }
     };
-    Promise.all([
+    void Promise.all([
       getClient(),
       fetchList<Record<string, unknown>>('/api/v1/deployments'),
       fetchList<Record<string, unknown>>('/api/v1/billing/receivables'),

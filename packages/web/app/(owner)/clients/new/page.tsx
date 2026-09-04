@@ -55,7 +55,7 @@ export default function NewClient() {
       <h1 className="text-3xl font-bold">Add Client</h1>
       <Card>
         <CardContent className="pt-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
             <div>
               <label className="text-sm font-medium">Name *</label>
               <Input value={formData.name} onChange={(e) => set('name', e.target.value)} placeholder="BuildIt Corp" required />

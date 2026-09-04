@@ -31,15 +31,15 @@ export class PlatformJwtStrategy extends PassportStrategy(Strategy, 'platform-jw
     });
   }
 
-  async validate(payload: PlatformJwtPayload) {
+  validate(payload: PlatformJwtPayload) {
     if (!payload.role || !['platform_admin', 'support'].includes(payload.role)) {
       throw new UnauthorizedException('Invalid platform role');
     }
 
-    return {
+    return Promise.resolve({
       id: payload.sub,
       username: payload['cognito:username'],
       role: payload.role,
-    };
+    });
   }
 }

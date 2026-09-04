@@ -55,7 +55,7 @@ export default function BillingPage() {
   };
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   const createRate = async (ev: React.FormEvent) => {
@@ -74,7 +74,7 @@ export default function BillingPage() {
     });
     if (res.ok) {
       setForm({ ...form, rate: '' });
-      load();
+      void load();
     }
   };
 
@@ -90,7 +90,7 @@ export default function BillingPage() {
       });
     } finally {
       setRunning(null);
-      load();
+      void load();
     }
   };
 
@@ -100,7 +100,7 @@ export default function BillingPage() {
       method: 'POST',
       body: JSON.stringify({ client_uuid: crypto.randomUUID() }),
     });
-    load();
+    void load();
   };
 
   const exportCsv = () => {
@@ -162,10 +162,10 @@ export default function BillingPage() {
                           </td>
                           <td className="py-2 text-right">
                             <div className="flex justify-end gap-2">
-                              <Button size="sm" variant="outline" disabled={running === String(d.id)} onClick={() => runBilling(String(d.id))}>
+                              <Button size="sm" variant="outline" disabled={running === String(d.id)} onClick={() => void runBilling(String(d.id))}>
                                 {running === String(d.id) ? 'Running…' : 'Run billing'}
                               </Button>
-                              <Button size="sm" variant={String(d.status) === 'on_hold_payment' ? 'default' : 'destructive'} onClick={() => holdToggle(d)}>
+                              <Button size="sm" variant={String(d.status) === 'on_hold_payment' ? 'default' : 'destructive'} onClick={() => void holdToggle(d)}>
                                 {String(d.status) === 'on_hold_payment' ? 'Release' : 'Hold'}
                               </Button>
                             </div>
@@ -185,7 +185,7 @@ export default function BillingPage() {
                 <CardTitle>New rate card</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={createRate} className="space-y-3">
+                <form onSubmit={(e) => void createRate(e)} className="space-y-3">
                   <div>
                     <label className="text-sm font-medium">Deployment *</label>
                     <select className="w-full border rounded-md p-2" value={form.deployment_id} onChange={(e) => setForm({ ...form, deployment_id: e.target.value })} required>

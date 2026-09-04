@@ -19,7 +19,7 @@ const MAX_RETRIES = 5;
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, 1);
-    request.onerror = () => reject(request.error);
+    request.onerror = () => reject(new Error(request.error?.message ?? 'IndexedDB request failed'));
     request.onsuccess = () => resolve(request.result);
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
@@ -42,7 +42,7 @@ async function addToQueue(item: Omit<QueuedItem, 'id' | 'createdAt' | 'retries'>
   });
   return new Promise<void>((resolve, reject) => {
     tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
+    tx.onerror = () => reject(new Error(tx.error?.message ?? 'IndexedDB transaction failed'));
   });
 }
 
@@ -53,7 +53,7 @@ async function getQueue(): Promise<QueuedItem[]> {
   return new Promise((resolve, reject) => {
     const request = store.getAll();
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onerror = () => reject(new Error(request.error?.message ?? 'IndexedDB request failed'));
   });
 }
 
@@ -64,7 +64,7 @@ async function removeFromQueue(id: string) {
   store.delete(id);
   return new Promise<void>((resolve, reject) => {
     tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
+    tx.onerror = () => reject(new Error(tx.error?.message ?? 'IndexedDB transaction failed'));
   });
 }
 
@@ -82,7 +82,7 @@ async function incrementRetry(id: string) {
       }
     };
     tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
+    tx.onerror = () => reject(new Error(tx.error?.message ?? 'IndexedDB transaction failed'));
   });
 }
 
@@ -154,7 +154,7 @@ export function useOfflineQueue() {
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      processQueue();
+      void processQueue();
     };
     const handleOffline = () => setIsOnline(false);
 
@@ -163,11 +163,11 @@ export function useOfflineQueue() {
     window.addEventListener('offline', handleOffline);
 
     // Process queue on mount
-    processQueue();
+    void processQueue();
 
     // Retry every 60s while online
     const interval = setInterval(() => {
-      if (navigator.onLine) processQueue();
+      if (navigator.onLine) void processQueue();
     }, 60000);
 
     return () => {
