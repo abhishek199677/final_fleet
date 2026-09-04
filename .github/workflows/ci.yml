@@ -19,10 +19,10 @@ jobs:
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/fleetos
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v5
         with: { version: 9 }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - name: Build shared (dist is gitignored; tests import @fleetos/shared)
@@ -62,10 +62,10 @@ jobs:
       JWT_SECRET: ci-test-secret
       NEXT_PUBLIC_API_URL: http://localhost:3001
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v5
         with: { version: 9 }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @fleetos/shared build
@@ -83,19 +83,31 @@ jobs:
     continue-on-error: true
     permissions: { id-token: write, contents: read, pull-requests: write }
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v5
         with: { version: 9 }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: Check AWS role configured (informational; skip diff if missing)
+        id: aws-check
+        run: |
+          if [ -z "${{ secrets.AWS_DEV_ROLE_ARN }}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::AWS_DEV_ROLE_ARN is not configured; skipping CDK diff."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: aws-actions/configure-aws-credentials@v6
+        if: steps.aws-check.outputs.configured == 'true'
         with:
           role-to-assume: ${{ secrets.AWS_DEV_ROLE_ARN }}
           aws-region: ap-south-1
       - name: CDK diff (dev only)
+        if: steps.aws-check.outputs.configured == 'true'
         run: pnpm --filter infra cdk diff FleetOS-dev > cdk-diff.txt || true
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v8
+        if: steps.aws-check.outputs.configured == 'true'
         with:
           script: |
             const fs = require('fs'); const body = '```\n' + fs.readFileSync('cdk-diff.txt','utf8').slice(0, 60000) + '\n```';
@@ -106,13 +118,19 @@ jobs:
     runs-on: ubuntu-latest
     permissions: { id-token: write, contents: read }
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v5
         with: { version: 9 }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: Check AWS role configured
+        run: |
+          if [ -z "${{ secrets.AWS_DEV_ROLE_ARN }}" ]; then
+            echo "::error::AWS_DEV_ROLE_ARN secret is not configured. Create the dev deploy role and add it as a repo secret (see docs/TSD.md infra section)."
+            exit 1
+          fi
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AWS_DEV_ROLE_ARN }}
           aws-region: ap-south-1
