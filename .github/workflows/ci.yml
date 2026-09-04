@@ -29,10 +29,10 @@ jobs:
         run: pnpm lint && pnpm typecheck
       - name: Ops/finance import boundary
         run: pnpm lint:boundaries
-      - name: Migration linter (tenant_id + RLS + no finance grants to ops)
-        run: pnpm db:lint
       - name: Migrate test DB
         run: pnpm db:migrate
+      - name: Migration linter (tenant_id + RLS + no finance grants to ops)
+        run: pnpm db:lint
       - name: Generated RLS isolation suite
         run: pnpm test:isolation
       - name: Finance denial suite (app_ops must be denied on every finance object)
