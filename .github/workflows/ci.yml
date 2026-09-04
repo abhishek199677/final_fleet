@@ -50,6 +50,17 @@ jobs:
   e2e:
     needs: checks
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: fleetos }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/fleetos
+      JWT_SECRET: ci-test-secret
+      NEXT_PUBLIC_API_URL: http://localhost:3001
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -57,6 +68,11 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @fleetos/shared build
+      - run: pnpm db:migrate && pnpm db:seed
+      - run: pnpm --filter @fleetos/api build
+      - name: Start API in background
+        run: (pnpm --filter @fleetos/api start > /tmp/api.log 2>&1 &) && sleep 15 && curl -sf http://localhost:3001/v1/health || (cat /tmp/api.log && exit 1)
       - run: pnpm --filter web exec playwright install --with-deps chromium
       - run: pnpm --filter web exec playwright test
   cdk-diff:
