@@ -32,7 +32,7 @@ export default function Settings() {
     void Promise.all([
       fetchList<Record<string, unknown>>('/api/v1/users'),
       fetchList<Record<string, unknown>>('/api/v1/expenses/categories'),
-      fetch('/api/v1/tenants/settings').then(r => r.json()).catch(() => null),
+      authFetch('/api/v1/tenants/settings').then(r => r.ok ? r.json() : null).catch(() => null),
     ]).then(([u, c, s]) => {
       setUsers(u);
       setCategories(c);
