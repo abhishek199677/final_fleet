@@ -157,7 +157,7 @@ export default function Settings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-muted-foreground">Configure when photo evidence is required for data entry.</p>
-                {Object.entries(settings.evidence_policy).map(([key, value]) => (
+                {settings.evidence_policy && Object.entries(settings.evidence_policy).map(([key, value]) => (
                   <div key={key} className="flex items-center justify-between">
                     <label className="text-sm font-medium capitalize">{key.replace(/_/g, ' ')}</label>
                     <select

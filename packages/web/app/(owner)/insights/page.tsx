@@ -23,11 +23,11 @@ export default function Insights() {
   }, []);
 
   // Calculate downtime by reason
-  const downtimeByReason = downtime.reduce((acc, d) => {
+  const downtimeByReason = downtime.reduce<Record<string, number>>((acc, d) => {
     const reason = (d.reason_code as string) || 'unknown';
     acc[reason] = (acc[reason] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {});
 
   const downtimeData = Object.entries(downtimeByReason).map(([reason, count]) => ({
     name: reason.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
