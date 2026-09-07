@@ -10,7 +10,7 @@ interface RateLimitEntry {
 export class RateLimitMiddleware implements NestMiddleware {
   private readonly store = new Map<string, RateLimitEntry>();
   private readonly windowMs = 60 * 1000; // 1 minute
-  private readonly maxRequests = 100;
+  private readonly maxRequests = 500;
 
   use(req: Request, res: Response, next: NextFunction) {
     const key = this.getKey(req);
