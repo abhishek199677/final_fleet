@@ -34,6 +34,18 @@ export class WorkSessionsController {
     return this.service.correct(req.tenant!.tenantId, id, dto, req.user!.id as string);
   }
 
+  @Post(':id/end')
+  @ApiOperation({ summary: 'End a work session with end meter reading' })
+  endSession(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: {
+    end_meter: number;
+    end_at?: string;
+    end_photo_key?: string;
+    end_evidence?: string;
+    notes?: string;
+  }) {
+    return this.service.endSession(req.tenant!.tenantId, id, dto, req.user!.id as string);
+  }
+
   @Get('daily/:machineId/:date')
   @ApiOperation({ summary: 'Get daily rollup for a machine' })
   getDailyRollup(@Req() req: TenantRequest, @Param('machineId') machineId: string, @Param('date') date: string) {

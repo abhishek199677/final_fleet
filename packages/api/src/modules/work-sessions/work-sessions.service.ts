@@ -56,6 +56,53 @@ export class WorkSessionsService {
     return result;
   }
 
+  async endSession(tenantId: string, id: string, data: {
+    end_meter: number;
+    end_at?: string;
+    end_photo_key?: string;
+    end_evidence?: string;
+    notes?: string;
+  }, userId: string) {
+    // Get the current session
+    const session = await this.repo.findById(tenantId, id);
+    if (!session) throw new NotFoundException('Work session not found');
+
+    // Validation: end >= start
+    const endAt = data.end_at || new Date().toISOString();
+    if (new Date(endAt) < new Date(session.start_at as string)) {
+      throw new BadRequestException('End time must be after start time');
+    }
+
+    // Validation: session <= 24h
+    const hours = (new Date(endAt).getTime() - new Date(session.start_at as string).getTime()) / (1000 * 60 * 60);
+    if (hours > 24) {
+      throw new BadRequestException('Session cannot exceed 24 hours');
+    }
+
+    // Validation: end_meter >= start_meter
+    if (data.end_meter < (session.start_meter as number)) {
+      throw new BadRequestException('End meter must be greater than or equal to start meter');
+    }
+
+    // Correct the session with end data
+    const result = await this.repo.correct(tenantId, id, {
+      end_at: endAt,
+      end_meter: data.end_meter,
+      units_run: data.end_meter - (session.start_meter as number),
+      end_photo_key: data.end_photo_key || null,
+      end_evidence: data.end_evidence || 'manual',
+      notes: data.notes || session.notes,
+      billable: true,
+    }, userId);
+
+    if (!result) throw new NotFoundException('Failed to end session');
+
+    // Run billing for the session's day
+    void this.runBillingForSession(tenantId, result).catch((e) => this.logger.warn(`billing hook failed: ${(e as Error).message}`));
+
+    return result;
+  }
+
   private async runBillingForSession(tenantId: string, session: Record<string, unknown>): Promise<void> {
     const deploymentId = session.deployment_id as string | undefined;
     const startAt = session.start_at as string | undefined;

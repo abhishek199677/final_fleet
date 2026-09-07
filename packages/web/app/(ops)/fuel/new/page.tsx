@@ -17,6 +17,7 @@ export default function NewFuelLog() {
     liters: '',
     amount_minor: '',
     currency: 'INR',
+    fx_rate: '1',
     vendor: '',
     odometer: '',
     notes: '',
@@ -31,13 +32,23 @@ export default function NewFuelLog() {
     e.preventDefault();
     setLoading(true);
     try {
+      const amountMinor = parseInt(formData.amount_minor);
+      const fxRate = parseFloat(formData.fx_rate) || 1;
+      const baseMinor = Math.round(amountMinor * fxRate);
+
       const res = await authFetch('/api/v1/fuel-downtime/fuel-logs', {
         method: 'POST',
         body: JSON.stringify({
-          ...formData,
+          machine_id: formData.machine_id,
+          fuel_date: formData.fuel_date,
           liters: parseFloat(formData.liters),
-          amount_minor: parseInt(formData.amount_minor),
+          cost_minor: amountMinor,
+          currency: formData.currency,
+          fx_rate: fxRate,
+          base_minor: baseMinor,
+          vendor: formData.vendor || undefined,
           odometer: formData.odometer ? parseFloat(formData.odometer) : undefined,
+          notes: formData.notes || undefined,
           client_uuid: crypto.randomUUID(),
         }),
       });
@@ -46,6 +57,10 @@ export default function NewFuelLog() {
       setLoading(false);
     }
   };
+
+  const baseMinor = formData.amount_minor
+    ? Math.round(parseInt(formData.amount_minor) * (parseFloat(formData.fx_rate) || 1))
+    : 0;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -72,19 +87,41 @@ export default function NewFuelLog() {
                 <Input type="number" step="0.01" value={formData.liters} onChange={e => setFormData({ ...formData, liters: e.target.value })} required />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="text-sm font-medium">Amount (paise) *</label>
+                <label className="text-sm font-medium">Cost (minor) *</label>
                 <Input type="number" value={formData.amount_minor} onChange={e => setFormData({ ...formData, amount_minor: e.target.value })} required />
               </div>
+              <div>
+                <label className="text-sm font-medium">Currency</label>
+                <select className="w-full border rounded-md p-2" value={formData.currency} onChange={e => setFormData({ ...formData, currency: e.target.value })}>
+                  <option value="INR">INR</option>
+                  <option value="USD">USD</option>
+                  <option value="KES">KES</option>
+                  <option value="EUR">EUR</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">FX Rate</label>
+                <Input type="number" step="0.0001" value={formData.fx_rate} onChange={e => setFormData({ ...formData, fx_rate: e.target.value })} />
+                {formData.currency !== 'INR' && (
+                  <p className="text-xs text-muted-foreground mt-1">Base: ₹{baseMinor.toLocaleString()}</p>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Odometer</label>
                 <Input type="number" step="0.1" value={formData.odometer} onChange={e => setFormData({ ...formData, odometer: e.target.value })} />
               </div>
+              <div>
+                <label className="text-sm font-medium">Vendor</label>
+                <Input value={formData.vendor} onChange={e => setFormData({ ...formData, vendor: e.target.value })} placeholder="Fuel station name" />
+              </div>
             </div>
             <div>
-              <label className="text-sm font-medium">Vendor</label>
-              <Input value={formData.vendor} onChange={e => setFormData({ ...formData, vendor: e.target.value })} />
+              <label className="text-sm font-medium">Notes</label>
+              <textarea className="w-full border rounded-md p-2" rows={2} value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} />
             </div>
             <div className="flex gap-4">
               <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Save Fuel Log'}</Button>
