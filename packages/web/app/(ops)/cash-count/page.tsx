@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchList } from '@/lib/api/fetch-list';
+import { useOfflineQueue } from '@/hooks/use-offline-queue';
 
 export default function CashCount() {
   const router = useRouter();
+  const { enqueue } = useOfflineQueue();
   const [accounts, setAccounts] = useState<Record<string, unknown>[]>([]);
   const [selectedAccount, setSelectedAccount] = useState('');
   const [denominations, setDenominations] = useState({
@@ -32,16 +33,15 @@ export default function CashCount() {
         .filter(([, qty]) => qty)
         .map(([value, quantity]) => ({ value: parseFloat(value), quantity: parseInt(quantity) }));
 
-      const res = await authFetch('/api/v1/cash/counts', {
-        method: 'POST',
-        body: JSON.stringify({
-          cash_account_id: selectedAccount,
-          count_date: new Date().toISOString().split('T')[0],
-          counted,
-          client_uuid: crypto.randomUUID(),
-        }),
-      });
-      if (res.ok) router.push('/today');
+      const body = {
+        cash_account_id: selectedAccount,
+        count_date: new Date().toISOString().split('T')[0],
+        counted,
+        client_uuid: crypto.randomUUID(),
+      };
+      const token = localStorage.getItem('fleetos_token');
+      await enqueue('/api/v1/cash/counts', 'POST', body, token ? { Authorization: `Bearer ${token}` } : {});
+      router.push('/today');
     } finally {
       setLoading(false);
     }

@@ -62,7 +62,7 @@ export default function EndWorkSession() {
   if (!session) return <p>Session not found</p>;
 
   const startMeter = Number(session.start_meter || 0);
-  const machineCode = String((session as Record<string, unknown>).machine_code || 'Unknown');
+  const machineCode = String(session.machine_code || 'Unknown');
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

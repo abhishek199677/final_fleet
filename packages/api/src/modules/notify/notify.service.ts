@@ -10,6 +10,14 @@ export interface NotifyMessage {
   channel: 'whatsapp' | 'sms' | 'in_app';
 }
 
+export interface WhatsAppAdapter {
+  send(phone: string, templateName: string, variables: Record<string, string>): Promise<{ message_id: string }>;
+}
+
+export interface SmsAdapter {
+  send(phone: string, message: string): Promise<{ message_id: string }>;
+}
+
 @Injectable()
 export class NotifyService {
   private readonly logger = new Logger(NotifyService.name);
@@ -17,9 +25,19 @@ export class NotifyService {
   constructor(private db: DatabaseService) {}
 
   async send(message: NotifyMessage): Promise<{ success: boolean; message_id?: string }> {
+    // Check user notification preferences before sending
+    if (message.user_id) {
+      const prefsResult = await this.db.queryWithTenant(message.tenant_id, 'owner',
+        `SELECT notification_preferences FROM tenant.users WHERE id = $1`, [message.user_id]);
+      const prefs = (prefsResult.rows[0]?.notification_preferences as Record<string, boolean>) ?? {};
+      if (prefs[message.channel] === false) {
+        this.logger.log(`Skipping ${message.channel} notification for user ${message.user_id} — disabled by preference`);
+        return { success: true };
+      }
+    }
+
     this.logger.log(`Sending ${message.channel} notification to ${message.phone}`);
 
-    // Store notification in DB
     const result = await this.db.queryWithTenant(message.tenant_id, 'owner',
       `INSERT INTO tenant.notifications (tenant_id, user_id, channel, template, variables, status, phone)
        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
@@ -52,40 +70,83 @@ export class NotifyService {
   }
 
   private async sendWhatsApp(message: NotifyMessage): Promise<void> {
-    // WhatsApp Business API integration
     const apiKey = process.env.WHATSAPP_API_KEY;
     const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
     if (!apiKey || !phoneNumberId) {
-      this.logger.warn('WhatsApp API not configured, skipping');
+      this.logger.warn('WhatsApp API not configured — notification logged but not sent');
       return;
     }
 
-    await this.getTemplate(message.template, message.tenant_id);
+    const template = this.getTemplate(message.template, message.tenant_id);
 
-    // In production, this would call the WhatsApp Business API
-    // const response = await fetch(`https://graph.facebook.com/v17.0/${phoneNumberId}/messages`, {
-    //   method: 'POST',
-    //   headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     messaging_product: 'whatsapp',
-    //     to: message.phone,
-    //     type: 'template',
-    //     template: { name: template.name, language: { code: 'en' }, components: [...] }
-    //   })
-    // });
+    const response = await fetch(
+      `https://graph.facebook.com/v17.0/${phoneNumberId}/messages`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: message.phone,
+          type: 'text',
+          text: { body: this.formatTemplate(template.body, message.variables) },
+        }),
+      }
+    );
 
-    this.logger.log(`WhatsApp message sent to ${message.phone}`);
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`WhatsApp API error ${response.status}: ${errorBody}`);
+    }
+
+    const data = (await response.json()) as { messages?: { id: string }[] };
+    this.logger.log(`WhatsApp message sent: ${data.messages?.[0]?.id}`);
   }
 
-  private sendSMS(message: NotifyMessage): Promise<void> {
-    // SMS provider integration (e.g., Twilio, AWS SNS)
-    this.logger.log(`SMS sent to ${message.phone}`);
-    return Promise.resolve();
+  private async sendSMS(message: NotifyMessage): Promise<void> {
+    const apiKey = process.env.SMS_API_KEY;
+    const provider = process.env.SMS_PROVIDER || 'twilio';
+
+    if (!apiKey) {
+      this.logger.warn('SMS API not configured — notification logged but not sent');
+      return;
+    }
+
+    const template = this.getTemplate(message.template, message.tenant_id);
+    const body = this.formatTemplate(template.body, message.variables);
+
+    if (provider === 'twilio') {
+      const accountSid = process.env.TWILIO_ACCOUNT_SID;
+      const fromNumber = process.env.TWILIO_FROM_NUMBER;
+      if (!accountSid || !fromNumber) {
+        this.logger.warn('Twilio not configured');
+        return;
+      }
+      const response = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${Buffer.from(`${accountSid}:${apiKey}`).toString('base64')}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            To: message.phone,
+            From: fromNumber,
+            Body: body,
+          }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`SMS API error: ${response.status}`);
+      }
+    }
   }
 
   private async createInAppNotification(message: NotifyMessage): Promise<void> {
-    // Create in-app notification for the user
     if (!message.user_id) return;
 
     await this.db.queryWithTenant(message.tenant_id, 'owner',
@@ -94,61 +155,57 @@ export class NotifyService {
       [message.tenant_id, message.user_id, message.template, JSON.stringify(message.variables)]);
   }
 
-  private getTemplate(templateName: string, _tenantId: string): Promise<{ name: string; body: string }> {
-    // Load template from DB or default templates
+  private formatTemplate(body: string, variables: Record<string, string>): string {
+    return body.replace(/\{(\w+)\}/g, (_, key) => variables[key] ?? `{${key}}`);
+  }
+
+  private getTemplate(templateName: string, _tenantId: string): { name: string; body: string } {
     const templates: Record<string, { name: string; body: string }> = {
-      // Session templates
       session_started: {
         name: 'session_started',
-        body: '🚛 Work session started\nMachine: {machine_code}\nOperator: {operator_name}\nMeter: {start_meter} {meter_unit}\nTime: {start_time}'
+        body: 'Work session started\nMachine: {machine_code}\nOperator: {operator_name}\nMeter: {start_meter} {meter_unit}\nTime: {start_time}'
       },
       session_ended: {
         name: 'session_ended',
-        body: '✅ Work session ended\nMachine: {machine_code}\nDuration: {duration}h\nDistance: {distance} {meter_unit}\nFuel: {fuel_liters}L'
+        body: 'Work session ended\nMachine: {machine_code}\nDuration: {duration}h\nDistance: {distance} {meter_unit}\nFuel: {fuel_liters}L'
       },
-      // Alert templates
       alert_created: {
         name: 'alert_created',
-        body: '⚠️ Alert: {alert_message}\nMachine: {machine_code}\nSeverity: {severity}'
+        body: 'Alert: {alert_message}\nMachine: {machine_code}\nSeverity: {severity}'
       },
       alert_critical: {
         name: 'alert_critical',
-        body: '🚨 CRITICAL: {alert_message}\nMachine: {machine_code}\nImmediate attention required!'
+        body: 'CRITICAL: {alert_message}\nMachine: {machine_code}\nImmediate attention required!'
       },
-      // Maintenance templates
       maintenance_due: {
         name: 'maintenance_due',
-        body: '🔧 Maintenance due\nMachine: {machine_code}\nTask: {task_name}\nDue at: {due_value} {meter_unit}\nCurrent: {current_meter} {meter_unit}'
+        body: 'Maintenance due\nMachine: {machine_code}\nTask: {task_name}\nDue at: {due_value} {meter_unit}\nCurrent: {current_meter} {meter_unit}'
       },
       maintenance_overdue: {
         name: 'maintenance_overdue',
-        body: '🚨 MAINTENANCE OVERDUE\nMachine: {machine_code}\nTask: {task_name}\nOverdue by: {overdue_amount} {meter_unit}'
+        body: 'MAINTENANCE OVERDUE\nMachine: {machine_code}\nTask: {task_name}\nOverdue by: {overdue_amount} {meter_unit}'
       },
-      // Financial templates
       payment_received: {
         name: 'payment_received',
-        body: '💰 Payment received\nClient: {client_name}\nAmount: {currency} {amount}\nReference: {reference}'
+        body: 'Payment received\nClient: {client_name}\nAmount: {currency} {amount}\nReference: {reference}'
       },
       payment_due: {
         name: 'payment_due',
-        body: '📅 Payment due\nClient: {client_name}\nAmount: {currency} {amount}\nDue date: {due_date}'
+        body: 'Payment due\nClient: {client_name}\nAmount: {currency} {amount}\nDue date: {due_date}'
       },
-      // Daily summary
       daily_summary: {
         name: 'daily_summary',
-        body: '📊 Daily Summary - {date}\nSessions: {session_count}\nActive machines: {active_machines}\nFuel logged: {fuel_liters}L\nExpenses: {currency} {expense_amount}'
+        body: 'Daily Summary - {date}\nSessions: {session_count}\nActive machines: {active_machines}\nFuel logged: {fuel_liters}L\nExpenses: {currency} {expense_amount}'
       },
-      // Fuel alert
       fuel_anomaly: {
         name: 'fuel_anomaly',
-        body: '⛽ Fuel anomaly detected\nMachine: {machine_code}\nExpected: {expected_liters}L\nActual: {actual_liters}L\nDifference: {difference}L'
+        body: 'Fuel anomaly detected\nMachine: {machine_code}\nExpected: {expected_liters}L\nActual: {actual_liters}L\nDifference: {difference}L'
       },
-      // Cash variance
       cash_variance: {
         name: 'cash_variance',
-        body: '💵 Cash variance detected\nAccount: {account_name}\nExpected: {currency} {expected}\nActual: {currency} {actual}\nVariance: {currency} {variance}'
+        body: 'Cash variance detected\nAccount: {account_name}\nExpected: {currency} {expected}\nActual: {currency} {actual}\nVariance: {currency} {variance}'
       },
     };
-    return Promise.resolve(templates[templateName] || { name: templateName, body: templateName });
+    return templates[templateName] || { name: templateName, body: templateName };
   }
 }

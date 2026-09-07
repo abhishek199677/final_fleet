@@ -57,6 +57,7 @@
     "cash": "Caisse",
     "projections": "Projections",
     "audit": "Audit",
+    "insights": "Analyses",
     "support": "Assistance",
     "machines": "Machines",
     "operators": "Opérateurs",
@@ -320,5 +321,21 @@
     "tasks": "Tâches",
     "visits": "Visites",
     "newTask": "Nouvelle tâche"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "whatsapp": "WhatsApp",
+    "sms": "SMS",
+    "inApp": "Dans l'app",
+    "preferences": "Préférences de notification",
+    "desc": "Choisissez comment recevoir les alertes et notifications."
+  },
+  "periodClose": {
+    "title": "Clôture de période",
+    "closePeriod": "Clôturer la période",
+    "period": "Période",
+    "note": "Note",
+    "closed": "Clôturé",
+    "closedBy": "Clôturé par"
   }
 }

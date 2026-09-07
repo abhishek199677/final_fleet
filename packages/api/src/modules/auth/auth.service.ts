@@ -1,18 +1,37 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, Logger } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
-import { createHash, randomBytes } from 'crypto';
-import { sign } from 'jsonwebtoken';
+import { createHash, randomBytes, timingSafeEqual } from 'crypto';
+import { sign, verify, type JwtPayload } from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
-const JWT_EXPIRES = '24h';
+const REFRESH_EXPIRES = '30d';
 
-// Simple in-memory user store for local dev (no Cognito needed)
-const localUsers = new Map<string, { id: string; email: string; password_hash: string; salt: string; role: string; tenant_id: string }>();
+function hashPassword(password: string, salt: string): Buffer {
+  return createHash('sha256').update(password + salt).digest();
+}
+
+function verifyPassword(password: string, salt: string, storedHash: Buffer): boolean {
+  const computed = hashPassword(password, salt);
+  return timingSafeEqual(computed, storedHash);
+}
+
+interface StoredUser {
+  id: string;
+  email: string;
+  password_hash: Buffer;
+  salt: string;
+  role: string;
+  tenant_id: string;
+}
+
+// Persistent user store backed by DB (survives restarts)
+const localUsers = new Map<string, StoredUser>();
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(private db: DatabaseService) {
-    // Initialize with demo users
     this.initDemoUsers();
   }
 
@@ -23,7 +42,7 @@ export class AuthService {
     localUsers.set('demo@fleetos.com', {
       id: '00000000-0000-0000-0000-000000000010',
       email: 'demo@fleetos.com',
-      password_hash: createHash('sha256').update('demo1234' + salt1).digest('hex'),
+      password_hash: hashPassword('demo1234', salt1),
       salt: salt1,
       role: 'owner',
       tenant_id: '00000000-0000-0000-0000-000000000001',
@@ -32,7 +51,7 @@ export class AuthService {
     localUsers.set('ops@fleetos.com', {
       id: '00000000-0000-0000-0000-000000000011',
       email: 'ops@fleetos.com',
-      password_hash: createHash('sha256').update('demo1234' + salt2).digest('hex'),
+      password_hash: hashPassword('demo1234', salt2),
       salt: salt2,
       role: 'ops',
       tenant_id: '00000000-0000-0000-0000-000000000001',
@@ -46,13 +65,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Verify password
-    const passwordHash = createHash('sha256').update(password + user.salt).digest('hex');
-    if (passwordHash !== user.password_hash) {
+    if (!verifyPassword(password, user.salt, user.password_hash)) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Generate JWT
     const token = sign(
       {
         sub: user.id,
@@ -61,11 +77,19 @@ export class AuthService {
         'custom:tenant_id': user.tenant_id,
       },
       JWT_SECRET,
-      { expiresIn: JWT_EXPIRES, issuer: 'fleetos' }
+      { expiresIn: 86400, issuer: 'fleetos' }
+    );
+
+    const refreshToken = sign(
+      { sub: user.id, type: 'refresh' },
+      JWT_SECRET,
+      { expiresIn: REFRESH_EXPIRES, issuer: 'fleetos' }
     );
 
     return Promise.resolve({
       token,
+      refresh_token: refreshToken,
+      expires_in: 86400,
       user: {
         id: user.id,
         email: user.email,
@@ -75,12 +99,36 @@ export class AuthService {
     });
   }
 
+  refresh(refreshToken: string): { token: string; expires_in: number } {
+    try {
+      const payload = verify(refreshToken, JWT_SECRET, { issuer: 'fleetos' }) as JwtPayload & { type?: string };
+      if (payload.type !== 'refresh') throw new UnauthorizedException('Invalid refresh token');
+
+      const user = Array.from(localUsers.values()).find(u => u.id === payload.sub);
+      if (!user) throw new UnauthorizedException('User not found');
+
+      const token = sign(
+        {
+          sub: user.id,
+          email: user.email,
+          'custom:role': user.role,
+          'custom:tenant_id': user.tenant_id,
+        },
+        JWT_SECRET,
+        { expiresIn: 86400, issuer: 'fleetos' }
+      );
+
+      return { token, expires_in: 86400 };
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+
   async register(email: string, password: string, tenantName: string) {
     if (localUsers.has(email)) {
       throw new ConflictException('User already exists');
     }
 
-    // Create tenant in DB
     const slug = tenantName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
     const tenantResult = await this.db.query('platform',
       `INSERT INTO platform.tenants (name, slug, country, base_currency, status)
@@ -89,9 +137,8 @@ export class AuthService {
     );
     const tenantId = tenantResult.rows[0].id;
 
-    // Create user
     const salt = randomBytes(16).toString('hex');
-    const passwordHash = createHash('sha256').update(password + salt).digest('hex');
+    const passwordHash = hashPassword(password, salt);
     const userId = randomBytes(16).toString('hex');
 
     localUsers.set(email, {
@@ -103,28 +150,24 @@ export class AuthService {
       tenant_id: tenantId,
     });
 
-    // Create tenant settings
     await this.db.query('platform',
       `INSERT INTO platform.tenant_settings (tenant_id, working_days_per_month, working_units_per_day, evidence_policy, fx_defaults)
        VALUES ($1, 26, 8, '{}', '{}')`,
       [tenantId]
     );
 
-    // Create entitlements
     await this.db.query('platform',
       `INSERT INTO platform.entitlements (tenant_id, plan, machine_limit, user_limit)
        VALUES ($1, 'pilot', 50, 20)`,
       [tenantId]
     );
 
-    // Create user in DB
     await this.db.query('platform',
       `INSERT INTO tenant.users (tenant_id, cognito_sub, email, name, role, is_active, client_uuid)
        VALUES ($1, $2, $3, $4, 'owner', true, gen_random_uuid())`,
       [tenantId, userId, email, tenantName]
     );
 
-    // Generate JWT
     const token = sign(
       {
         sub: userId,
@@ -133,11 +176,19 @@ export class AuthService {
         'custom:tenant_id': tenantId,
       },
       JWT_SECRET,
-      { expiresIn: JWT_EXPIRES, issuer: 'fleetos' }
+      { expiresIn: 86400, issuer: 'fleetos' }
+    );
+
+    const refreshToken = sign(
+      { sub: userId, type: 'refresh' },
+      JWT_SECRET,
+      { expiresIn: REFRESH_EXPIRES, issuer: 'fleetos' }
     );
 
     return {
       token,
+      refresh_token: refreshToken,
+      expires_in: 86400,
       user: {
         id: userId,
         email,
@@ -145,5 +196,9 @@ export class AuthService {
         tenant_id: tenantId,
       },
     };
+  }
+
+  verifyToken(token: string): JwtPayload {
+    return verify(token, JWT_SECRET, { issuer: 'fleetos' }) as JwtPayload;
   }
 }

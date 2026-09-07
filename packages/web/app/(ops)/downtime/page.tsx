@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchList } from '@/lib/api/fetch-list';
+import { useOfflineQueue } from '@/hooks/use-offline-queue';
 
 interface Row extends Record<string, unknown> {
   id?: string;
@@ -14,6 +14,7 @@ interface Row extends Record<string, unknown> {
 const REASONS = ['no_diesel', 'breakdown', 'transport', 'police_permit', 'no_work_client', 'weather', 'operator_absent', 'other'];
 
 export default function DowntimePage() {
+  const { enqueue } = useOfflineQueue();
   const [machines, setMachines] = useState<Row[]>([]);
   const [recent, setRecent] = useState<Row[]>([]);
   const [form, setForm] = useState({ machine_id: '', started_at: '', ended_at: '', reason_code: 'breakdown', note: '' });
@@ -32,21 +33,18 @@ export default function DowntimePage() {
     ev.preventDefault();
     setSaving(true);
     try {
-      const res = await authFetch('/api/v1/fuel-downtime/downtime', {
-        method: 'POST',
-        body: JSON.stringify({
-          machine_id: form.machine_id,
-          started_at: new Date(form.started_at).toISOString(),
-          ended_at: form.ended_at ? new Date(form.ended_at).toISOString() : undefined,
-          reason_code: form.reason_code,
-          note: form.note || undefined,
-          client_uuid: crypto.randomUUID(),
-        }),
-      });
-      if (res.ok) {
-        setForm({ machine_id: '', started_at: '', ended_at: '', reason_code: 'breakdown', note: '' });
-        void load();
-      }
+      const body = {
+        machine_id: form.machine_id,
+        started_at: new Date(form.started_at).toISOString(),
+        ended_at: form.ended_at ? new Date(form.ended_at).toISOString() : undefined,
+        reason_code: form.reason_code,
+        note: form.note || undefined,
+        client_uuid: crypto.randomUUID(),
+      };
+      const token = localStorage.getItem('fleetos_token');
+      await enqueue('/api/v1/fuel-downtime/downtime', 'POST', body, token ? { Authorization: `Bearer ${token}` } : {});
+      setForm({ machine_id: '', started_at: '', ended_at: '', reason_code: 'breakdown', note: '' });
+      void load();
     } finally {
       setSaving(false);
     }

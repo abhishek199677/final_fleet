@@ -67,4 +67,14 @@ export class UsersController {
   reactivate(@Req() req: TenantRequest, @Param('id') id: string) {
     return this.service.reactivate(req.tenant!.tenantId, id);
   }
+
+  @Put(':id/notification-prefs')
+  @ApiOperation({ summary: 'Update own notification preferences' })
+  updateNotificationPrefs(
+    @Req() req: TenantRequest,
+    @Param('id') id: string,
+    @Body() dto: { notification_preferences: Record<string, boolean> }
+  ) {
+    return this.service.updateNotificationPrefs(req.tenant!.tenantId, id, dto.notification_preferences);
+  }
 }

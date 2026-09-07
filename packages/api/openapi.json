@@ -46,6 +46,45 @@
         ]
       }
     },
+    "/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Refresh access token",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "operationId": "AuthController_me",
+        "parameters": [
+          {
+            "name": "authorization",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get current user profile",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
     "/admin/tenants": {
       "get": {
         "operationId": "TenantsController_findAll",
@@ -1009,6 +1048,35 @@
           }
         ],
         "summary": "Correct a work session (creates new version)",
+        "tags": [
+          "Work Sessions"
+        ]
+      }
+    },
+    "/work-sessions/{id}/end": {
+      "post": {
+        "operationId": "WorkSessionsController_endSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "End a work session with end meter reading",
         "tags": [
           "Work Sessions"
         ]

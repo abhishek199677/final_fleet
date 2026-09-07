@@ -1,10 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
-import { promises as fs } from 'fs';
-import { join, extname } from 'path';
-import { createHash } from 'crypto';
-
-const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+import { StorageAdapter, createStorageAdapter } from '../../common/storage/storage.adapter';
+import { extname } from 'path';
 
 /**
  * Photo evidence (TSD §3.2, §7 media). Columns follow the schema:
@@ -14,12 +11,19 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
  */
 @Injectable()
 export class PhotosService {
-  constructor(private db: DatabaseService) {}
+  private readonly logger = new Logger(PhotosService.name);
+  private storage: StorageAdapter;
+
+  constructor(private db: DatabaseService) {
+    this.storage = createStorageAdapter();
+  }
 
   async presignUpload(tenantId: string, data: Record<string, unknown>, clientUuid: string, userId: string) {
     const filename = String(data.filename ?? 'photo.jpg').replace(/[^a-zA-Z0-9._-]/g, '_');
     const key = `tenants/${tenantId}/${clientUuid}-${filename}`;
-    await fs.mkdir(join(UPLOAD_DIR, `tenants/${tenantId}`), { recursive: true });
+    const contentType = String(data.content_type ?? 'image/jpeg');
+
+    const uploadUrl = await this.storage.presignUpload(key, contentType);
 
     const result = await this.db.queryWithTenant(tenantId, 'ops',
       `INSERT INTO tenant.photos (tenant_id, s3_key_original, sha256_device, size_bytes, taken_at_device, lat, lng, gps_accuracy_m, capture_source, uploaded_by, client_uuid)
@@ -28,7 +32,7 @@ export class PhotosService {
        data.taken_at_device ?? null, data.lat ?? null, data.lng ?? null,
        data.gps_accuracy_m ?? null, data.capture_source ?? 'web', userId, clientUuid]);
     return {
-      upload_url: `/api/v1/photos/${result.rows[0].id}/upload`,
+      upload_url: uploadUrl,
       photo: result.rows[0],
       key,
     };
@@ -39,15 +43,13 @@ export class PhotosService {
       `SELECT * FROM tenant.photos WHERE id = $1`, [photoId]);
     if (photo.rows.length === 0) throw new NotFoundException('Photo not found');
 
-    const filePath = join(UPLOAD_DIR, photo.rows[0].s3_key_original as string);
-    await fs.mkdir(join(UPLOAD_DIR, `tenants/${tenantId}`), { recursive: true });
-    await fs.writeFile(filePath, file);
+    const key = photo.rows[0].s3_key_original as string;
+    const { sha256, size } = await this.storage.upload(key, file);
 
-    const sha256 = createHash('sha256').update(file).digest('hex');
     await this.db.queryWithTenant(tenantId, 'ops',
       `UPDATE tenant.photos SET sha256_server = $2, size_bytes = $3 WHERE id = $1`,
-      [photoId, sha256, file.length]);
-    return { success: true, sha256, size: file.length };
+      [photoId, sha256, size]);
+    return { success: true, sha256, size };
   }
 
   async commitUpload(tenantId: string, photoId: string, sha256Device?: string) {
@@ -60,10 +62,6 @@ export class PhotosService {
     return result.rows[0];
   }
 
-  /**
-   * Photos for a work session (via its meter photo keys) or recent tenant
-   * photos when no entity filter is given.
-   */
   async getPhotos(tenantId: string, entityType?: string, entityId?: string) {
     if (entityType === 'work_session' && entityId) {
       const result = await this.db.queryWithTenant(tenantId, 'ops',
@@ -84,12 +82,25 @@ export class PhotosService {
     if (result.rows.length === 0) throw new NotFoundException('Photo not found');
     const key = result.rows[0].s3_key_original as string;
     try {
-      const buffer = await fs.readFile(join(UPLOAD_DIR, key));
+      const buffer = await this.storage.download(key);
       const ext = extname(key).toLowerCase();
       const contentType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
       return { buffer, contentType };
     } catch {
       throw new NotFoundException('Photo file not found');
+    }
+  }
+
+  async getThumbFile(photoId: string, tenantId: string): Promise<{ buffer: Buffer; contentType: string } | null> {
+    const result = await this.db.queryWithTenant(tenantId, 'ops',
+      `SELECT s3_key_thumb FROM tenant.photos WHERE id = $1`, [photoId]);
+    if (result.rows.length === 0 || !result.rows[0].s3_key_thumb) return null;
+    const key = result.rows[0].s3_key_thumb as string;
+    try {
+      const buffer = await this.storage.download(key);
+      return { buffer, contentType: 'image/jpeg' };
+    } catch {
+      return null;
     }
   }
 }

@@ -8,17 +8,14 @@ import { fetchList } from '@/lib/api/fetch-list';
 
 export default function OpsWorkSession() {
   const [activeSessions, setActiveSessions] = useState<Record<string, unknown>[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchList<Record<string, unknown>>('/api/v1/work-sessions')
+    void fetchList<Record<string, unknown>>('/api/v1/work-sessions')
       .then(sessions => {
-        // Filter for sessions without end_at (active sessions)
         const active = sessions.filter(s => !s.end_at);
         setActiveSessions(active);
       })
-      .catch(() => setActiveSessions([]))
-      .finally(() => setLoading(false));
+      .catch(() => setActiveSessions([]));
   }, []);
 
   return (

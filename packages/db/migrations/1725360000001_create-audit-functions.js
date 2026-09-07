@@ -10,9 +10,10 @@ exports.up = (pgm) => {
     RETURNS TRIGGER AS $$
     BEGIN
       IF NEW.supersedes_id IS NOT NULL THEN
-        UPDATE tenant."table_name"
-        SET is_current = false
-        WHERE id = NEW.supersedes_id AND is_current = true;
+        EXECUTE format(
+          'UPDATE tenant.%I SET is_current = false WHERE id = $1 AND is_current = true',
+          TG_TABLE_NAME
+        ) USING NEW.supersedes_id;
       END IF;
       RETURN NEW;
     END;

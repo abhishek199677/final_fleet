@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { authFetch } from '@/lib/api/auth-fetch';
+import { PhotoCapture } from '@/components/ui/photo-capture';
 import { fetchList } from '@/lib/api/fetch-list';
 import { useOfflineQueue } from '@/hooks/use-offline-queue';
 
@@ -20,6 +20,7 @@ export default function NewWorkSession() {
     start_meter: '',
     notes: '',
   });
+  const [meterPhoto, setMeterPhoto] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [savedOffline, setSavedOffline] = useState(false);
 
@@ -116,6 +117,13 @@ export default function NewWorkSession() {
                 value={formData.start_meter}
                 onChange={e => setFormData({ ...formData, start_meter: e.target.value })}
                 required
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Meter Photo (optional)</label>
+              <PhotoCapture
+                onPhoto={setMeterPhoto}
+                label={meterPhoto ? `✓ ${meterPhoto.name}` : 'Capture Odometer'}
               />
             </div>
             <div>

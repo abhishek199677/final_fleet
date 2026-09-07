@@ -68,4 +68,33 @@ export class TenantsService {
       throw new ForbiddenException({ code: 'ENTITLEMENT_LIMIT', message: 'Entitlement limit reached' });
     }
   }
+
+  async closePeriod(tenantId: string, period: string, userId: string, note?: string) {
+    // Validate period format (YYYY-MM)
+    if (!/^\d{4}-\d{2}$/.test(period)) {
+      throw new ForbiddenException({ code: 'INVALID_PERIOD', message: 'Period must be YYYY-MM format' });
+    }
+
+    // Check not already closed
+    const existing = await this.db.queryWithTenant(tenantId, 'owner',
+      `SELECT id FROM tenant.period_closes WHERE period = $1`, [period]);
+    if (existing.rows.length > 0) {
+      throw new ForbiddenException({ code: 'PERIOD_CLOSED', message: 'Period already closed' });
+    }
+
+    const result = await this.db.queryWithTenant(tenantId, 'owner',
+      `INSERT INTO tenant.period_closes (tenant_id, period, closed_by, note, client_uuid)
+       VALUES ($1, $2, $3, $4, gen_random_uuid()) RETURNING *`,
+      [tenantId, period, userId, note || null]);
+    return result.rows[0];
+  }
+
+  async listPeriodCloses(tenantId: string) {
+    const result = await this.db.queryWithTenant(tenantId, 'owner',
+      `SELECT pc.*, u.name AS closed_by_name
+       FROM tenant.period_closes pc
+       LEFT JOIN tenant.users u ON u.id = pc.closed_by
+       ORDER BY pc.period DESC`);
+    return result.rows;
+  }
 }

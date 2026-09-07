@@ -46,26 +46,27 @@ async function testIsolation() {
     );
     if (existsRes.rows.length === 0) continue;
 
-    // Insert as tenant A
-    try {
-      await client.query(`SET LOCAL app.tenant_id = '${tenantA}'`);
-    } catch {
-      // SET LOCAL fails outside transaction, that's ok
-    }
-
     // Each role: verify no cross-tenant rows visible
     for (const role of ['app_owner', 'app_ops']) {
       try {
+        // Begin a transaction so SET LOCAL works
+        await client.query('BEGIN');
+        await client.query(`SET LOCAL ROLE ${role}`);
+        await client.query(`SET LOCAL app.tenant_id = '${tenantA}'`);
+
         const res = await client.query(
           `SELECT count(*) FROM ${tableName} WHERE tenant_id = $1`,
           [tenantB],
         );
-        // If we can query, the count should be 0 (RLS filtering)
+
+        await client.query('ROLLBACK');
+
         if (parseInt(res.rows[0].count) > 0) {
           errors.push(`${tableName} (${role}): can see tenant B rows from tenant A context`);
         }
       } catch (err) {
         // Permission denied is acceptable for some roles on finance tables
+        try { await client.query('ROLLBACK'); } catch { /* ignore */ }
         if (err.code !== '42501') {
           errors.push(`${tableName} (${role}): unexpected error: ${err.message}`);
         }

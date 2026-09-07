@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
-import { randomBytes, createHash } from 'crypto';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class UsersService {
@@ -86,6 +86,16 @@ export class UsersService {
 
   async reactivate(tenantId: string, id: string) {
     return this.update(tenantId, id, { is_active: true });
+  }
+
+  async updateNotificationPrefs(tenantId: string, id: string, prefs: Record<string, boolean>) {
+    const result = await this.db.queryWithTenant(tenantId, 'owner',
+      `UPDATE tenant.users SET notification_preferences = $2 WHERE id = $1 RETURNING *`,
+      [id, JSON.stringify(prefs)]);
+    if (result.rows.length === 0) {
+      throw new NotFoundException('User not found');
+    }
+    return result.rows[0];
   }
 
   async getStats(tenantId: string) {

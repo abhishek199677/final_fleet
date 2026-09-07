@@ -1,3 +1,36 @@
 export { ERROR_CODES, type ErrorCode } from './errors/index.js';
-export type { RateCard, BillingLedger, ClientMoneyEvent, ClientReceivable } from './types/finance.js';
-export type { WorkSession, FuelLog, DowntimeSegment, MaintenanceVisit, Expense, CashCount } from './types/ops.js';
+export type {
+  RateCard,
+  BillingLedger,
+  ClientMoneyEvent,
+  ClientReceivable,
+  AdvanceConsumption,
+  MachineFinancial,
+  ClientCredit,
+  ExtraCharge,
+} from './types/finance.js';
+export type {
+  WorkSession,
+  FuelLog,
+  DowntimeSegment,
+  MaintenanceVisit,
+  Expense,
+  CashCount,
+  Machine,
+  Client,
+  Site,
+  Deployment,
+  Operator,
+  User,
+  Tenant,
+  CashAccount,
+  CashTransfer,
+  MaintenanceTask,
+  MaintenanceVisitTask,
+  MaintenancePart,
+  ExpenseCategory,
+  Alert,
+  Notification,
+  Photo,
+  InsightNote,
+} from './types/ops.js';

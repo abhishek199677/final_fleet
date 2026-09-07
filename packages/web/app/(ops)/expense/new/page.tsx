@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchList } from '@/lib/api/fetch-list';
+import { useOfflineQueue } from '@/hooks/use-offline-queue';
 
 export default function NewExpense() {
   const router = useRouter();
+  const { enqueue } = useOfflineQueue();
   const [categories, setCategories] = useState<Record<string, unknown>[]>([]);
   const [cashAccounts, setCashAccounts] = useState<Record<string, unknown>[]>([]);
   const [machines, setMachines] = useState<Record<string, unknown>[]>([]);
@@ -76,11 +77,9 @@ export default function NewExpense() {
         body.machine_id = formData.machine_id;
       }
 
-      const res = await authFetch('/api/v1/expenses', {
-        method: 'POST',
-        body: JSON.stringify(body),
-      });
-      if (res.ok) router.push('/expense');
+      const token = localStorage.getItem('fleetos_token');
+      await enqueue('/api/v1/expenses', 'POST', body, token ? { Authorization: `Bearer ${token}` } : {});
+      router.push('/expense');
     } finally {
       setLoading(false);
     }

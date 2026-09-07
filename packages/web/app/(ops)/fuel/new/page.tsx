@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { authFetch } from '@/lib/api/auth-fetch';
+import { PhotoCapture } from '@/components/ui/photo-capture';
 import { fetchList } from '@/lib/api/fetch-list';
+import { useOfflineQueue } from '@/hooks/use-offline-queue';
 
 export default function NewFuelLog() {
   const router = useRouter();
+  const { enqueue } = useOfflineQueue();
   const [machines, setMachines] = useState<Record<string, unknown>[]>([]);
   const [formData, setFormData] = useState({
     machine_id: '',
@@ -23,6 +25,7 @@ export default function NewFuelLog() {
     notes: '',
   });
   const [loading, setLoading] = useState(false);
+  const [odometerPhoto, setOdometerPhoto] = useState<File | null>(null);
 
   useEffect(() => {
     void fetchList<Record<string, unknown>>('/api/v1/machines').then(setMachines);
@@ -36,23 +39,23 @@ export default function NewFuelLog() {
       const fxRate = parseFloat(formData.fx_rate) || 1;
       const baseMinor = Math.round(amountMinor * fxRate);
 
-      const res = await authFetch('/api/v1/fuel-downtime/fuel-logs', {
-        method: 'POST',
-        body: JSON.stringify({
-          machine_id: formData.machine_id,
-          fuel_date: formData.fuel_date,
-          liters: parseFloat(formData.liters),
-          cost_minor: amountMinor,
-          currency: formData.currency,
-          fx_rate: fxRate,
-          base_minor: baseMinor,
-          vendor: formData.vendor || undefined,
-          odometer: formData.odometer ? parseFloat(formData.odometer) : undefined,
-          notes: formData.notes || undefined,
-          client_uuid: crypto.randomUUID(),
-        }),
-      });
-      if (res.ok) router.push('/fuel');
+      const body = {
+        machine_id: formData.machine_id,
+        fuel_date: formData.fuel_date,
+        liters: parseFloat(formData.liters),
+        cost_minor: amountMinor,
+        currency: formData.currency,
+        fx_rate: fxRate,
+        base_minor: baseMinor,
+        vendor: formData.vendor || undefined,
+        odometer: formData.odometer ? parseFloat(formData.odometer) : undefined,
+        notes: formData.notes || undefined,
+        client_uuid: crypto.randomUUID(),
+      };
+
+      const token = localStorage.getItem('fleetos_token');
+      await enqueue('/api/v1/fuel-downtime/fuel-logs', 'POST', body, token ? { Authorization: `Bearer ${token}` } : {});
+      router.push('/fuel');
     } finally {
       setLoading(false);
     }
@@ -118,6 +121,13 @@ export default function NewFuelLog() {
                 <label className="text-sm font-medium">Vendor</label>
                 <Input value={formData.vendor} onChange={e => setFormData({ ...formData, vendor: e.target.value })} placeholder="Fuel station name" />
               </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Odometer Photo (optional)</label>
+              <PhotoCapture
+                onPhoto={setOdometerPhoto}
+                label={odometerPhoto ? `✓ ${odometerPhoto.name}` : 'Capture Odometer Reading'}
+              />
             </div>
             <div>
               <label className="text-sm font-medium">Notes</label>

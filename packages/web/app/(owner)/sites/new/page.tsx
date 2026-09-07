@@ -21,7 +21,7 @@ export default function NewSite() {
   const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
-    fetchList<Record<string, unknown>>('/api/v1/clients')
+    void fetchList<Record<string, unknown>>('/api/v1/clients')
       .then(setClients)
       .finally(() => setFetching(false));
   }, []);

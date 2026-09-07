@@ -11,12 +11,8 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && user && user.role !== 'ops') {
-      if (user.role === 'owner' || user.role === 'admin') {
-        router.push('/');
-      } else {
-        router.push('/login');
-      }
+    if (!loading && user && user.role !== 'ops' && user.role !== 'owner' && user.role !== 'admin') {
+      router.push('/login');
     }
   }, [user, loading, router]);
 
@@ -28,22 +24,31 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user || user.role !== 'ops') {
+  if (!user) {
     return null;
   }
+
+  const isReadOnly = user.role === 'owner' || user.role === 'admin';
 
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b">
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-6">
-            <Link href="/today" className="text-xl font-bold">
+            <Link href="/home" className="text-xl font-bold">
               Fleet OS
             </Link>
             <OpsNav />
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">Operations</span>
+            {isReadOnly && (
+              <Link href="/home" className="text-sm text-primary hover:underline">
+                ← Back to Owner Portal
+              </Link>
+            )}
+            <span className="text-sm text-muted-foreground">
+              {isReadOnly ? 'Operations (view only)' : 'Operations'}
+            </span>
           </div>
         </div>
       </header>

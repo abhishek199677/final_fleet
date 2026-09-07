@@ -56,3 +56,46 @@ export interface ClientReceivable {
   ageing31_60: number;
   ageing60Plus: number;
 }
+
+export interface AdvanceConsumption {
+  id: string;
+  tenantId: string;
+  advanceId: string;
+  billingLedgerId: string;
+  baseMinor: number;
+  date: string;
+}
+
+export interface MachineFinancial {
+  machineId: string;
+  tenantId: string;
+  purchaseDate?: string;
+  purchaseCostMinor?: number;
+  currency?: string;
+  fx?: number;
+  baseMinor?: number;
+  depreciationMethod?: string;
+  depreciationValue?: number;
+  insuranceExpiry?: string;
+  insuranceCostMinor?: number;
+}
+
+export interface ClientCredit {
+  clientId: string;
+  tenantId: string;
+  creditLimitMinor: number;
+  requiredAdvanceMinor: number;
+}
+
+export interface ExtraCharge {
+  id: string;
+  tenantId: string;
+  deploymentId: string;
+  kind: 'mobilisation' | 'demobilisation' | 'transport' | 'other';
+  date: string;
+  currency: string;
+  amountMinor: number;
+  fx: number;
+  baseMinor: number;
+  note?: string;
+}

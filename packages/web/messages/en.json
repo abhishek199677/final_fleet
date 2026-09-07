@@ -57,6 +57,7 @@
     "cash": "Cash",
     "projections": "Projections",
     "audit": "Audit",
+    "insights": "Insights",
     "support": "Support",
     "machines": "Machines",
     "operators": "Operators",
@@ -320,5 +321,21 @@
     "tasks": "Tasks",
     "visits": "Visits",
     "newTask": "New task"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "whatsapp": "WhatsApp",
+    "sms": "SMS",
+    "inApp": "In-app",
+    "preferences": "Notification Preferences",
+    "desc": "Choose how you receive alerts and notifications."
+  },
+  "periodClose": {
+    "title": "Period Close",
+    "closePeriod": "Close Period",
+    "period": "Period",
+    "note": "Note",
+    "closed": "Closed",
+    "closedBy": "Closed by"
   }
 }

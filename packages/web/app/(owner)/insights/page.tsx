@@ -10,38 +10,58 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'
 export default function Insights() {
   const [machines, setMachines] = useState<Record<string, unknown>[]>([]);
   const [downtime, setDowntime] = useState<Record<string, unknown>[]>([]);
+  const [sessions, setSessions] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     void Promise.all([
       fetchList<Record<string, unknown>>('/api/v1/machines'),
       fetchList<Record<string, unknown>>('/api/v1/fuel-downtime/downtime'),
-    ]).then(([m, d]) => {
+      fetchList<Record<string, unknown>>('/api/v1/work-sessions'),
+    ]).then(([m, d, s]) => {
       setMachines(m);
       setDowntime(d);
+      setSessions(s);
     }).finally(() => setLoading(false));
   }, []);
 
-  // Calculate downtime by reason
+  // Calculate downtime by reason (count hours if endedAt-startAt available, else count events)
   const downtimeByReason = downtime.reduce<Record<string, number>>((acc, d) => {
     const reason = (d.reason_code as string) || 'unknown';
-    acc[reason] = (acc[reason] || 0) + 1;
+    if (d.started_at && d.ended_at) {
+      const hours = (new Date(d.ended_at).getTime() - new Date(d.started_at).getTime()) / (1000 * 60 * 60);
+      acc[reason] = (acc[reason] || 0) + Math.round(hours * 10) / 10;
+    } else {
+      acc[reason] = (acc[reason] || 0) + 1;
+    }
     return acc;
   }, {});
 
-  const downtimeData = Object.entries(downtimeByReason).map(([reason, count]) => ({
+  const downtimeData = Object.entries(downtimeByReason).map(([reason, value]) => ({
     name: reason.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    value: count,
+    value,
   }));
 
-  // Calculate machines with recent activity
+  // Calculate machine status based on today's sessions
+  const today = new Date().toISOString().split('T')[0];
+  const machinesWithSessionToday = new Set(
+    sessions
+      .filter(s => s.start_at && (s.start_at as string).startsWith(today))
+      .map(s => s.machine_id)
+  );
+
   const activeMachines = machines.filter(m => m.status_flag !== 'retired');
-  const machinesWithSession = new Set(downtime.map(d => d.machine_id));
+  const machinesWithDowntime = new Set(downtime.map(d => d.machine_id));
 
   const utilisationData = [
-    { name: 'Active', value: activeMachines.length - machinesWithSession.size },
-    { name: 'In Downtime', value: machinesWithSession.size },
-  ];
+    { name: 'Operating', value: activeMachines.filter(m => machinesWithSessionToday.has(m.id)).length },
+    { name: 'In Downtime', value: activeMachines.filter(m => machinesWithDowntime.has(m.id) && !machinesWithSessionToday.has(m.id)).length },
+    { name: 'Idle', value: activeMachines.filter(m => !machinesWithSessionToday.has(m.id) && !machinesWithDowntime.has(m.id)).length },
+  ].filter(d => d.value > 0);
+
+  // Calculate total units from sessions
+  const totalUnits = sessions.reduce((sum, s) => sum + ((s.units_run as number) || 0), 0);
+  const billableUnits = sessions.filter(s => s.billable).reduce((sum, s) => sum + ((s.units_run as number) || 0), 0);
 
   if (loading) return <p className="text-muted-foreground">Loading insights...</p>;
 
@@ -65,7 +85,7 @@ export default function Insights() {
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="value" fill="#8884d8" />
+                  <Bar dataKey="value" fill="#8884d8" name="Hours" />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -75,10 +95,10 @@ export default function Insights() {
         {/* Machine Utilisation */}
         <Card>
           <CardHeader>
-            <CardTitle>Machine Status</CardTitle>
+            <CardTitle>Machine Status (Today)</CardTitle>
           </CardHeader>
           <CardContent>
-            {utilisationData[0].value === 0 && utilisationData[1].value === 0 ? (
+            {utilisationData.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">No machines</p>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
@@ -120,14 +140,12 @@ export default function Insights() {
                 <p className="text-sm text-muted-foreground">Active Machines</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold">{downtime.length}</p>
-                <p className="text-sm text-muted-foreground">Downtime Events</p>
+                <p className="text-2xl font-bold">{totalUnits.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Total Units</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold">
-                  {machines.length > 0 ? Math.round((activeMachines.length / machines.length) * 100) : 0}%
-                </p>
-                <p className="text-sm text-muted-foreground">Fleet Availability</p>
+                <p className="text-2xl font-bold">{totalUnits > 0 ? Math.round((billableUnits / totalUnits) * 100) : 0}%</p>
+                <p className="text-sm text-muted-foreground">Billable Ratio</p>
               </div>
             </div>
           </CardContent>

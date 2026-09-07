@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   Bell, Building2, ChevronsLeft, CircleDollarSign, LayoutDashboard, LifeBuoy, Menu,
-  Receipt, Scale, ScrollText, Search, Settings, Tractor, Users, X,
+  Receipt, Scale, ScrollText, Search, Settings, Tractor, Users, X, BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchList } from '@/lib/api/fetch-list';
@@ -29,6 +29,7 @@ const NAV: NavEntry[] = [
   { href: '/billing', labelKey: 'billing', icon: Receipt },
   { href: '/cash', labelKey: 'cash', icon: CircleDollarSign },
   { href: '/projections', labelKey: 'projections', icon: Scale },
+  { href: '/insights', labelKey: 'insights', icon: BarChart3 },
   { href: '/audit', labelKey: 'audit', icon: ScrollText },
   { href: '/support', labelKey: 'support', icon: LifeBuoy },
   { href: '/settings', labelKey: 'settings', icon: Settings },

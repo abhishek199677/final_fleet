@@ -4,14 +4,15 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchList } from '@/lib/api/fetch-list';
+import { useOfflineQueue } from '@/hooks/use-offline-queue';
 
 interface Row extends Record<string, unknown> {
   id?: string;
 }
 
 export default function ReceiptPage() {
+  const { enqueue } = useOfflineQueue();
   const [clients, setClients] = useState<Row[]>([]);
   const [mine, setMine] = useState<Row[]>([]);
   const [form, setForm] = useState({
@@ -38,23 +39,20 @@ export default function ReceiptPage() {
     ev.preventDefault();
     setSaving(true);
     try {
-      const res = await authFetch('/api/v1/client-money/events', {
-        method: 'POST',
-        body: JSON.stringify({
-          client_id: form.client_id,
-          event_type: form.event_type,
-          currency: form.currency,
-          amount_minor: Math.round(parseFloat(form.amount || '0') * 100),
-          mode: form.mode,
-          reference: form.reference || undefined,
-          event_date: form.event_date,
-          client_uuid: crypto.randomUUID(),
-        }),
-      });
-      if (res.ok) {
-        setForm({ ...form, amount: '', reference: '' });
-        void load();
-      }
+      const body = {
+        client_id: form.client_id,
+        event_type: form.event_type,
+        currency: form.currency,
+        amount_minor: Math.round(parseFloat(form.amount || '0') * 100),
+        mode: form.mode,
+        reference: form.reference || undefined,
+        event_date: form.event_date,
+        client_uuid: crypto.randomUUID(),
+      };
+      const token = localStorage.getItem('fleetos_token');
+      await enqueue('/api/v1/client-money/events', 'POST', body, token ? { Authorization: `Bearer ${token}` } : {});
+      setForm({ ...form, amount: '', reference: '' });
+      void load();
     } finally {
       setSaving(false);
     }
