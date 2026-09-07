@@ -1,10 +1,14 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { entitlementExceeded } from '../../common/domain/hardening.js';
 import { TenantsRepository } from './tenants.repository';
+import { DatabaseService } from '../../common/database/database.service';
 
 @Injectable()
 export class TenantsService {
-  constructor(private repo: TenantsRepository) {}
+  constructor(
+    private repo: TenantsRepository,
+    private db: DatabaseService
+  ) {}
 
   async findAll() {
     return this.repo.findAll();
@@ -26,6 +30,36 @@ export class TenantsService {
 
   async archive(id: string) {
     return this.repo.updateStatus(id, 'archived');
+  }
+
+  async getSettings(tenantId: string) {
+    const result = await this.db.query('platform',
+      `SELECT evidence_policy, fx_defaults, cut_off_time, working_units_per_day, working_days_per_month
+       FROM platform.tenant_settings WHERE tenant_id = $1`, [tenantId]);
+    if (result.rows.length === 0) throw new NotFoundException('Tenant settings not found');
+    return result.rows[0];
+  }
+
+  async updateSettings(tenantId: string, updates: {
+    evidence_policy?: Record<string, string>;
+    fx_defaults?: Record<string, unknown>;
+    cut_off_time?: string;
+    working_units_per_day?: number;
+    working_days_per_month?: number;
+  }) {
+    const result = await this.db.query('platform',
+      `UPDATE platform.tenant_settings 
+       SET evidence_policy = COALESCE($2, evidence_policy),
+           fx_defaults = COALESCE($3, fx_defaults),
+           cut_off_time = COALESCE($4, cut_off_time),
+           working_units_per_day = COALESCE($5, working_units_per_day),
+           working_days_per_month = COALESCE($6, working_days_per_month)
+       WHERE tenant_id = $1 
+       RETURNING *`,
+      [tenantId, updates.evidence_policy, updates.fx_defaults, 
+       updates.cut_off_time, updates.working_units_per_day, updates.working_days_per_month]);
+    if (result.rows.length === 0) throw new NotFoundException('Tenant settings not found');
+    return result.rows[0];
   }
 
   /** Hard entitlement enforcement (TEN-02 hardening; pilot used warnings). */

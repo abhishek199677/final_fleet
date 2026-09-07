@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchList } from '@/lib/api/fetch-list';
+import { useOfflineQueue } from '@/hooks/use-offline-queue';
 
 export default function NewWorkSession() {
   const router = useRouter();
+  const { isOnline, pendingCount, enqueue } = useOfflineQueue();
   const [machines, setMachines] = useState<Record<string, unknown>[]>([]);
   const [operators, setOperators] = useState<Record<string, unknown>[]>([]);
   const [formData, setFormData] = useState({
@@ -19,6 +21,7 @@ export default function NewWorkSession() {
     notes: '',
   });
   const [loading, setLoading] = useState(false);
+  const [savedOffline, setSavedOffline] = useState(false);
 
   useEffect(() => {
     void Promise.all([
@@ -33,17 +36,25 @@ export default function NewWorkSession() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setSavedOffline(false);
     try {
-      const res = await authFetch('/api/v1/work-sessions', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...formData,
-          start_meter: parseFloat(formData.start_meter),
-          start_at: new Date().toISOString(),
-          client_uuid: crypto.randomUUID(),
-        }),
+      const body = {
+        ...formData,
+        start_meter: parseFloat(formData.start_meter),
+        start_at: new Date().toISOString(),
+        client_uuid: crypto.randomUUID(),
+      };
+
+      const result = await enqueue('/api/v1/work-sessions', 'POST', body, {
+        'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('fleetos_token') : ''}`,
       });
-      if (res.ok) router.push('/work-session');
+
+      if (result.offline) {
+        setSavedOffline(true);
+        setTimeout(() => router.push('/work-session'), 1500);
+      } else {
+        router.push('/work-session');
+      }
     } finally {
       setLoading(false);
     }
@@ -51,7 +62,21 @@ export default function NewWorkSession() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold">Start Work Session</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Start Work Session</h1>
+        <div className="flex items-center gap-2 text-sm">
+          <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-yellow-500'}`} />
+          <span className="text-muted-foreground">{isOnline ? 'Online' : 'Offline'}</span>
+          {pendingCount > 0 && (
+            <span className="text-yellow-600">({pendingCount} pending)</span>
+          )}
+        </div>
+      </div>
+      {savedOffline && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-yellow-800">
+          Saved offline. It will sync when you're back online.
+        </div>
+      )}
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">

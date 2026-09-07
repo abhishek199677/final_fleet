@@ -26,4 +26,16 @@ export class ImportController {
   importClients(@Req() req: TenantRequest, @Body() dto: { csv: string }) {
     return this.service.importClients(req.tenant!.tenantId, dto.csv);
   }
+
+  @Post('daily-log')
+  @ApiOperation({ summary: 'Import daily work log from CSV' })
+  importDailyLog(@Req() req: TenantRequest, @Body() dto: { csv: string }) {
+    return this.service.importDailyLog(req.tenant!.tenantId, dto.csv);
+  }
+
+  @Post('payments')
+  @ApiOperation({ summary: 'Import payments/receipts from CSV' })
+  importPayments(@Req() req: TenantRequest, @Body() dto: { csv: string }) {
+    return this.service.importPayments(req.tenant!.tenantId, dto.csv);
+  }
 }

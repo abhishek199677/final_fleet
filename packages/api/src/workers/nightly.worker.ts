@@ -2,10 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../common/database/database.service';
 import { OcrWorker } from './ocr.worker';
 import { MediaWorker } from './media.worker';
+import { BillingEngine, BillingInput } from '../modules/billing/billing-engine-logic';
+import { AlertEngineService } from '../modules/alerts/alert-engine.service';
 
 export interface NightlyJob {
   tenant_id: string;
-  type: 'ocr' | 'media' | 'billing' | 'rollup' | 'cleanup';
+  type: 'ocr' | 'media' | 'billing' | 'rollup' | 'cleanup' | 'alerts';
 }
 
 @Injectable()
@@ -16,6 +18,8 @@ export class NightlyWorker {
     private db: DatabaseService,
     private ocrWorker: OcrWorker,
     private mediaWorker: MediaWorker,
+    private billingEngine: BillingEngine,
+    private alertEngine: AlertEngineService,
   ) {}
 
   async processJob(job: NightlyJob): Promise<{ success: boolean; message: string }> {
@@ -33,6 +37,8 @@ export class NightlyWorker {
           return await this.processDailyRollup(job.tenant_id);
         case 'cleanup':
           return await this.processCleanup(job.tenant_id);
+        case 'alerts':
+          return await this.processAlerts(job.tenant_id);
         default:
           // ALT-04 hardening-lite: daily digest falls through to a digest write.
           if ((job.type as string) === 'digest') return await this.processDigest(job.tenant_id);
@@ -83,10 +89,37 @@ export class NightlyWorker {
     const deployments = await this.db.queryWithTenant(tenantId, 'owner',
       `SELECT id FROM tenant.deployments WHERE status = 'active'`);
 
-    // This would call the billing engine to calculate and insert ledger entries
-    const billed = deployments.rows.length;
+    let billed = 0;
+    const errors: string[] = [];
 
-    return { success: true, message: `Billing processed ${billed} deployments` };
+    // Calculate billing period: last month
+    const now = new Date();
+    const periodEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0, 10);
+    const periodStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 10);
+
+    for (const dep of deployments.rows) {
+      try {
+        const input: BillingInput = {
+          deployment_id: dep.id,
+          period_start: periodStart,
+          period_end: periodEnd,
+        };
+        const result = await this.billingEngine.calculateBilling(tenantId, input);
+        if (result.entries.length > 0) {
+          await this.billingEngine.postBilling(tenantId, result);
+          billed++;
+        }
+      } catch (error) {
+        errors.push(`Deployment ${dep.id}: ${(error as Error).message}`);
+      }
+    }
+
+    const message = `Billing processed ${billed}/${deployments.rows.length} deployments`;
+    if (errors.length > 0) {
+      this.logger.warn(`Billing errors: ${errors.join('; ')}`);
+      return { success: true, message: `${message} (${errors.length} errors)` };
+    }
+    return { success: true, message };
   }
 
   private async processDailyRollup(tenantId: string) {
@@ -103,6 +136,11 @@ export class NightlyWorker {
       `DELETE FROM tenant.notifications WHERE created_at < NOW() - INTERVAL '90 days'`);
 
     return { success: true, message: `Cleaned up ${result.rowCount} old notifications` };
+  }
+
+  private async processAlerts(tenantId: string) {
+    await this.alertEngine.runAllChecks(tenantId);
+    return { success: true, message: 'Alert checks completed' };
   }
 
   /** Daily digest (ALT-04 hardening-lite): one in-app summary from open alerts. */

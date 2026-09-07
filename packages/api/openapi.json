@@ -181,6 +181,44 @@
         ]
       }
     },
+    "/tenants/settings": {
+      "get": {
+        "operationId": "TenantSettingsController_getSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get tenant settings",
+        "tags": [
+          "Tenant Settings"
+        ]
+      },
+      "put": {
+        "operationId": "TenantSettingsController_updateSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Update tenant settings",
+        "tags": [
+          "Tenant Settings"
+        ]
+      }
+    },
     "/machines": {
       "get": {
         "operationId": "MachinesController_findAll",
@@ -599,6 +637,198 @@
         "summary": "Update an operator",
         "tags": [
           "Operators"
+        ]
+      }
+    },
+    "/users": {
+      "get": {
+        "operationId": "UsersController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List all users in tenant",
+        "tags": [
+          "Users"
+        ]
+      },
+      "post": {
+        "operationId": "UsersController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create a new user",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/users/stats": {
+      "get": {
+        "operationId": "UsersController_getStats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get user statistics",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "operationId": "UsersController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Get user by ID",
+        "tags": [
+          "Users"
+        ]
+      },
+      "put": {
+        "operationId": "UsersController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Update a user",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/users/invite": {
+      "post": {
+        "operationId": "UsersController_invite",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Invite a new user (owner only)",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/users/{id}/deactivate": {
+      "put": {
+        "operationId": "UsersController_deactivate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Deactivate a user",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/users/{id}/reactivate": {
+      "put": {
+        "operationId": "UsersController_reactivate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Reactivate a user",
+        "tags": [
+          "Users"
         ]
       }
     },
@@ -1691,6 +1921,26 @@
         ]
       }
     },
+    "/alerts/check": {
+      "post": {
+        "operationId": "AlertsController_runChecks",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Run all alert checks for the tenant",
+        "tags": [
+          "Alerts"
+        ]
+      }
+    },
     "/photos/presign": {
       "post": {
         "operationId": "PhotosController_presign",
@@ -1935,6 +2185,46 @@
           }
         ],
         "summary": "Import clients from CSV",
+        "tags": [
+          "Import"
+        ]
+      }
+    },
+    "/import/daily-log": {
+      "post": {
+        "operationId": "ImportController_importDailyLog",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Import daily work log from CSV",
+        "tags": [
+          "Import"
+        ]
+      }
+    },
+    "/import/payments": {
+      "post": {
+        "operationId": "ImportController_importPayments",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Import payments/receipts from CSV",
         "tags": [
           "Import"
         ]

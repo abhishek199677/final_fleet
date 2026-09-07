@@ -119,4 +119,119 @@ export class ImportService {
     this.logger.log(`Import clients: ${result.imported}/${result.total} succeeded`);
     return result;
   }
+
+  async importDailyLog(tenantId: string, csvData: string): Promise<ImportResult> {
+    const lines = csvData.trim().split('\n');
+    if (lines.length < 2) throw new BadRequestException('CSV must have a header row and at least one data row');
+
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const requiredHeaders = ['machine_code', 'date', 'start_meter', 'end_meter'];
+    const missing = requiredHeaders.filter(h => !headers.includes(h));
+    if (missing.length > 0) throw new BadRequestException(`Missing required columns: ${missing.join(', ')}`);
+
+    const result: ImportResult = { total: 0, imported: 0, errors: [] };
+
+    for (let i = 1; i < lines.length; i++) {
+      result.total++;
+      const values = lines[i].split(',').map(v => v.trim());
+      const row: Record<string, string> = {};
+      headers.forEach((h, idx) => { row[h] = values[idx]; });
+
+      try {
+        if (!row.machine_code || !row.date || !row.start_meter || !row.end_meter) {
+          throw new Error('machine_code, date, start_meter, and end_meter are required');
+        }
+
+        // Look up machine by code
+        const machineResult = await this.db.queryWithTenant(tenantId, 'owner',
+          `SELECT id FROM tenant.machines WHERE code = $1`, [row.machine_code]);
+        if (machineResult.rows.length === 0) throw new Error(`Machine "${row.machine_code}" not found`);
+        const machineId = machineResult.rows[0].id;
+
+        // Look up deployment for this machine on this date
+        const deploymentResult = await this.db.queryWithTenant(tenantId, 'owner',
+          `SELECT id FROM tenant.deployments 
+           WHERE machine_id = $1 AND status = 'active'
+           AND start_date <= $2 AND (end_date IS NULL OR end_date >= $2)`,
+          [machineId, row.date]);
+        const deploymentId = deploymentResult.rows[0]?.id;
+
+        // Look up first active operator
+        const operatorResult = await this.db.queryWithTenant(tenantId, 'owner',
+          `SELECT id FROM tenant.operators WHERE is_active = true LIMIT 1`);
+        const operatorId = operatorResult.rows[0]?.id;
+
+        const startMeter = parseFloat(row.start_meter);
+        const endMeter = parseFloat(row.end_meter);
+        const unitsRun = endMeter - startMeter;
+
+        await this.db.queryWithTenant(tenantId, 'owner',
+          `INSERT INTO tenant.work_sessions (
+            tenant_id, machine_id, deployment_id, operator_id, 
+            start_at, end_at, start_meter, end_meter, units_run, 
+            billable, source, client_uuid
+          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+          [tenantId, machineId, deploymentId || null, operatorId || null,
+           `${row.date}T08:00:00Z`, `${row.date}T17:00:00Z`,
+           startMeter, endMeter, unitsRun,
+           true, 'import', row.client_uuid || crypto.randomUUID()]);
+        result.imported++;
+      } catch (error) {
+        result.errors.push({ row: i + 1, message: (error as Error).message });
+      }
+    }
+
+    this.logger.log(`Import daily log: ${result.imported}/${result.total} succeeded`);
+    return result;
+  }
+
+  async importPayments(tenantId: string, csvData: string): Promise<ImportResult> {
+    const lines = csvData.trim().split('\n');
+    if (lines.length < 2) throw new BadRequestException('CSV must have a header row and at least one data row');
+
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const requiredHeaders = ['client_name', 'date', 'amount'];
+    const missing = requiredHeaders.filter(h => !headers.includes(h));
+    if (missing.length > 0) throw new BadRequestException(`Missing required columns: ${missing.join(', ')}`);
+
+    const result: ImportResult = { total: 0, imported: 0, errors: [] };
+
+    for (let i = 1; i < lines.length; i++) {
+      result.total++;
+      const values = lines[i].split(',').map(v => v.trim());
+      const row: Record<string, string> = {};
+      headers.forEach((h, idx) => { row[h] = values[idx]; });
+
+      try {
+        if (!row.client_name || !row.date || !row.amount) {
+          throw new Error('client_name, date, and amount are required');
+        }
+
+        // Look up client by name
+        const clientResult = await this.db.queryWithTenant(tenantId, 'owner',
+          `SELECT id FROM tenant.clients WHERE name ILIKE $1`, [row.client_name]);
+        if (clientResult.rows.length === 0) throw new Error(`Client "${row.client_name}" not found`);
+        const clientId = clientResult.rows[0].id;
+
+        const amount = parseFloat(row.amount);
+        const kind = row.type === 'advance' ? 'advance' : 'receipt';
+
+        await this.db.queryWithTenant(tenantId, 'owner',
+          `INSERT INTO tenant.client_money_events (
+            tenant_id, client_id, event_type, event_date, 
+            currency, amount_minor, fx_rate, base_minor, 
+            notes, source, client_uuid
+          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+          [tenantId, clientId, kind, row.date,
+           row.currency || 'INR', Math.round(amount * 100), 1, Math.round(amount * 100),
+           row.notes || null, 'import', row.client_uuid || crypto.randomUUID()]);
+        result.imported++;
+      } catch (error) {
+        result.errors.push({ row: i + 1, message: (error as Error).message });
+      }
+    }
+
+    this.logger.log(`Import payments: ${result.imported}/${result.total} succeeded`);
+    return result;
+  }
 }

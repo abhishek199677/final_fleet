@@ -7,6 +7,7 @@ import { MachinesModule } from './modules/machines/machines.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { DeploymentsModule } from './modules/deployments/deployments.module';
 import { OperatorsModule } from './modules/operators/operators.module';
+import { UsersModule } from './modules/users/users.module';
 import { SitesModule } from './modules/sites/sites.module';
 import { WorkSessionsModule } from './modules/work-sessions/work-sessions.module';
 import { FuelDowntimeModule } from './modules/fuel-downtime/fuel-downtime.module';
@@ -24,6 +25,7 @@ import { NotifyModule } from './modules/notify/notify.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { SupportModule } from './modules/support/support.module';
+import { WorkersModule } from './workers/workers.module';
 import { DatabaseModule } from './common/database/database.module';
 import { TenantJwtStrategy } from './common/strategies/tenant-jwt.strategy';
 import { PlatformJwtStrategy } from './common/strategies/platform-jwt.strategy';
@@ -44,6 +46,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     ClientsModule,
     DeploymentsModule,
     OperatorsModule,
+    UsersModule,
     SitesModule,
     WorkSessionsModule,
     FuelDowntimeModule,
@@ -61,6 +64,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     AuditModule,
     ReportsModule,
     SupportModule,
+    WorkersModule,
     DatabaseModule,
   ],
   providers: [

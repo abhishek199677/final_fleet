@@ -8,12 +8,19 @@ import Link from 'next/link';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchList } from '@/lib/api/fetch-list';
 
+interface AgeingBucket {
+  label: string;
+  amount: number;
+  count: number;
+}
+
 export default function ClientDetail() {
   const params = useParams();
   const id = params.id as string;
   const [client, setClient] = useState<Record<string, unknown> | null>(null);
   const [deployments, setDeployments] = useState<Record<string, unknown>[]>([]);
   const [receivable, setReceivable] = useState<Record<string, unknown> | null>(null);
+  const [ageing, setAgeing] = useState<AgeingBucket[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,7 +44,46 @@ export default function ClientDetail() {
     ]).then(([c, d, r]) => {
       setClient(c);
       setDeployments(d.filter((dep) => dep.client_id === id));
-      setReceivable(r.find((rec) => rec.client_id === id) || null);
+      const recv = r.find((rec) => rec.client_id === id) || null;
+      setReceivable(recv);
+      
+      // Calculate ageing from ledger entries
+      if (recv && recv.ledger) {
+        const now = new Date();
+        const buckets: AgeingBucket[] = [
+          { label: 'Current', amount: 0, count: 0 },
+          { label: '1-30 days', amount: 0, count: 0 },
+          { label: '31-60 days', amount: 0, count: 0 },
+          { label: '61-90 days', amount: 0, count: 0 },
+          { label: '90+ days', amount: 0, count: 0 },
+        ];
+        
+        for (const entry of recv.ledger as Record<string, unknown>[]) {
+          if (entry.kind === 'invoice' && entry.due_date) {
+            const dueDate = new Date(entry.due_date as string);
+            const daysPastDue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+            const amount = Number(entry.amount_minor || 0);
+            
+            if (daysPastDue <= 0) {
+              buckets[0].amount += amount;
+              buckets[0].count++;
+            } else if (daysPastDue <= 30) {
+              buckets[1].amount += amount;
+              buckets[1].count++;
+            } else if (daysPastDue <= 60) {
+              buckets[2].amount += amount;
+              buckets[2].count++;
+            } else if (daysPastDue <= 90) {
+              buckets[3].amount += amount;
+              buckets[3].count++;
+            } else {
+              buckets[4].amount += amount;
+              buckets[4].count++;
+            }
+          }
+        }
+        setAgeing(buckets);
+      }
     }).finally(() => setLoading(false));
   }, [id]);
 
@@ -93,6 +139,28 @@ export default function ClientDetail() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Receivables Ageing */}
+      {ageing.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Receivables Ageing</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-5">
+              {ageing.map((bucket) => (
+                <div key={bucket.label} className="text-center">
+                  <p className="text-sm text-muted-foreground">{bucket.label}</p>
+                  <p className={`text-lg font-bold ${bucket.label === 'Current' ? 'text-green-600' : bucket.amount > 0 ? 'text-red-600' : ''}`}>
+                    {formatMoney(bucket.amount)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{bucket.count} invoices</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Active Deployments */}
       <Card>

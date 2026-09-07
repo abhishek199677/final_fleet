@@ -1,13 +1,17 @@
 import { Controller, Get, Post, Param, Body, Query, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AlertsService } from './alerts.service';
+import { AlertEngineService } from './alert-engine.service';
 import { TenantRequest } from '../../common/middleware/tenant-context.middleware';
 
 @ApiTags('Alerts')
 @ApiBearerAuth('tenant-auth')
 @Controller('alerts')
 export class AlertsController {
-  constructor(private service: AlertsService) {}
+  constructor(
+    private service: AlertsService,
+    private alertEngine: AlertEngineService
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'List alerts' })
@@ -32,5 +36,12 @@ export class AlertsController {
   @ApiOperation({ summary: 'Create an alert rule' })
   createRule(@Req() req: TenantRequest, @Body() dto: Record<string, unknown>) {
     return this.service.createRule(req.tenant!.tenantId, dto, dto.client_uuid as string);
+  }
+
+  @Post('check')
+  @ApiOperation({ summary: 'Run all alert checks for the tenant' })
+  async runChecks(@Req() req: TenantRequest) {
+    await this.alertEngine.runAllChecks(req.tenant!.tenantId);
+    return { status: 'completed' };
   }
 }
