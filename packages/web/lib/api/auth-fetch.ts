@@ -11,6 +11,8 @@ export async function authFetch(path: string, options: RequestInit = {}): Promis
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-  const url = API_BASE ? `${API_BASE}${path}` : path;
+  // When calling API directly, strip /api prefix (e.g. /api/v1/machines -> /v1/machines)
+  const apiPath = API_BASE && path.startsWith('/api') ? path.slice(4) : path;
+  const url = API_BASE ? `${API_BASE}${apiPath}` : path;
   return fetch(url, { ...options, headers });
 }

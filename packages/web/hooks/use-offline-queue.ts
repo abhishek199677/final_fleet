@@ -90,6 +90,14 @@ export function useOfflineQueue() {
   const [isOnline, setIsOnline] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
 
+  const API_BASE = typeof process !== 'undefined' ? (process.env.NEXT_PUBLIC_API_URL || '') : '';
+
+  function resolveUrl(url: string): string {
+    if (API_BASE && url.startsWith('/api')) return `${API_BASE}${url.slice(4)}`;
+    if (API_BASE) return `${API_BASE}${url}`;
+    return url;
+  }
+
   const processQueue = useCallback(async () => {
     if (!navigator.onLine) return;
 
@@ -98,7 +106,7 @@ export function useOfflineQueue() {
 
     for (const item of items) {
       try {
-        const response = await fetch(item.url, {
+        const response = await fetch(resolveUrl(item.url), {
           method: item.method,
           headers: item.headers,
           body: item.body,
@@ -128,7 +136,7 @@ export function useOfflineQueue() {
     async (url: string, method: string, body: unknown, headers: Record<string, string> = {}) => {
       if (navigator.onLine) {
         try {
-          const response = await fetch(url, {
+          const response = await fetch(resolveUrl(url), {
             method,
             headers: { 'Content-Type': 'application/json', ...headers },
             body: JSON.stringify(body),
