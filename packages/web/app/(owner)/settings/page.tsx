@@ -414,7 +414,7 @@ export default function Settings() {
                       <div key={pc.id as string} className="flex items-center justify-between p-2 bg-muted rounded">
                         <div>
                           <span className="font-medium">{pc.period as string}</span>
-                          {pc.note && <span className="text-sm text-muted-foreground ml-2">{pc.note as string}</span>}
+                          {Boolean(pc.note) && <span className="text-sm text-muted-foreground ml-2">{pc.note as string}</span>}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {tPeriodClose('closedBy')} {pc.closed_by_name as string || '—'}

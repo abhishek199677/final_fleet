@@ -42,19 +42,19 @@ export default function SiteDetail() {
             <span className="text-muted-foreground">Client</span>
             <span className="font-medium">{(site.clients as Record<string, unknown>)?.name as string ?? site.client_id as string}</span>
           </div>
-          {site.location && (
+          {Boolean(site.location) && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Location</span>
               <span className="font-medium">{site.location as string}</span>
             </div>
           )}
-          {site.start_date && (
+          {Boolean(site.start_date) && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Start Date</span>
               <span className="font-medium">{site.start_date as string}</span>
             </div>
           )}
-          {site.end_date && (
+          {Boolean(site.end_date) && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">End Date</span>
               <span className="font-medium">{site.end_date as string}</span>

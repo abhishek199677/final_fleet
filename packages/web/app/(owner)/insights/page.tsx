@@ -29,7 +29,7 @@ export default function Insights() {
   const downtimeByReason = downtime.reduce<Record<string, number>>((acc, d) => {
     const reason = (d.reason_code as string) || 'unknown';
     if (d.started_at && d.ended_at) {
-      const hours = (new Date(d.ended_at).getTime() - new Date(d.started_at).getTime()) / (1000 * 60 * 60);
+      const hours = (new Date(d.ended_at as string).getTime() - new Date(d.started_at as string).getTime()) / (1000 * 60 * 60);
       acc[reason] = (acc[reason] || 0) + Math.round(hours * 10) / 10;
     } else {
       acc[reason] = (acc[reason] || 0) + 1;
