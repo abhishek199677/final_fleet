@@ -22,12 +22,10 @@ COPY tsconfig.base.json ./
 RUN pnpm --filter @fleetos/shared build
 RUN pnpm --filter @fleetos/web build
 
-# Copy standalone output
+# Copy standalone output to root
 RUN cp -r packages/web/.next/standalone ./
-RUN cp -r packages/web/.next/static packages/web/.next/standalone/.next/static
-RUN cp -r packages/web/public packages/web/.next/standalone/public || true
-
-WORKDIR /app/packages/web/.next/standalone
+RUN cp -r packages/web/.next/static ./.next/static
+RUN cp -r packages/web/public ./public || true
 
 EXPOSE 3000
 
