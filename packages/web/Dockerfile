@@ -2,9 +2,6 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
@@ -19,7 +16,10 @@ RUN pnpm install --frozen-lockfile
 # Copy source and configs
 COPY packages/web/ packages/web/
 COPY packages/shared/ packages/shared/
-COPY tsconfig.base.json ./
+COPY tsconfig.base.json .@
+
+# Set API URL at build time
+ENV NEXT_PUBLIC_API_URL=https://fleetos-api-rdwp.onrender.com
 
 # Build
 RUN pnpm --filter @fleetos/shared build
