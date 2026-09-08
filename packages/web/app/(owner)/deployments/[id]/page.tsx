@@ -58,7 +58,7 @@ export default function DeploymentDetail() {
             <span className="text-muted-foreground">Start Date</span>
             <span className="font-medium">{deployment.start_date as string}</span>
           </div>
-          {deployment.end_date && (
+          {Boolean(deployment.end_date) && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">End Date</span>
               <span className="font-medium">{deployment.end_date as string}</span>
