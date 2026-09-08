@@ -1,16 +1,11 @@
 services:
-  # ─── API (NestJS) ───
   - type: web
     name: fleetos-api
     runtime: docker
     dockerfilePath: packages/api/Dockerfile
-    port: 3001
-    healthCheckPath: /api/v1/health
     envVars:
-      - key: JWT_SECRET
-        generateValue: true
       - key: API_PORT
-        value: 3001
+        value: "3001"
       - key: NODE_ENV
         value: production
       - key: UPLOAD_DIR
@@ -18,9 +13,7 @@ services:
       - key: EXPORT_DIR
         value: /tmp/exports
 
-  # ─── Web (Next.js) ───
   - type: web
     name: fleetos-web
     runtime: docker
     dockerfilePath: packages/web/Dockerfile
-    port: 3000
