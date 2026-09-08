@@ -1,5 +1,7 @@
 'use client';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
+
 export async function authFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('fleetos_token') : null;
   const headers: Record<string, string> = {
@@ -9,5 +11,6 @@ export async function authFetch(path: string, options: RequestInit = {}): Promis
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-  return fetch(path, { ...options, headers });
+  const url = API_BASE ? `${API_BASE}${path}` : path;
+  return fetch(url, { ...options, headers });
 }
