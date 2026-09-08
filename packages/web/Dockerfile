@@ -24,7 +24,7 @@ RUN pnpm --filter @fleetos/web build
 
 # Copy standalone output to root
 RUN cp -r packages/web/.next/standalone ./
-RUN cp -r packages/web/.next/static ./.next/static
+RUN mkdir -p .next/static && cp -r packages/web/.next/static/* ./.next/static/
 RUN cp -r packages/web/public ./public || true
 
 EXPOSE 3000
