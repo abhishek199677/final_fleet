@@ -51,9 +51,3 @@ services:
     envVars:
       - key: NEXT_PUBLIC_API_URL
         value: https://fleetos-api.onrender.com
-
-  # ─── Database (PostgreSQL) ───
-  - type: postgres
-    name: fleetos-db
-    database: fleetos
-    plan: free
