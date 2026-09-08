@@ -14,10 +14,11 @@ COPY packages/db/package.json packages/db/
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Copy source
+# Copy source and configs
 COPY packages/api/ packages/api/
 COPY packages/shared/ packages/shared/
 COPY packages/db/ packages/db/
+COPY tsconfig.base.json ./
 
 # Build
 RUN pnpm --filter @fleetos/shared build
