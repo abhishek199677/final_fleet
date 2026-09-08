@@ -16,7 +16,7 @@ RUN pnpm install --frozen-lockfile
 # Copy source and configs
 COPY packages/web/ packages/web/
 COPY packages/shared/ packages/shared/
-COPY tsconfig.base.json .@
+COPY tsconfig.base.json ./
 
 # Build
 RUN pnpm --filter @fleetos/shared build
