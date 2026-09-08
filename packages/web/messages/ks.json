@@ -266,10 +266,10 @@
     "fx": "FX",
     "email": "Email",
     "role": "Role",
-    "evidence": "Evidence",
-    "thresholds": "Thresholds",
-    "language": "Language",
-    "languageDesc": "Converted screens follow this language; the rest follow next."
+    "evidence": "ثبوت",
+    "thresholds": "حدود",
+    "language": "ژبه",
+    "languageDesc": "تبدیل شدہ اسکرینز ہا ژبه تٲziej پیروی کردن۔"
   },
   "alerts": {
     "title": "Alerts",
@@ -337,14 +337,14 @@
   "periodClose": {
     "title": "Period Close",
     "closePeriod": "Close Period",
-    "period": "Period (YYYY-MM)",
-    "note": "Note (optional)",
-    "notePlaceholder": "Reason for closing...",
+    "period": "مدت (YYYY-MM)",
+    "note": "نوٹ (آپشنل)",
     "closed": "Closed",
     "closedBy": "Closed by",
-    "closedPeriods": "Closed Periods",
-    "noClosed": "No closed periods.",
-    "confirmClose": "Are you sure you want to close this period? This action is irreversible.",
-    "desc": "Closing a period locks work data and triggers billing. This action is irreversible."
+    "notePlaceholder": "بند کرن glaciers... طریقہ",
+    "closedPeriods": "بند مدت",
+    "noClosed": "کوئی بند مدت نہیں۔",
+    "confirmClose": "کیا تumlah یقینی طور پر یہ مدت بند کرنا چاہتے ہیں؟ یہ عمل واپس نہیں ہو سکتا۔",
+    "desc": "مدت بند کرنے سے کام کا ڈیٹا لاک ہو جاتا ہے اور بلنگ شروع ہو جاتی ہے۔ یہ عمل واپس نہیں ہو سکتا۔"
   }
 }

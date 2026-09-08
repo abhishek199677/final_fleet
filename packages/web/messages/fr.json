@@ -265,7 +265,11 @@
     "categories": "Catégories",
     "fx": "Devises",
     "email": "E-mail",
-    "role": "Rôle"
+    "role": "Rôle",
+    "evidence": "Preuves",
+    "thresholds": "Seuils",
+    "language": "Langue",
+    "languageDesc": "Les écrans convertis suivent cette langue ; les autres suivront."
   },
   "alerts": {
     "title": "Alertes",
@@ -333,9 +337,14 @@
   "periodClose": {
     "title": "Clôture de période",
     "closePeriod": "Clôturer la période",
-    "period": "Période",
-    "note": "Note",
+    "period": "Période (AAAA-MM)",
+    "note": "Note (optionnel)",
     "closed": "Clôturé",
-    "closedBy": "Clôturé par"
+    "closedBy": "Clôturé par",
+    "notePlaceholder": "Raison de la clôture...",
+    "closedPeriods": "Périodes clôturées",
+    "noClosed": "Aucune période clôturée.",
+    "confirmClose": "Voulez-vous vraiment clôturer cette période ? Cette action est irréversible.",
+    "desc": "Clôturer une période verrouille les données de travail et lance la facturation. Cette action est irréversible."
   }
 }

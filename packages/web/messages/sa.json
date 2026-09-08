@@ -266,10 +266,10 @@
     "fx": "FX",
     "email": "Email",
     "role": "Role",
-    "evidence": "Evidence",
-    "thresholds": "Thresholds",
-    "language": "Language",
-    "languageDesc": "Converted screens follow this language; the rest follow next."
+    "evidence": "प्रमाणः",
+    "thresholds": "सीमा",
+    "language": "भाषा",
+    "languageDesc": "रूपान्तरिताः स्क्रीनः एतां भाषां पालयन्ति; अवशिष्टाः परां भाषां पालयिष्यन्ति।"
   },
   "alerts": {
     "title": "Alerts",
@@ -337,14 +337,14 @@
   "periodClose": {
     "title": "Period Close",
     "closePeriod": "Close Period",
-    "period": "Period (YYYY-MM)",
-    "note": "Note (optional)",
-    "notePlaceholder": "Reason for closing...",
+    "period": "कालः (YYYY-MM)",
+    "note": "टिप्पणी (वैकल्पिकम्)",
     "closed": "Closed",
     "closedBy": "Closed by",
-    "closedPeriods": "Closed Periods",
-    "noClosed": "No closed periods.",
-    "confirmClose": "Are you sure you want to close this period? This action is irreversible.",
-    "desc": "Closing a period locks work data and triggers billing. This action is irreversible."
+    "notePlaceholder": "बन्द कर्तुम् कारणम्...",
+    "closedPeriods": "बन्द कालाः",
+    "noClosed": "न कश्चित् बन्द कालः अस्ति।",
+    "confirmClose": "किम् भवान् वास्तवम् एतम् कालम् बन्द कर्तुम् इच्छति? एतत् कर्म अपरिवर्तनीयम् अस्ति।",
+    "desc": "कालम् बन्द कर्णे कर्म डाटा लॉक भवति तथा बिलिंग आरभते। एतत् कर्म अपरिवर्तनीयम् अस्ति।"
   }
 }

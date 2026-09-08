@@ -266,10 +266,10 @@
     "fx": "FX",
     "email": "Email",
     "role": "Role",
-    "evidence": "Evidence",
-    "thresholds": "Thresholds",
-    "language": "Language",
-    "languageDesc": "Converted screens follow this language; the rest follow next."
+    "evidence": "पुरावो",
+    "thresholds": "मर्यादा",
+    "language": "भांव",
+    "languageDesc": "रूपांतरित स्क्रीन ही भांव फांवतात; उरिल्या पुढच्या भांव फांवतील।"
   },
   "alerts": {
     "title": "Alerts",
@@ -337,14 +337,14 @@
   "periodClose": {
     "title": "Period Close",
     "closePeriod": "Close Period",
-    "period": "Period (YYYY-MM)",
-    "note": "Note (optional)",
-    "notePlaceholder": "Reason for closing...",
+    "period": "कालावधी (YYYY-MM)",
+    "note": "टीप (पर्यायी)",
     "closed": "Closed",
     "closedBy": "Closed by",
-    "closedPeriods": "Closed Periods",
-    "noClosed": "No closed periods.",
-    "confirmClose": "Are you sure you want to close this period? This action is irreversible.",
-    "desc": "Closing a period locks work data and triggers billing. This action is irreversible."
+    "notePlaceholder": "बंद करपाक खातीर कारण...",
+    "closedPeriods": "बंद कालावधी",
+    "noClosed": "कोणये बंद कालावधी ना.",
+    "confirmClose": "तुम्हाला खरोखर ही कालावधी बंद करायची आहे का? ही क्रिया परिवर्तनीय नाही.",
+    "desc": "कालावधी बंद केल्यास कार्य डेटा लॉक होतो आणि बिलिंग सुरू होते. ही क्रिया परिवर्तनीय नाही."
   }
 }

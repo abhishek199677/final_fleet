@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
@@ -21,8 +21,16 @@ COPY packages/shared/ packages/shared/
 RUN pnpm --filter @fleetos/shared build
 RUN pnpm --filter @fleetos/web build
 
-# Expose port
+# Copy standalone output
+RUN cp -r packages/web/.next/standalone ./
+RUN cp -r packages/web/.next/static packages/web/.next/standalone/.next/static
+RUN cp -r packages/web/public packages/web/.next/standalone/public || true
+
+WORKDIR /app/packages/web/.next/standalone
+
 EXPOSE 3000
 
-# Start
-CMD ["node", "packages/web/server.js"]
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]

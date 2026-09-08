@@ -1,0 +1,9 @@
+{
+  "buildCommand": "pnpm --filter @fleetos/shared build && pnpm --filter @fleetos/web build",
+  "outputDirectory": "packages/web/.next",
+  "framework": "nextjs",
+  "installCommand": "pnpm install",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "@api-url"
+  }
+}

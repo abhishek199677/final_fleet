@@ -20,6 +20,8 @@ interface TenantSettings {
 export default function Settings() {
   const t = useTranslations('settings');
   const tCommon = useTranslations('common');
+  const tNotifications = useTranslations('notifications');
+  const tPeriodClose = useTranslations('periodClose');
   const { locale, setLocale } = useLocale();
   const [tab, setTab] = useState<'users' | 'machines' | 'categories' | 'fx' | 'evidence' | 'thresholds' | 'notifications' | 'periodClose' | 'language'>('users');
   const [periodClosePeriod, setPeriodClosePeriod] = useState('');
@@ -86,11 +88,11 @@ export default function Settings() {
             className={`px-4 py-2 font-medium whitespace-nowrap ${tab === t2 ? 'border-b-2 border-primary' : 'text-muted-foreground'}`}
             onClick={() => setTab(t2)}
           >
-            {t2 === 'language' ? (locale === 'fr' ? 'Langue' : 'Language') : 
-             t2 === 'evidence' ? 'Evidence' : 
-             t2 === 'thresholds' ? 'Thresholds' :
-             t2 === 'notifications' ? (locale === 'fr' ? 'Notifications' : 'Notifications') :
-             t2 === 'periodClose' ? (locale === 'fr' ? 'Clôture' : 'Period Close') : t(t2)}
+            {t2 === 'language' ? t('language') :
+             t2 === 'evidence' ? t('evidence') :
+             t2 === 'thresholds' ? t('thresholds') :
+             t2 === 'notifications' ? tNotifications('title') :
+             t2 === 'periodClose' ? tPeriodClose('title') : t(t2)}
           </button>
         ))}
       </div>
@@ -316,13 +318,11 @@ export default function Settings() {
           {tab === 'notifications' && (
             <Card>
               <CardHeader>
-                <CardTitle>{locale === 'fr' ? 'Préférences de notification' : 'Notification Preferences'}</CardTitle>
+                <CardTitle>{tNotifications('preferences')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-muted-foreground">
-                  {locale === 'fr' 
-                    ? 'Choisissez comment recevoir les alertes et notifications.'
-                    : 'Choose how you receive alerts and notifications.'}
+                  {tNotifications('desc')}
                 </p>
                 {users.filter(u => u.is_active).map((u: Record<string, unknown>) => {
                   const prefs = (u.notification_preferences as Record<string, boolean>) ?? { whatsapp: true, sms: false, in_app: true };
@@ -346,7 +346,7 @@ export default function Settings() {
                                 });
                               }}
                             />
-                            {ch === 'in_app' ? (locale === 'fr' ? 'Dans l\'app' : 'In-app') : ch.charAt(0).toUpperCase() + ch.slice(1)}
+                            {ch === 'in_app' ? tNotifications('inApp') : ch.charAt(0).toUpperCase() + ch.slice(1)}
                           </label>
                         ))}
                       </div>
@@ -361,17 +361,15 @@ export default function Settings() {
             <div className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>{locale === 'fr' ? 'Clôture de période' : 'Period Close'}</CardTitle>
+                  <CardTitle>{tPeriodClose('title')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-muted-foreground">
-                    {locale === 'fr' 
-                      ? 'Clôturer une période verrouille les données de travail et lance la facturation. Cette action est irréversible.'
-                      : 'Closing a period locks work data and triggers billing. This action is irreversible.'}
-                  </p>
+                  {tPeriodClose('desc')}
+                </p>
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <label className="text-sm font-medium">{locale === 'fr' ? 'Période (AAAA-MM)' : 'Period (YYYY-MM)'}</label>
+                      <label className="text-sm font-medium">{tPeriodClose('period')}</label>
                       <Input
                         type="month"
                         value={periodClosePeriod}
@@ -379,20 +377,18 @@ export default function Settings() {
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">{locale === 'fr' ? 'Note (optionnel)' : 'Note (optional)'}</label>
+                      <label className="text-sm font-medium">{tPeriodClose('note')}</label>
                       <Input
                         value={periodCloseNote}
                         onChange={(e) => setPeriodCloseNote(e.target.value)}
-                        placeholder={locale === 'fr' ? 'Raison de la clôture...' : 'Reason for closing...'}
+                        placeholder={tPeriodClose('notePlaceholder')}
                       />
                     </div>
                     <div className="flex items-end">
                       <Button
                         onClick={() => {
                           if (!periodClosePeriod) return;
-                          if (!confirm(locale === 'fr' 
-                            ? 'Voulez-vous vraiment clôturer cette période ? Cette action est irréversible.'
-                            : 'Are you sure you want to close this period? This action is irreversible.')) return;
+                          if (!confirm(tPeriodClose('confirmClose'))) return;
                           void authFetch(`/api/v1/tenants/period-close/${periodClosePeriod}`, {
                             method: 'POST',
                             body: JSON.stringify({ note: periodCloseNote || undefined }),
@@ -402,7 +398,7 @@ export default function Settings() {
                           });
                         }}
                       >
-                        {locale === 'fr' ? 'Clôturer' : 'Close Period'}
+                        {tPeriodClose('closePeriod')}
                       </Button>
                     </div>
                   </div>
@@ -410,7 +406,7 @@ export default function Settings() {
               </Card>
               <Card>
                 <CardHeader>
-                  <CardTitle>{locale === 'fr' ? 'Périodes clôturées' : 'Closed Periods'}</CardTitle>
+                  <CardTitle>{tPeriodClose('closedPeriods')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
@@ -421,13 +417,13 @@ export default function Settings() {
                           {pc.note && <span className="text-sm text-muted-foreground ml-2">{pc.note as string}</span>}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {locale === 'fr' ? 'Clôturé par' : 'Closed by'} {pc.closed_by_name as string || '—'}
+                          {tPeriodClose('closedBy')} {pc.closed_by_name as string || '—'}
                         </div>
                       </div>
                     ))}
                     {periodCloses.length === 0 && (
                       <p className="text-muted-foreground text-center py-4">
-                        {locale === 'fr' ? 'Aucune période clôturée.' : 'No closed periods.'}
+                        {tPeriodClose('noClosed')}
                       </p>
                     )}
                   </div>
@@ -439,24 +435,47 @@ export default function Settings() {
           {tab === 'language' && (
             <Card>
               <CardHeader>
-                <CardTitle>{locale === 'fr' ? 'Langue' : 'Language'}</CardTitle>
+                <CardTitle>{t('language')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex gap-2">
-                  {(['en', 'fr'] as Locale[]).map((l) => (
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    ['en', 'English'],
+                    ['fr', 'Français'],
+                    ['hi', 'हिन्दी'],
+                    ['bn', 'বাংলা'],
+                    ['te', 'తెలుగు'],
+                    ['mr', 'मराठी'],
+                    ['ta', 'தமிழ்'],
+                    ['gu', 'ગુજરાતી'],
+                    ['kn', 'ಕನ್ನಡ'],
+                    ['ml', 'മലയാളം'],
+                    ['pa', 'ਪੰਜਾਬੀ'],
+                    ['or', 'ଓଡ଼ିଆ'],
+                    ['as', 'অসমীয়া'],
+                    ['ur', 'اردو'],
+                    ['ne', 'नेपाली'],
+                    ['sd', 'سنڌي'],
+                    ['ks', 'کٲشُر'],
+                    ['doi', 'डोगरी'],
+                    ['kok', 'कोंकणी'],
+                    ['mai', 'मैथिली'],
+                    ['sat', 'ᱥᱟᱱᱛᱟᱲᱤ'],
+                    ['mni', 'মৈতৈলোন্'],
+                    ['brx', 'बड़ो'],
+                    ['sa', 'संस्कृतम्'],
+                  ] as [Locale, string][]).map(([l, label]) => (
                     <Button
                       key={l}
                       variant={locale === l ? 'default' : 'outline'}
                       onClick={() => setLocale(l)}
                     >
-                      {l === 'en' ? 'English' : 'Français'}
+                      {label}
                     </Button>
                   ))}
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {locale === 'fr'
-                    ? 'Les écrans convertis suivent cette langue ; les autres suivront.'
-                    : 'Converted screens follow this language; the rest follow next.'}
+                  {t('languageDesc')}
                 </p>
               </CardContent>
             </Card>

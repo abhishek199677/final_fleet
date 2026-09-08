@@ -53,11 +53,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (!res.ok) {
-      const error = await res.json();
+      const error = await res.json().catch(() => ({}));
       throw new Error(error.message || 'Login failed');
     }
 
-    const { token, user: userData } = await res.json();
+    const body = await res.json().catch(() => null);
+    if (!body?.token) throw new Error('Invalid server response');
+    const { token, user: userData } = body;
     localStorage.setItem('fleetos_token', token);
     setUser(userData);
 
@@ -77,11 +79,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (!res.ok) {
-      const error = await res.json();
+      const error = await res.json().catch(() => ({}));
       throw new Error(error.message || 'Registration failed');
     }
 
-    const { token, user: userData } = await res.json();
+    const body = await res.json().catch(() => null);
+    if (!body?.token) throw new Error('Invalid server response');
+    const { token, user: userData } = body;
     localStorage.setItem('fleetos_token', token);
     setUser(userData);
     router.push('/');

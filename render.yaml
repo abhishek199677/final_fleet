@@ -1,0 +1,59 @@
+services:
+  # ─── API (NestJS) ───
+  - type: web
+    name: fleetos-api
+    runtime: docker
+    dockerfilePath: packages/api/Dockerfile
+    port: 3001
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fleetos-db
+          property: connectionString
+      - key: DB_HOST
+        fromDatabase:
+          name: fleetos-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: fleetos-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: fleetos-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: fleetos-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: fleetos-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: API_PORT
+        value: 3001
+      - key: NODE_ENV
+        value: production
+      - key: UPLOAD_DIR
+        value: /tmp/uploads
+      - key: EXPORT_DIR
+        value: /tmp/exports
+
+  # ─── Web (Next.js) ───
+  - type: web
+    name: fleetos-web
+    runtime: docker
+    dockerfilePath: packages/web/Dockerfile
+    port: 3000
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://fleetos-api.onrender.com
+
+  # ─── Database (PostgreSQL) ───
+  - type: postgres
+    name: fleetos-db
+    database: fleetos
+    plan: free

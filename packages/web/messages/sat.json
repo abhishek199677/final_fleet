@@ -266,10 +266,10 @@
     "fx": "FX",
     "email": "Email",
     "role": "Role",
-    "evidence": "Evidence",
-    "thresholds": "Thresholds",
-    "language": "Language",
-    "languageDesc": "Converted screens follow this language; the rest follow next."
+    "evidence": "ᱯᱩᱨᱟᱹᱣᱤᱰᱟ",
+    "thresholds": "ᱥᱤᱨᱟ",
+    "language": "ᱯᱟᱨᱤ",
+    "languageDesc": "ᱰᱟᱨᱮᱢᱚᱨᱮᱢ ᱥᱴᱨᱤᱱ ᱫᱚ ᱤᱥ ᱯᱟᱨᱤ ᱧᱟᱢᱟ ᱠᱟᱱᱟ; ᱵᱟᱡᱚ ᱟᱜᱚᱨᱤ ᱧᱟᱢᱟ ᱠᱟᱱᱟ।"
   },
   "alerts": {
     "title": "Alerts",
@@ -337,14 +337,14 @@
   "periodClose": {
     "title": "Period Close",
     "closePeriod": "Close Period",
-    "period": "Period (YYYY-MM)",
-    "note": "Note (optional)",
-    "notePlaceholder": "Reason for closing...",
+    "period": "ᱰᱟᱨᱮ (YYYY-MM)",
+    "note": "ᱱᱚᱴ (ᱚᱵᱥᱚᱸ)",
     "closed": "Closed",
     "closedBy": "Closed by",
-    "closedPeriods": "Closed Periods",
-    "noClosed": "No closed periods.",
-    "confirmClose": "Are you sure you want to close this period? This action is irreversible.",
-    "desc": "Closing a period locks work data and triggers billing. This action is irreversible."
+    "notePlaceholder": "ᱵᱟᱱᱰ ᱠᱟᱨᱟ ᱠᱚᱨᱚᱢ...",
+    "closedPeriods": "ᱵᱟᱱᱰ ᱰᱟᱨᱮ",
+    "noClosed": "ᱡᱟᱨᱮᱡᱚᱟᱜ ᱵᱟᱱᱰ ᱰᱟᱨᱮ ᱵᱟᱝᱮᱭᱟᱜ ᱠᱟᱱᱟ।",
+    "confirmClose": "ᱟᱢ ᱱᱤᱭᱟᱜᱤᱭᱟᱢ ᱤᱥ ᱰᱟᱨᱮ ᱵᱟᱱᱰ ᱠᱟᱨᱮᱭᱟᱜ ᱠᱟᱱᱟ ᱵᱟᱝ? ᱤᱥ ᱠᱟᱹᱨᱚᱢ ᱵᱟᱝᱨᱟᱹᱣᱟᱜ ᱠᱟᱱᱟ।",
+    "desc": "ᱰᱟᱨᱮ ᱵᱟᱱᱰ ᱠᱟᱨᱮᱢᱚᱨᱮᱢ ᱠᱟᱹᱨᱚᱢ ᱫᱚ ᱥᱚᱹᱱᱟ ᱰᱟᱨᱮ ᱰᱚᱠᱤᱭᱟᱜ ᱠᱟᱱᱟ ᱟᱨᱣᱟ ᱵᱤᱨᱚᱞᱚᱢ ᱟᱨᱢᱭᱟᱨ ᱠᱟᱱᱟ। ᱤᱥ ᱠᱟᱹᱨᱚᱢ ᱵᱟᱝᱨᱟᱹᱣᱟᱜ ᱠᱟᱱᱟ।"
   }
 }

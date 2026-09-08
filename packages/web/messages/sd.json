@@ -266,10 +266,10 @@
     "fx": "FX",
     "email": "Email",
     "role": "Role",
-    "evidence": "Evidence",
-    "thresholds": "Thresholds",
-    "language": "Language",
-    "languageDesc": "Converted screens follow this language; the rest follow next."
+    "evidence": "ثبوت",
+    "thresholds": "حدود",
+    "language": "ٻولInsensitive",
+    "languageDesc": "تبدیل شدٞ اسکرینس هن ٻولي جي پيروي ڪندين؛ باقي ڍندن جي پيروي ڪندين۔"
   },
   "alerts": {
     "title": "Alerts",
@@ -337,14 +337,14 @@
   "periodClose": {
     "title": "Period Close",
     "closePeriod": "Close Period",
-    "period": "Period (YYYY-MM)",
-    "note": "Note (optional)",
-    "notePlaceholder": "Reason for closing...",
+    "period": "مدت (YYYY-MM)",
+    "note": "نوٹ (مterm)",
     "closed": "Closed",
     "closedBy": "Closed by",
-    "closedPeriods": "Closed Periods",
-    "noClosed": "No closed periods.",
-    "confirmClose": "Are you sure you want to close this period? This action is irreversible.",
-    "desc": "Closing a period locks work data and triggers billing. This action is irreversible."
+    "notePlaceholder": "بند ڪريڻ جو سبب...",
+    "closedPeriods": "بند مدت",
+    "noClosed": "ڪوئي بند مدت نه آهي.",
+    "confirmClose": "ڇا توهين ڇوتو آهيو ته هن مدت بند ڪرڻ چاهيو ٿو؟ هن ڪم جو التيو نه ٿو سگهجي.",
+    "desc": "مدت بند ڪرڻ سان ڪم جو ڊيٹا لاڪ ٿي وڃي ۽ بلنگ شروع ٿي وڃي. هن ڪم جو التيو نه ٿو سگهجي."
   }
 }
