@@ -2,6 +2,9 @@ FROM node:22-alpine
 
 WORKDIR /app
 
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
@@ -22,9 +25,9 @@ COPY tsconfig.base.json ./
 RUN pnpm --filter @fleetos/shared build
 RUN pnpm --filter @fleetos/web build
 
-# Copy standalone and add static assets
+# Copy standalone output
 RUN cp -r packages/web/.next/standalone ./
-RUN mkdir -p packages/web/.next/static 2>/dev/null; cp -r packages/web/.next/static/* packages/web/.next/standalone/.next/static/ 2>/dev/null || true
+RUN mkdir -p packages/web/.next/standalone/.next/static && cp -r packages/web/.next/static/* packages/web/.next/standalone/.next/static/
 RUN cp -r packages/web/public packages/web/.next/standalone/public 2>/dev/null || true
 
 WORKDIR /app/standalone/packages/web
