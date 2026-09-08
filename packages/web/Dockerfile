@@ -22,15 +22,14 @@ COPY tsconfig.base.json ./
 RUN pnpm --filter @fleetos/shared build
 RUN pnpm --filter @fleetos/web build
 
-# Copy standalone to a clean directory and add static assets
-RUN mkdir -p /standalone
-RUN cp -r packages/web/.next/standalone/packages /standalone/
-RUN cp -r packages/web/.next/standalone/node_modules /standalone/
-RUN cp packages/web/.next/standalone/server.js /standalone/
-RUN mkdir -p /standalone/.next/static && cp -r packages/web/.next/static/* /standalone/.next/static/
-RUN cp -r packages/web/public /standalone/public || true
+# Copy standalone output
+RUN cp -r packages/web/.next/standalone ./
 
-WORKDIR /standalone
+# Add static assets
+RUN mkdir -p .next/static && cp -r packages/web/.next/static/* .next/static/
+RUN cp -r packages/web/public ./public || true
+
+WORKDIR /app/standalone
 
 EXPOSE 3000
 
