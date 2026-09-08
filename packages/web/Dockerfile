@@ -25,12 +25,14 @@ ENV NEXT_PUBLIC_API_URL=https://fleetos-api-rdwp.onrender.com
 RUN pnpm --filter @fleetos/shared build
 RUN pnpm --filter @fleetos/web build
 
-# Copy standalone output
-RUN cp -r packages/web/.next/standalone ./
-RUN mkdir -p packages/web/.next/standalone/.next/static && cp -r packages/web/.next/static/* packages/web/.next/standalone/.next/static/
-RUN cp -r packages/web/public packages/web/.next/standalone/public 2>/dev/null || true
+# Copy standalone to a clean location
+RUN mkdir -p /app/run
+RUN cp -r packages/web/.next/standalone/* /app/run/
+RUN mkdir -p /app/run/packages/web/.next/static
+RUN cp -r packages/web/.next/static/* /app/run/packages/web/.next/static/
+RUN cp -r packages/web/public /app/run/packages/web/public 2>/dev/null || true
 
-WORKDIR /app/standalone/packages/web
+WORKDIR /app/run/packages/web
 
 EXPOSE 3000
 
