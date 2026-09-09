@@ -13,6 +13,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       user: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       max: 10,
+      ssl: process.env.DB_HOST && process.env.DB_HOST !== 'localhost' ? { rejectUnauthorized: false } : false,
     };
 
     // Create pools for each role

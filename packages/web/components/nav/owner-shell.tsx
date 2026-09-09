@@ -44,13 +44,13 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
   const pathname = usePathname();
   const t = useTranslations('sidebar');
   return (
-    <div className="flex h-full flex-col">
-      <div className={cn('flex h-16 items-center border-b px-4', collapsed && 'justify-center px-2')}>
+    <div className="flex h-full flex-col bg-gradient-to-b from-slate-900 to-slate-800">
+      <div className={cn('flex h-16 items-center border-b border-slate-700/50 px-4', collapsed && 'justify-center px-2')}>
         <Link href="/home" className="flex items-center gap-2" onClick={onNavigate}>
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-sm font-bold text-white shadow-lg shadow-emerald-500/20">
             F
           </span>
-          {!collapsed && <span className="text-lg font-bold tracking-tight">Fleet OS</span>}
+          {!collapsed && <span className="text-lg font-bold tracking-tight text-white">FleetOS</span>}
         </Link>
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">
@@ -59,7 +59,7 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
             <p
               key={`s-${i}`}
               className={cn(
-                'px-3 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground first:pt-1',
+                'px-3 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400 first:pt-1',
                 collapsed && 'sr-only',
               )}
             >
@@ -72,11 +72,11 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
               title={t(entry.labelKey!)}
               onClick={onNavigate}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
                 collapsed && 'justify-center px-2',
                 isActive(pathname, entry.href!)
-                  ? 'bg-accent text-accent-foreground'
-                  : 'text-muted-foreground hover:bg-accent/60 hover:text-accent-foreground',
+                  ? 'bg-white/10 text-white shadow-lg shadow-black/10'
+                  : 'text-slate-300 hover:bg-white/5 hover:text-white',
               )}
             >
               <entry.icon className="h-4 w-4 shrink-0" />
@@ -85,15 +85,15 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
           ),
         )}
       </nav>
-      <div className="border-t p-3">
-        <div className={cn('flex items-center gap-3 rounded-lg bg-muted/60 p-2', collapsed && 'justify-center')}>
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+      <div className="border-t border-slate-700/50 p-3">
+        <div className={cn('flex items-center gap-3 rounded-lg bg-white/5 p-2', collapsed && 'justify-center')}>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-xs font-bold text-white">
             OW
           </span>
           {!collapsed && (
             <div className="min-w-0 leading-tight">
-              <p className="truncate text-sm font-medium">{t('role')}</p>
-              <p className="truncate text-xs text-muted-foreground">Fleet OS</p>
+              <p className="truncate text-sm font-medium text-white">{t('role')}</p>
+              <p className="truncate text-xs text-slate-400">Fleet OS</p>
             </div>
           )}
         </div>
@@ -121,7 +121,7 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          'sticky top-0 hidden h-screen shrink-0 border-r bg-card transition-all lg:block',
+          'sticky top-0 hidden h-screen shrink-0 border-r border-slate-700/50 transition-all lg:block',
           collapsed ? 'w-16' : 'w-64',
         )}
       >
@@ -132,7 +132,7 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
       {drawerOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setDrawerOpen(false)} />
-          <aside className="absolute left-0 top-0 h-full w-72 bg-card shadow-xl">
+          <aside className="absolute left-0 top-0 h-full w-72 bg-slate-900 shadow-xl">
             <button
               aria-label={t('closeMenu')}
               onClick={() => setDrawerOpen(false)}
@@ -199,7 +199,7 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 space-y-6 p-4 md:p-8">{children}</main>
+        <main className="flex-1 overflow-x-hidden p-4 md:p-8">{children}</main>
       </div>
     </div>
   );

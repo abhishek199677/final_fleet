@@ -33,6 +33,18 @@ module.exports = {
           line: 'var(--fleet-night-line)',
           muted: 'var(--fleet-night-muted)',
         },
+        glass: {
+          bg: 'var(--glass-bg)',
+          'bg-hover': 'var(--glass-bg-hover)',
+          border: 'var(--glass-border)',
+        },
+        slate: {
+          950: 'var(--slate-950)',
+          900: 'var(--slate-900)',
+          800: 'var(--slate-800)',
+          700: 'var(--slate-700)',
+          600: 'var(--slate-600)',
+        },
       },
       fontFamily: {
         sans: ['var(--fleet-font-primary)'],
@@ -68,6 +80,13 @@ module.exports = {
         instant: 'var(--fleet-motion-instant)',
         fast: 'var(--fleet-motion-fast)',
         slow: 'var(--fleet-motion-slow)',
+      },
+      boxShadow: {
+        glass: 'var(--glass-shadow)',
+        'glass-lg': 'var(--glass-shadow-hover)',
+      },
+      backdropBlur: {
+        glass: 'var(--glass-blur)',
       },
     },
   },

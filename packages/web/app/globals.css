@@ -69,6 +69,33 @@
   --fleet-night-text: #f4f4f5;
   --fleet-night-muted: #a1a1aa;
 
+  /* ---- Glassmorphism tokens ---- */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-hover: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  --glass-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.1);
+  --glass-blur: blur(12px);
+
+  /* ---- Dark slate palette ---- */
+  --slate-950: #020617;
+  --slate-900: #0f172a;
+  --slate-800: #1e293b;
+  --slate-700: #334155;
+  --slate-600: #475569;
+
+  /* ---- Status colors (vibrant) ---- */
+  --status-working: #10b981;
+  --status-idle: #f59e0b;
+  --status-breakdown: #ef4444;
+  --status-transit: #8b5cf6;
+  --status-service: #3b82f6;
+
+  /* ---- KPI sparkline colors ---- */
+  --sparkline-revenue: #10b981;
+  --sparkline-cost: #ef4444;
+  --sparkline-profit: #3b82f6;
+
   /* ---- shadcn compat (light-first) ---- */
   --background: 0 0% 100%;
   --foreground: 222 47% 11%;

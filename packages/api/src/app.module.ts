@@ -24,6 +24,7 @@ import { ExportModule } from './modules/export/export.module';
 import { NotifyModule } from './modules/notify/notify.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { InsightsModule } from './modules/insights/insights.module';
 import { SupportModule } from './modules/support/support.module';
 import { WorkersModule } from './workers/workers.module';
 import { DatabaseModule } from './common/database/database.module';
@@ -63,6 +64,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     NotifyModule,
     AuditModule,
     ReportsModule,
+    InsightsModule,
     SupportModule,
     WorkersModule,
     DatabaseModule,

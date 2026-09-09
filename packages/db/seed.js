@@ -4,12 +4,37 @@
  * Run: pnpm db:seed
  */
 
+const path = require('path');
+const fs = require('fs');
+
+// Load .env from repo root (packages/db/.env not expected)
+const envPath = path.resolve(__dirname, '../../.env');
+if (fs.existsSync(envPath)) {
+  const env = fs.readFileSync(envPath, 'utf8');
+  for (const line of env.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    const val = trimmed.slice(eq + 1).trim();
+    if (!process.env[key]) process.env[key] = val;
+  }
+}
+
 const { Client } = require('pg');
 
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/fleetos';
+const config = {
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5432', 10),
+  database: process.env.DB_NAME || 'fleetos',
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || 'postgres',
+  ssl: process.env.DB_HOST && process.env.DB_HOST !== 'localhost' ? { rejectUnauthorized: false } : false,
+};
 
 async function seed() {
-  const client = new Client({ connectionString: DATABASE_URL });
+  const client = new Client(config);
   await client.connect();
 
   try {
@@ -112,6 +137,7 @@ async function seed() {
 
     await seedDemoHistory(client);
     await seedDemoBilling(client);
+    await seedDemoAlerts(client);
   } catch (error) {
     console.error('❌ Seed failed:', error);
     throw error;
@@ -262,6 +288,61 @@ async function seedDemoBilling(client) {
     );
   }
   console.log('✅ Demo billing seeded (rate cards + mobilisation)');
+
+  // Seed demo alerts
+  await seedDemoAlerts(client);
+}
+
+async function seedDemoAlerts(client) {
+  const TENANT = '00000000-0000-0000-0000-000000000001';
+  const existing = await client.query(`SELECT COUNT(*)::int AS n FROM tenant.alerts WHERE tenant_id = $1`, [TENANT]);
+  if (existing.rows[0].n > 0) {
+    console.log('ℹ️  Demo alerts already present — skipping');
+    return;
+  }
+
+  const q = async (text, params = []) => (await client.query(text, params)).rows;
+
+  // Get some machines and clients for alerts
+  const machines = await q(`SELECT id, code FROM tenant.machines WHERE tenant_id = $1 LIMIT 3`, [TENANT]);
+  const clients = await q(`SELECT id, name FROM tenant.clients WHERE tenant_id = $1 LIMIT 1`, [TENANT]);
+
+  // Payment overdue alert
+  if (clients.length > 0) {
+    await q(
+      `INSERT INTO tenant.alerts (tenant_id, type, client_id, severity, title, detail, is_resolved)
+       VALUES ($1, 'payment_overdue', $2, 'critical', 'Payment overdue: BuildIt Corp', 'Client BuildIt Corp has an overdue payment of ₹50,000 (15 days overdue).', false)`,
+      [TENANT, clients[0].id]
+    );
+  }
+
+  // Maintenance warning alerts
+  if (machines.length > 0) {
+    await q(
+      `INSERT INTO tenant.alerts (tenant_id, type, machine_id, severity, title, detail, is_resolved)
+       VALUES ($1, 'maintenance_warning', $2, 'warning', 'Maintenance due soon: General service', 'Machine EXC-001 needs General service. 20 hours remaining.', false)`,
+      [TENANT, machines[0].id]
+    );
+  }
+
+  if (machines.length > 1) {
+    await q(
+      `INSERT INTO tenant.alerts (tenant_id, type, machine_id, severity, title, detail, is_resolved)
+       VALUES ($1, 'maintenance_overdue', $2, 'critical', 'Maintenance overdue: Hydraulic check', 'Machine EXC-002 hydraulic check is 10 hours overdue.', false)`,
+      [TENANT, machines[1].id]
+    );
+  }
+
+  // Log pending alert
+  if (machines.length > 2) {
+    await q(
+      `INSERT INTO tenant.alerts (tenant_id, type, machine_id, severity, title, detail, is_resolved)
+       VALUES ($1, 'log_pending', $2, 'info', 'No work logged today: LDR-001', 'Machine LDR-001 has no work session logged for today.', false)`,
+      [TENANT, machines[2].id]
+    );
+  }
+
+  console.log('✅ Demo alerts seeded (4 alerts)');
 }
 
 seed();

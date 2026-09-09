@@ -12,6 +12,7 @@
     "test:append": "DATABASE_URL=\"postgresql:///fleetos_test\" node generators/test-append-only.js fleetos_test"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "node-pg-migrate": "^7.8.0",
     "pg": "^8.13.0"
   },
