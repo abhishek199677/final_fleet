@@ -7,8 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { fetchList } from '@/lib/api/fetch-list';
 import { useOfflineQueue } from '@/hooks/use-offline-queue';
+import { useAuth } from '@/lib/auth/context';
 
 export default function NewExpense() {
+  const { user } = useAuth();
+  const isReadOnly = user?.role === 'owner' || user?.role === 'admin';
+  
   const router = useRouter();
   const { enqueue } = useOfflineQueue();
   const [categories, setCategories] = useState<Record<string, unknown>[]>([]);
@@ -88,6 +92,20 @@ export default function NewExpense() {
   const baseMinor = formData.amount_minor
     ? Math.round(parseInt(formData.amount_minor) * (parseFloat(formData.fx_rate) || 1))
     : 0;
+
+  if (isReadOnly) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <h1 className="text-3xl font-bold">Log Expense</h1>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-muted-foreground">Expenses can only be logged by operations staff.</p>
+            <Button variant="outline" className="mt-4" onClick={() => router.back()}>Go Back</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

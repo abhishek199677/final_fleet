@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import {
   Bell, Building2, ChevronsLeft, CircleDollarSign, LayoutDashboard, LifeBuoy, Menu,
   Receipt, Scale, ScrollText, Search, Settings, Tractor, Users, X, BarChart3,
+  MapPin, Rocket,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchList } from '@/lib/api/fetch-list';
@@ -23,6 +24,8 @@ const NAV: NavEntry[] = [
   { section: 'overview' },
   { href: '/home', labelKey: 'dashboard', icon: LayoutDashboard },
   { href: '/machines', labelKey: 'machines', icon: Tractor },
+  { href: '/sites', labelKey: 'sites', icon: MapPin },
+  { href: '/deployments', labelKey: 'deployments', icon: Rocket },
   { section: 'manage' },
   { href: '/operators', labelKey: 'operators', icon: Users },
   { href: '/clients', labelKey: 'clients', icon: Building2 },

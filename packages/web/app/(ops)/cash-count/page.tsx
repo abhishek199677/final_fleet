@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { fetchList } from '@/lib/api/fetch-list';
 import { useOfflineQueue } from '@/hooks/use-offline-queue';
+import { useAuth } from '@/lib/auth/context';
+import { Calculator, X } from 'lucide-react';
 
 export default function CashCount() {
+  const { user } = useAuth();
+  const isReadOnly = user?.role === 'owner' || user?.role === 'admin';
+  
   const router = useRouter();
   const { enqueue } = useOfflineQueue();
   const [accounts, setAccounts] = useState<Record<string, unknown>[]>([]);
@@ -48,43 +52,68 @@ export default function CashCount() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold">Cash Count</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Blind Count</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <div className="mx-auto max-w-2xl space-y-6">
+      <div className="rounded-xl bg-gradient-to-r from-violet-500 to-purple-500 p-6 text-white">
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-white/20 p-2">
+            <Calculator className="h-6 w-6" />
+          </div>
           <div>
-            <label className="text-sm font-medium">Account *</label>
-            <select className="w-full border rounded-md p-2" value={selectedAccount} onChange={e => setSelectedAccount(e.target.value)} required>
-              <option value="">Select account...</option>
-              {accounts.map((a: Record<string, unknown>) => (
-                <option key={a.id as string} value={a.id as string}>{a.name as string}</option>
+            <h1 className="text-2xl font-bold">Cash Count</h1>
+            <p className="text-white/80">Perform a blind cash count for reconciliation.</p>
+          </div>
+        </div>
+      </div>
+
+      {isReadOnly ? (
+        <div className="rounded-xl border border-[#E5E2DB] bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <div className="mb-4 flex items-center gap-2">
+            <X className="h-5 w-5 text-slate-600" />
+            <h2 className="text-lg font-semibold text-slate-900">View Only</h2>
+          </div>
+          <p className="text-slate-500">Cash counts can only be performed by operations staff.</p>
+          <Button variant="outline" className="mt-4 border-[#E5E2DB] text-slate-700 hover:bg-slate-50" onClick={() => router.back()}>Go Back</Button>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-[#E5E2DB] bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <div className="mb-4 flex items-center gap-2">
+            <Calculator className="h-5 w-5 text-violet-600" />
+            <h2 className="text-lg font-semibold text-slate-900">Blind Count</h2>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-slate-700">Account *</label>
+              <select className="w-full rounded-lg border border-[#E5E2DB] p-2.5 text-slate-900 focus:border-violet-400 focus:outline-none" value={selectedAccount} onChange={e => setSelectedAccount(e.target.value)} required>
+                <option value="">Select account...</option>
+                {accounts.map((a: Record<string, unknown>) => (
+                  <option key={a.id as string} value={a.id as string}>{a.name as string}</option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              {Object.entries(denominations).map(([value, qty]) => (
+                <div key={value}>
+                  <label className="text-sm font-medium text-slate-700">₹{value}</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="w-full rounded-lg border border-[#E5E2DB] p-2.5 text-slate-900 focus:border-violet-400 focus:outline-none"
+                    value={qty}
+                    onChange={e => setDenominations({ ...denominations, [value]: e.target.value })}
+                  />
+                </div>
               ))}
-            </select>
+            </div>
+            <div className="rounded-lg bg-violet-50 p-3 text-right text-xl font-bold text-violet-700">
+              Total: ₹{(total / 100).toFixed(2)}
+            </div>
+            <div className="flex gap-4">
+              <Button onClick={() => void handleSubmit()} disabled={!selectedAccount || loading} className="bg-violet-600 text-white hover:bg-violet-700">{loading ? 'Saving...' : 'Submit Count'}</Button>
+              <Button variant="outline" onClick={() => router.back()} className="border-[#E5E2DB] text-slate-700 hover:bg-slate-50">Cancel</Button>
+            </div>
           </div>
-          <div className="grid grid-cols-3 gap-4">
-            {Object.entries(denominations).map(([value, qty]) => (
-              <div key={value}>
-                <label className="text-sm font-medium">₹{value}</label>
-                <input
-                  type="number"
-                  min="0"
-                  className="w-full border rounded-md p-2"
-                  value={qty}
-                  onChange={e => setDenominations({ ...denominations, [value]: e.target.value })}
-                />
-              </div>
-            ))}
-          </div>
-          <div className="text-right text-xl font-bold">Total: ₹{(total / 100).toFixed(2)}</div>
-          <div className="flex gap-4">
-            <Button onClick={() => void handleSubmit()} disabled={!selectedAccount || loading}>{loading ? 'Saving...' : 'Submit Count'}</Button>
-            <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
     </div>
   );
 }

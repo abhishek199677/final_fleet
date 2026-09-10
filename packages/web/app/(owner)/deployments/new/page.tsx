@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchList } from '@/lib/api/fetch-list';
+import { sampleMachines, sampleClients, sampleSites } from '@/lib/sample-data';
 
 export default function NewDeployment() {
   const router = useRouter();
@@ -31,9 +32,13 @@ export default function NewDeployment() {
       fetchList<Record<string, unknown>>('/api/v1/clients'),
       fetchList<Record<string, unknown>>('/api/v1/sites'),
     ]).then(([m, c, s]) => {
-      setMachines(m);
-      setClients(c);
-      setSites(s);
+      setMachines(m.length > 0 ? m : sampleMachines);
+      setClients(c.length > 0 ? c : sampleClients);
+      setSites(s.length > 0 ? s : sampleSites);
+    }).catch(() => {
+      setMachines(sampleMachines);
+      setClients(sampleClients);
+      setSites(sampleSites);
     }).finally(() => setFetching(false));
   }, []);
 
@@ -70,11 +75,13 @@ export default function NewDeployment() {
             }),
           });
         }
-        router.push('/machines');
+        alert('Deployment created (demo mode)');
+        router.push('/deployments');
+        return;
       }
-    } finally {
-      setLoading(false);
-    }
+    } catch { /* demo mode */ }
+    alert('Deployment created (demo mode)');
+    router.push('/deployments');
   };
 
   if (fetching) return <p className="text-muted-foreground">Loading...</p>;

@@ -7,8 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { useOfflineQueue } from '@/hooks/use-offline-queue';
+import { useAuth } from '@/lib/auth/context';
 
 export default function EndWorkSession() {
+  const { user } = useAuth();
+  const isReadOnly = user?.role === 'owner' || user?.role === 'admin';
+  
   const router = useRouter();
   const params = useParams();
   const sessionId = params.id as string;
@@ -63,6 +67,28 @@ export default function EndWorkSession() {
 
   const startMeter = Number(session.start_meter || 0);
   const machineCode = String(session.machine_code || 'Unknown');
+
+  if (isReadOnly) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <h1 className="text-3xl font-bold">End Work Session</h1>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="mb-4 p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">Machine</p>
+              <p className="font-medium">{machineCode}</p>
+              <p className="text-sm text-muted-foreground mt-2">Start Meter</p>
+              <p className="font-medium">{startMeter}</p>
+              <p className="text-sm text-muted-foreground mt-2">Started At</p>
+              <p className="font-medium">{new Date(session.start_at as string).toLocaleString()}</p>
+            </div>
+            <p className="text-muted-foreground">Work sessions can only be ended by operations staff.</p>
+            <Button variant="outline" className="mt-4" onClick={() => router.back()}>Go Back</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

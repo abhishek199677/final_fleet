@@ -7,6 +7,7 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import { AlertTriangle, ArrowLeft, ChevronDown, Clock, Fuel, Gauge as GaugeIcon, Star, Tractor, User, Wrench } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchList } from '@/lib/api/fetch-list';
+import { sampleMachines, sampleSessions, sampleFuelLogs, sampleDowntime, sampleMaintenance } from '@/lib/sample-data';
 
 interface Row extends Record<string, unknown> {
   id?: string;
@@ -75,8 +76,8 @@ function Gauge({ value, display, sub }: { value: number; display: string; sub: s
         <line x1={cx} y1={cy} x2={nx} y2={ny} stroke="#F4F4F5" strokeWidth="3" strokeLinecap="round" />
         <circle cx={cx} cy={cy} r="6" fill="#F4F4F5" />
       </svg>
-      <p className="mt-1 text-center text-xl font-bold text-white">{display}</p>
-      <p className="text-center text-xs text-night-muted">{sub}</p>
+      <p className="mt-1 text-center text-xl font-bold text-slate-900">{display}</p>
+      <p className="text-center text-xs text-slate-500">{sub}</p>
     </div>
   );
 }
@@ -94,18 +95,18 @@ function Ring({ pct, display, sub }: { pct: number; display: string; sub: string
           <circle cx="60" cy="60" r={r} fill="none" stroke="#F59E0B" strokeWidth="10" strokeLinecap="round" strokeDasharray={`${(v / 100) * c} ${c}`} />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <Fuel className="h-4 w-4 text-night-muted" />
-          <p className="text-lg font-bold text-white">{display}</p>
+          <Fuel className="h-4 w-4 text-slate-500" />
+          <p className="text-lg font-bold text-slate-900">{display}</p>
         </div>
       </div>
-      <p className="mt-1 text-center text-xs text-night-muted">{sub}</p>
+      <p className="mt-1 text-center text-xs text-slate-500">{sub}</p>
     </div>
   );
 }
 
 function NightCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-white/10 bg-night-card p-5 shadow-xl ${className}`}>
+    <div className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}>
       {children}
     </div>
   );
@@ -113,7 +114,7 @@ function NightCard({ children, className = '' }: { children: React.ReactNode; cl
 
 function Bar({ pct, color }: { pct: number; color: string }) {
   return (
-    <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
+    <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200">
       <div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, pct))}%`, background: color }} />
     </div>
   );
@@ -159,17 +160,29 @@ export default function MachineDetail() {
       fetchList<Row>('/api/v1/operators'),
       fetchList<Row>('/api/v1/billing/contribution'),
     ]).then(([m, ml, s, f, d, t, dep, ops, c]) => {
-      setMachine(m);
-      setMachineList(ml);
-      setSessions(s);
-      setFuelLogs(f);
-      setDowntime(d);
-      setTasks(t);
+      const machineData = m || sampleMachines.find(x => x.id === id) || null;
+      setMachine(machineData);
+      setMachineList(ml.length > 0 ? ml : sampleMachines);
+      setSessions(s.length > 0 ? s : sampleSessions.filter(x => x.machine_id === id));
+      setFuelLogs(f.length > 0 ? f : sampleFuelLogs.filter(x => x.machine_id === id));
+      setDowntime(d.length > 0 ? d : sampleDowntime.filter(x => x.machine_id === id));
+      setTasks(t.length > 0 ? t : sampleMaintenance.filter(x => x.machine_code === machineData?.code));
       setDeployment(dep);
       setOperators(ops);
       setContrib(c.find((x) => String(x.machine_id) === String(id)) ?? null);
+    }).catch(() => {
+      const m = sampleMachines.find(x => x.id === id);
+      if (m) setMachine(m);
+      setMachineList(sampleMachines);
+      setSessions(sampleSessions.filter(x => x.machine_id === id));
+      setFuelLogs(sampleFuelLogs.filter(x => x.machine_id === id));
+      setDowntime(sampleDowntime.filter(x => x.machine_id === id));
+      if (m) setTasks(sampleMaintenance.filter(x => x.machine_code === m.code));
     }).finally(() => setLoading(false));
   }, [id]);
+  //     setContrib(c.find((x) => String(x.machine_id) === String(id)) ?? null);
+  //   }).finally(() => setLoading(false));
+  // }, [id]);
 
   const now = useMemo(() => Date.now(), []);
   const todayStart = useMemo(() => {
@@ -258,27 +271,27 @@ export default function MachineDetail() {
   if (!machine) return <p>Machine not found</p>;
 
   return (
-    <div className="rounded-2xl bg-night-base p-4 text-white md:p-6">
+    <div className="p-4 md:p-6">
       {/* Header: back + selector */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <Link href="/machines" className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-night-card px-3 py-2 text-sm text-white hover:bg-night-raised">
+        <Link href="/machines" className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
           <ArrowLeft className="h-4 w-4" /> Fleet
         </Link>
         <div className="relative">
           <select
             value={String(machine.id)}
             onChange={(e) => router.push(`/machines/${e.target.value}`)}
-            className="appearance-none rounded-lg border border-white/10 bg-night-card py-2 pl-3 pr-9 text-sm font-semibold text-white outline-none"
+            className="appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-9 text-sm font-semibold text-slate-900 outline-none"
           >
             {machineList.map((m) => (
-              <option key={String(m.id)} value={String(m.id)} className="bg-night-card">
+              <option key={String(m.id)} value={String(m.id)} className="bg-white">
                 {String(m.code)}
               </option>
             ))}
           </select>
-          <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-night-muted" />
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-slate-500" />
         </div>
-        <span className="rounded-full bg-green-500/15 px-3 py-1 text-xs font-medium text-green-400">{statusLabel}</span>
+        <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-600">{statusLabel}</span>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-12">
@@ -287,20 +300,20 @@ export default function MachineDetail() {
           <NightCard>
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="flex items-center gap-2 font-semibold text-white">
-                  <GaugeIcon className="h-4 w-4 text-night-muted" /> Utilisation Performance
+                <h3 className="flex items-center gap-2 font-semibold text-slate-900">
+                  <GaugeIcon className="h-4 w-4 text-slate-500" /> Utilisation Performance
                 </h3>
-                <p className="mt-1 text-xs text-night-muted">Daily meter units vs rest days · last 14 days</p>
+                <p className="mt-1 text-xs text-slate-500">Daily meter units vs rest days · last 14 days</p>
               </div>
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-night-muted">↻</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500">↻</span>
             </div>
             <div className="mt-3 h-52">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={units14}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.08)" />
-                  <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#A1A1AA' }} tickLine={false} axisLine={false} interval={1} />
-                  <YAxis tick={{ fontSize: 10, fill: '#A1A1AA' }} tickLine={false} axisLine={false} width={30} />
-                  <Tooltip contentStyle={{ background: '#26262E', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff' }} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.08)" />
+                  <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94A3B8' }} tickLine={false} axisLine={false} interval={1} />
+                  <YAxis tick={{ fontSize: 10, fill: '#94A3B8' }} tickLine={false} axisLine={false} width={30} />
+                  <Tooltip contentStyle={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 8, color: '#1E293B' }} />
                   <Area type="monotone" dataKey="units" name={`units (${unit})`} stroke="#8B5CF6" strokeWidth={2} fill="#8B5CF6" fillOpacity={0.45} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -310,50 +323,50 @@ export default function MachineDetail() {
           <NightCard>
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-xl font-bold text-white">{String(machine.code)}</h2>
-                <p className="text-xs text-night-muted">
+                <h2 className="text-xl font-bold text-slate-900">{String(machine.code)}</h2>
+                <p className="text-xs text-slate-500">
                   {String(machine.make ?? '')} {String(machine.model ?? '')} · {String(machine.year ?? '')} · {String(machine.chassis_no ?? machine.serial ?? 'no serial')}
                 </p>
               </div>
             </div>
 
-            <div className="mt-4 rounded-xl bg-night-raised p-3">
+            <div className="mt-4 rounded-xl bg-slate-50 p-3">
               <div className="flex items-center justify-between text-sm">
-                <p className="font-medium text-white">{siteName} → {clientName}</p>
-                <p className="text-night-muted">{daysDeployed}d <span className="text-xs">deployed</span></p>
+                <p className="font-medium text-slate-900">{siteName} → {clientName}</p>
+                <p className="text-slate-500">{daysDeployed}d <span className="text-xs">deployed</span></p>
               </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
                 <div className="h-full rounded-full bg-amber-400" style={{ width: `${reportPct30}%` }} />
               </div>
               <div className="mt-3 flex items-center justify-between text-sm">
-                <p className="flex items-center gap-1.5 text-night-muted">
+                <p className="flex items-center gap-1.5 text-slate-500">
                   <Clock className="h-4 w-4" /> Next service: {String(nextTask?.task_name ?? '—')}
                 </p>
-                <p className="text-white">{dueText}</p>
+                <p className="text-slate-900">{dueText}</p>
               </div>
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-night-raised p-3">
+              <div className="rounded-xl bg-slate-50 p-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-night-muted">Utilisation</p>
-                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${utilisation >= 70 ? 'bg-green-500/15 text-green-400' : utilisation >= 40 ? 'bg-amber-500/15 text-amber-400' : 'bg-red-500/15 text-red-400'}`}>
+                  <p className="text-xs text-slate-500">Utilisation</p>
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${utilisation >= 70 ? 'bg-green-50 text-green-600' : utilisation >= 40 ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'}`}>
                     {utilisation >= 70 ? 'High' : utilisation >= 40 ? 'Medium' : 'Low'}
                   </span>
                 </div>
                 <Gauge value={utilisation} display={`${utilisation}%`} sub="days reported · 14d" />
               </div>
-              <div className="rounded-xl bg-night-raised p-3">
+              <div className="rounded-xl bg-slate-50 p-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-night-muted">Evidence</p>
-                  <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-400">{evidence}%</span>
+                  <p className="text-xs text-slate-500">Evidence</p>
+                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-600">{evidence}%</span>
                 </div>
                 <Ring pct={evidence} display={`${evidence}%`} sub="photo-verified · 30d" />
               </div>
             </div>
 
             {(nextStatus === 'overdue' || nextStatus === 'warning') && nextTask && (
-              <div className={`mt-4 flex items-center gap-2 rounded-xl p-3 text-sm ${nextStatus === 'overdue' ? 'bg-red-500/15 text-red-300' : 'bg-amber-500/15 text-amber-300'}`}>
+              <div className={`mt-4 flex items-center gap-2 rounded-xl p-3 text-sm ${nextStatus === 'overdue' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'}`}>
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <p>
                   <span className="font-semibold">{nextStatus === 'overdue' ? 'Service overdue' : 'Service due soon'}:</span>{' '}
@@ -368,46 +381,46 @@ export default function MachineDetail() {
         <div className="space-y-4 xl:col-span-8">
           <NightCard>
             <div className="flex flex-wrap items-center gap-3">
-              <h3 className="font-semibold text-white">Deployment</h3>
-              <span className="flex items-center gap-1.5 rounded-full bg-green-500/15 px-3 py-1 text-xs font-medium text-green-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-400" />
+              <h3 className="font-semibold text-slate-900">Deployment</h3>
+              <span className="flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-600">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
                 {deployment ? 'On site' : 'No active deployment'}
               </span>
             </div>
             <div className="mt-3 grid gap-4 md:grid-cols-2">
               <div>
-                <p className="text-sm text-white">
-                  ⛽ {fmtInt(units30)} <span className="text-night-muted">/ {unit} this month</span>
+                <p className="text-sm text-slate-900">
+                  ⛽ {fmtInt(units30)} <span className="text-slate-500">/ {unit} this month</span>
                 </p>
-                <p className="text-xs text-night-muted">Meter units logged</p>
+                <p className="text-xs text-slate-500">Meter units logged</p>
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="rounded bg-white/10 px-1.5 py-0.5 text-[11px] text-night-muted">{reportPct30}%</span>
+                  <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[11px] text-slate-500">{reportPct30}%</span>
                   <Bar pct={reportPct30} color="#F59E0B" />
                 </div>
               </div>
               <div>
-                <p className="text-sm text-white">
-                  ▤ {fmtInt(litres30)} <span className="text-night-muted">/ L · {litresPerUnit > 0 ? `${litresPerUnit.toFixed(2)} L/${unit}` : '—'}</span>
+                <p className="text-sm text-slate-900">
+                  ▤ {fmtInt(litres30)} <span className="text-slate-500">/ L · {litresPerUnit > 0 ? `${litresPerUnit.toFixed(2)} L/${unit}` : '—'}</span>
                 </p>
-                <p className="text-xs text-night-muted">Diesel efficiency</p>
+                <p className="text-xs text-slate-500">Diesel efficiency</p>
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="rounded bg-white/10 px-1.5 py-0.5 text-[11px] text-night-muted">{evidence}%</span>
+                  <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[11px] text-slate-500">{evidence}%</span>
                   <Bar pct={evidence} color="#F87171" />
                 </div>
               </div>
             </div>
 
             {/* Visual panel */}
-            <div className="relative mt-4 overflow-hidden rounded-xl bg-night-raised p-6">
-              <div className="pointer-events-none absolute inset-x-16 bottom-8 h-px bg-white/20" />
+            <div className="relative mt-4 overflow-hidden rounded-xl bg-slate-50 p-6">
+              <div className="pointer-events-none absolute inset-x-16 bottom-8 h-px bg-slate-200" />
               <div className="flex flex-col items-center py-4">
-                <span className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/5">
-                  <Tractor className="h-10 w-10 text-amber-400" />
+                <span className="flex h-20 w-20 items-center justify-center rounded-2xl bg-slate-100">
+                  <Tractor className="h-10 w-10 text-amber-600" />
                 </span>
-                <p className="mt-3 text-3xl font-bold text-white">
-                  {fmtInt(num(machine.current_meter))} <span className="text-base font-normal text-night-muted">{unit}</span>
+                <p className="mt-3 text-3xl font-bold text-slate-900">
+                  {fmtInt(num(machine.current_meter))} <span className="text-base font-normal text-slate-500">{unit}</span>
                 </p>
-                <p className="mt-1 text-xs text-night-muted">Current meter · {String(machine.type ?? '')}</p>
+                <p className="mt-1 text-xs text-slate-500">Current meter · {String(machine.type ?? '')}</p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs">
                   {[
                     `${todaySes.length} sessions today`,
@@ -415,7 +428,7 @@ export default function MachineDetail() {
                     `${fmtInt(litresToday)} L today`,
                     `${dt30.toFixed(1)} hrs downtime · 30d`,
                   ].map((chip) => (
-                    <span key={chip} className="rounded-lg border border-white/10 bg-night-card px-3 py-1.5 text-night-muted">{chip}</span>
+                    <span key={chip} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-500">{chip}</span>
                   ))}
                 </div>
               </div>
@@ -425,64 +438,64 @@ export default function MachineDetail() {
           <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
             <NightCard className="md:col-span-2 2xl:col-span-1">
               <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 text-sm font-bold text-white">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-200 text-sm font-bold text-slate-900">
                   {initials(opName)}
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate font-semibold text-white">{opName}</p>
-                  <p className="truncate text-xs text-night-muted">Assigned Operator</p>
+                  <p className="truncate font-semibold text-slate-900">{opName}</p>
+                  <p className="truncate text-xs text-slate-500">Assigned Operator</p>
                 </div>
-                <span className={`ml-auto flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${opWorking ? 'bg-teal-500/15 text-teal-300' : 'bg-white/10 text-night-muted'}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${opWorking ? 'bg-teal-300' : 'bg-night-muted'}`} />
+                <span className={`ml-auto flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${opWorking ? 'bg-teal-50 text-teal-600' : 'bg-slate-200 text-slate-500'}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${opWorking ? 'bg-teal-300' : 'bg-slate-400'}`} />
                   {opWorking ? 'Working' : 'Idle'}
                 </span>
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-2 border-t border-white/10 pt-3 text-center">
+              <div className="mt-4 grid grid-cols-3 gap-2 border-t border-slate-200 pt-3 text-center">
                 <div>
-                  <p className="flex items-center justify-center gap-1 font-semibold text-white"><Clock className="h-3.5 w-3.5 text-night-muted" />{opTodayHrs.toFixed(1)}h</p>
-                  <p className="text-[11px] text-night-muted">Hours Today</p>
+                  <p className="flex items-center justify-center gap-1 font-semibold text-slate-900"><Clock className="h-3.5 w-3.5 text-slate-500" />{opTodayHrs.toFixed(1)}h</p>
+                  <p className="text-[11px] text-slate-500">Hours Today</p>
                 </div>
                 <div>
-                  <p className="flex items-center justify-center gap-1 font-semibold text-white"><Clock className="h-3.5 w-3.5 text-night-muted" />{opWeekHrs.toFixed(0)}h</p>
-                  <p className="text-[11px] text-night-muted">This Week</p>
+                  <p className="flex items-center justify-center gap-1 font-semibold text-slate-900"><Clock className="h-3.5 w-3.5 text-slate-500" />{opWeekHrs.toFixed(0)}h</p>
+                  <p className="text-[11px] text-slate-500">This Week</p>
                 </div>
                 <div>
-                  <p className="flex items-center justify-center gap-1 font-semibold text-white"><Star className="h-3.5 w-3.5 text-night-muted" />{opSes.length}</p>
-                  <p className="text-[11px] text-night-muted">Sessions</p>
+                  <p className="flex items-center justify-center gap-1 font-semibold text-slate-900"><Star className="h-3.5 w-3.5 text-slate-500" />{opSes.length}</p>
+                  <p className="text-[11px] text-slate-500">Sessions</p>
                 </div>
               </div>
             </NightCard>
 
             <NightCard>
-              <p className="text-xs text-night-muted">Meter today</p>
-              <p className="mt-1 text-xl font-bold text-white">⚙ {unitsToday.toFixed(1)} <span className="text-sm font-normal text-night-muted">{unit}</span></p>
-              <span className="mt-1 inline-block rounded bg-white/10 px-1.5 py-0.5 text-[11px] text-night-muted">Today</span>
+              <p className="text-xs text-slate-500">Meter today</p>
+              <p className="mt-1 text-xl font-bold text-slate-900">⚙ {unitsToday.toFixed(1)} <span className="text-sm font-normal text-slate-500">{unit}</span></p>
+              <span className="mt-1 inline-block rounded bg-slate-200 px-1.5 py-0.5 text-[11px] text-slate-500">Today</span>
               <div className="mt-3">
-                <p className="text-xs text-night-muted">Current reading</p>
-                <p className="text-sm font-semibold text-white">{fmtInt(num(machine.current_meter))} {unit}</p>
+                <p className="text-xs text-slate-500">Current reading</p>
+                <p className="text-sm font-semibold text-slate-900">{fmtInt(num(machine.current_meter))} {unit}</p>
                 <div className="mt-2"><Bar pct={Math.min(100, (unitsToday / Math.max(units30 / 30, 1)) * 100)} color="#F87171" /></div>
               </div>
             </NightCard>
 
             <NightCard>
-              <p className="text-xs text-night-muted">Diesel</p>
-              <p className="mt-1 flex items-center gap-1.5 text-xl font-bold text-white">
-                <Fuel className="h-4 w-4 text-night-muted" /> {fmtInt(litresToday)} L
+              <p className="text-xs text-slate-500">Diesel</p>
+              <p className="mt-1 flex items-center gap-1.5 text-xl font-bold text-slate-900">
+                <Fuel className="h-4 w-4 text-slate-500" /> {fmtInt(litresToday)} L
               </p>
-              <span className="mt-1 inline-block rounded bg-white/10 px-1.5 py-0.5 text-[11px] text-night-muted">Today</span>
+              <span className="mt-1 inline-block rounded bg-slate-200 px-1.5 py-0.5 text-[11px] text-slate-500">Today</span>
               <div className="mt-3">
-                <p className="text-xs text-night-muted">{litresPerUnit > 0 ? `${litresPerUnit.toFixed(2)} L/${unit} · 30d` : 'No efficiency data yet'}</p>
-                <p className="text-sm font-semibold text-white">{fmtInt(litres30)} L · 30d</p>
+                <p className="text-xs text-slate-500">{litresPerUnit > 0 ? `${litresPerUnit.toFixed(2)} L/${unit} · 30d` : 'No efficiency data yet'}</p>
+                <p className="text-sm font-semibold text-slate-900">{fmtInt(litres30)} L · 30d</p>
               </div>
             </NightCard>
 
             <NightCard>
-              <p className="flex items-center gap-1.5 text-xs text-night-muted"><User className="h-3.5 w-3.5" /> Contribution · 30d</p>
-              <p className="mt-1 text-xl font-bold text-white">{minorToMoney(contribution)}</p>
+              <p className="flex items-center gap-1.5 text-xs text-slate-500"><User className="h-3.5 w-3.5" /> Contribution · 30d</p>
+              <p className="mt-1 text-xl font-bold text-slate-900">{minorToMoney(contribution)}</p>
               <div className="mt-3 space-y-1 text-xs">
-                <p className="flex justify-between text-night-muted"><span>Billed</span><span className="text-white">{minorToMoney(billed)}</span></p>
-                <p className="flex justify-between text-night-muted"><span>Direct costs</span><span className="text-white">{minorToMoney(costs)}</span></p>
-                <div className="flex items-center gap-1.5 pt-1 text-night-muted"><Wrench className="h-3.5 w-3.5" />{tasks.length} tasks tracked</div>
+                <p className="flex justify-between text-slate-500"><span>Billed</span><span className="text-slate-900">{minorToMoney(billed)}</span></p>
+                <p className="flex justify-between text-slate-500"><span>Direct costs</span><span className="text-slate-900">{minorToMoney(costs)}</span></p>
+                <div className="flex items-center gap-1.5 pt-1 text-slate-500"><Wrench className="h-3.5 w-3.5" />{tasks.length} tasks tracked</div>
               </div>
             </NightCard>
           </div>

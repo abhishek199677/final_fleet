@@ -8,8 +8,12 @@ import { Input } from '@/components/ui/input';
 import { PhotoCapture } from '@/components/ui/photo-capture';
 import { fetchList } from '@/lib/api/fetch-list';
 import { useOfflineQueue } from '@/hooks/use-offline-queue';
+import { useAuth } from '@/lib/auth/context';
 
 export default function NewWorkSession() {
+  const { user } = useAuth();
+  const isReadOnly = user?.role === 'owner' || user?.role === 'admin';
+  
   const router = useRouter();
   const { isOnline, pendingCount, enqueue } = useOfflineQueue();
   const [machines, setMachines] = useState<Record<string, unknown>[]>([]);
@@ -60,6 +64,20 @@ export default function NewWorkSession() {
       setLoading(false);
     }
   };
+
+  if (isReadOnly) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <h1 className="text-3xl font-bold">Start Work Session</h1>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-muted-foreground">Work sessions can only be started by operations staff.</p>
+            <Button variant="outline" className="mt-4" onClick={() => router.back()}>Go Back</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

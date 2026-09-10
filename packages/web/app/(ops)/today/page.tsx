@@ -13,6 +13,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { fetchList } from '@/lib/api/fetch-list';
+import { useAuth } from '@/lib/auth/context';
+import { sampleMachines, sampleSessions, sampleFuelLogs, sampleDowntime, sampleExpenses, sampleAlerts } from '@/lib/sample-data';
 
 type RangeKey = '1d' | '7d';
 
@@ -93,13 +95,13 @@ function statusOf(m: Row, activeIds: Set<string>): string {
 
 function statusBadge(status: string) {
   const map: Record<string, string> = {
-    working: 'bg-green-100 text-green-800',
-    log_pending: 'bg-amber-100 text-amber-800',
-    stopped: 'bg-red-100 text-red-800',
-    service: 'bg-blue-100 text-blue-800',
-    transit: 'bg-violet-100 text-violet-800',
+    working: 'bg-green-100 text-green-700',
+    log_pending: 'bg-amber-100 text-amber-700',
+    stopped: 'bg-red-100 text-red-700',
+    service: 'bg-blue-100 text-blue-700',
+    transit: 'bg-violet-100 text-violet-700',
   };
-  return map[status] ?? 'bg-gray-100 text-gray-800';
+  return map[status] ?? 'bg-slate-100 text-slate-700';
 }
 
 function Legend({ items }: { items: { color: string; label: string }[] }) {
@@ -127,6 +129,9 @@ function Delta({ value, format, invert }: { value: number; format: (n: number) =
 }
 
 export default function OpsToday() {
+  const { user } = useAuth();
+  const isReadOnly = user?.role === 'owner' || user?.role === 'admin';
+  
   const [range, setRange] = useState<RangeKey>('1d');
   const [loading, setLoading] = useState(true);
   const [nonce, setNonce] = useState(0);
@@ -151,12 +156,12 @@ export default function OpsToday() {
       fetchList<Row>('/api/v1/expenses'),
       fetchList<Row>('/api/v1/alerts?status=unread'),
     ]).then(([m, s, f, d, e, al]) => {
-      setMachines(m);
-      setSessions(s);
-      setFuelLogs(f);
-      setDowntime(d);
-      setExpenses(e);
-      setAlerts(al.slice(0, 4));
+      setMachines(m.length > 0 ? m : sampleMachines);
+      setSessions(s.length > 0 ? s : sampleSessions);
+      setFuelLogs(f.length > 0 ? f : sampleFuelLogs);
+      setDowntime(d.length > 0 ? d : sampleDowntime);
+      setExpenses(e.length > 0 ? e : sampleExpenses);
+      setAlerts(al.length > 0 ? al.slice(0, 4) : sampleAlerts);
       // Maintenance status per machine (shared ops-readable view)
       void Promise.all(m.map((mm) => fetchList<Row>(`/api/v1/maintenance/machines/${mm.id}/status`)))
         .then((lists) => {
@@ -315,306 +320,287 @@ export default function OpsToday() {
   const rangeSpan = range === '1d' ? dayLabel(new Date(now)) : `${dayLabel(new Date(winStart))} – ${dayLabel(new Date(now))}`;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Title + quick actions */}
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight">Today</h2>
-          <p className="text-sm text-muted-foreground">Operations overview · {rangeSpan}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link href="/work-session/new">
-            <Button size="sm" className="bg-amber-500 text-white hover:bg-amber-600">
-              <Play className="mr-2 h-4 w-4" /> Start Session
+      <div className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 shadow-lg">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white tracking-tight">Fleet OS Today</h1>
+            <p className="text-sm text-blue-100">Operations overview · {rangeSpan}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {!isReadOnly && (
+              <>
+                <Link href="/work-session/new">
+                  <Button size="sm" className="bg-white text-blue-600 hover:bg-blue-50">
+                    <Play className="mr-2 h-4 w-4" /> Start Session
+                  </Button>
+                </Link>
+                <Link href="/fuel/new">
+                  <Button size="sm" variant="outline" className="border-white/30 text-white hover:bg-white/10">
+                    <Fuel className="mr-2 h-4 w-4" /> Log Fuel
+                  </Button>
+                </Link>
+                <Link href="/expense/new">
+                  <Button size="sm" variant="outline" className="border-white/30 text-white hover:bg-white/10">
+                    <Receipt className="mr-2 h-4 w-4" /> Log Expense
+                  </Button>
+                </Link>
+                <Link href="/cash-count">
+                  <Button size="sm" variant="outline" className="border-white/30 text-white hover:bg-white/10">
+                    <ClipboardCheck className="mr-2 h-4 w-4" /> Cash Count
+                  </Button>
+                </Link>
+              </>
+            )}
+            <Button size="sm" variant="outline" onClick={() => setNonce((n) => n + 1)} className="border-white/30 text-white hover:bg-white/10">
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
-          </Link>
-          <Link href="/fuel/new">
-            <Button size="sm" variant="outline">
-              <Fuel className="mr-2 h-4 w-4" /> Log Fuel
-            </Button>
-          </Link>
-          <Link href="/expense/new">
-            <Button size="sm" variant="outline">
-              <Receipt className="mr-2 h-4 w-4" /> Log Expense
-            </Button>
-          </Link>
-          <Link href="/cash-count">
-            <Button size="sm" variant="outline">
-              <ClipboardCheck className="mr-2 h-4 w-4" /> Cash Count
-            </Button>
-          </Link>
-          <Button size="sm" variant="outline" onClick={() => setNonce((n) => n + 1)} className="border-amber-500 text-amber-700 hover:bg-amber-50">
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-          <div className="inline-flex items-center rounded-md border bg-card p-0.5">
-            {RANGES.map((r) => (
-              <button
-                key={r.key}
-                onClick={() => setRange(r.key)}
-                className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${range === r.key ? 'border border-blue-500 bg-blue-50 text-foreground' : 'border border-transparent text-muted-foreground hover:text-foreground'}`}
-              >
-                {r.label}
-              </button>
-            ))}
+            <div className="inline-flex items-center rounded-lg bg-white/20 p-0.5">
+              {RANGES.map((r) => (
+                <button
+                  key={r.key}
+                  onClick={() => setRange(r.key)}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${range === r.key ? 'bg-white text-blue-600 shadow-sm' : 'text-white/80 hover:text-white'}`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
       {loading ? (
-        <p className="text-muted-foreground">Loading...</p>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-slate-400">Loading dashboard...</div>
+        </div>
       ) : (
         <>
           {/* KPI cards — operational only, no money */}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-            {kpiCards.map((k) => (
-              <Card key={k.title} className="rounded-xl shadow-sm">
-                <CardContent className="pt-4">
-                  <p className="text-sm font-medium">{k.title}</p>
-                  <p className="mt-3 text-center text-[32px] font-semibold leading-none tracking-tight">
+            {kpiCards.map((k, i) => {
+              const gradients = [
+                'from-emerald-500 to-teal-500',
+                'from-amber-500 to-orange-500',
+                'from-blue-500 to-indigo-500',
+                'from-cyan-500 to-blue-500',
+                'from-slate-500 to-gray-600',
+                'from-red-500 to-rose-500',
+              ];
+              return (
+                <div key={k.title} className={`overflow-hidden rounded-xl bg-gradient-to-br ${gradients[i]} p-4 shadow-lg`}>
+                  <p className="text-sm font-medium text-white/80">{k.title}</p>
+                  <p className="mt-2 text-3xl font-bold text-white">
                     {k.value}
-                    {k.unit && <span className="ml-1 text-base font-normal text-muted-foreground">{k.unit}</span>}
+                    {k.unit && <span className="ml-1 text-sm font-normal text-white/70">{k.unit}</span>}
                   </p>
                   {k.prev !== '' ? (
-                    <div className="mt-2 flex items-center justify-center gap-2">
-                      <span className="text-sm text-green-700">{k.prev}</span>
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-sm text-white/70">vs {k.prev}</span>
                       <Delta value={k.delta} format={k.deltaFmt} invert={k.invert} />
                     </div>
                   ) : (
-                    <p className="mt-2 text-center text-sm text-muted-foreground">
+                    <p className="mt-2 text-sm text-white/70">
                       {dueTasks.filter((t) => String(t.status).toLowerCase() === 'overdue').length} overdue
                     </p>
                   )}
-                  <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span className="inline-block h-2.5 w-2.5 rounded-[2px]" style={{ background: k.dot }} />
-                    {k.metricKey}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              );
+            })}
           </div>
 
           {/* Row 1 */}
           <div className="grid gap-4 xl:grid-cols-2">
-            <Card className="rounded-xl shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold">Sessions per machine</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={perMachine} barCategoryGap="30%">
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                      <XAxis dataKey="name" tick={axisTick} tickLine={false} axisLine={{ stroke: '#E5E7EB' }} interval="preserveStartEnd" />
-                      <YAxis tick={axisTick} tickLine={false} axisLine={false} allowDecimals={false} />
-                      <Tooltip />
-                      <Bar dataKey="billable" name="billable sessions" stackId="a" fill={AMBER} />
-                      <Bar dataKey="nonBillable" name="non-billable sessions" stackId="a" fill={GRAY} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                <Legend items={[
-                  { color: AMBER, label: 'billable_sessions' },
-                  { color: GRAY, label: 'non_billable_sessions' },
-                ]} />
-              </CardContent>
-            </Card>
+            <div className="rounded-xl border border-[#E5E2DB] bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+              <h3 className="text-base font-semibold text-slate-900">Sessions per machine</h3>
+              <div className="mt-4 h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={perMachine} barCategoryGap="30%">
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                    <XAxis dataKey="name" tick={axisTick} tickLine={false} axisLine={{ stroke: '#E5E7EB' }} interval="preserveStartEnd" />
+                    <YAxis tick={axisTick} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip />
+                    <Bar dataKey="billable" name="billable sessions" stackId="a" fill={AMBER} />
+                    <Bar dataKey="nonBillable" name="non-billable sessions" stackId="a" fill={GRAY} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <Legend items={[
+                { color: AMBER, label: 'billable_sessions' },
+                { color: GRAY, label: 'non_billable_sessions' },
+              ]} />
+            </div>
 
-            <Card className="rounded-xl shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold">Reporting — last 7 days</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={compliance} barCategoryGap="30%">
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                      <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={{ stroke: '#E5E7EB' }} interval="preserveStartEnd" />
-                      <YAxis tick={axisTick} tickLine={false} axisLine={false} allowDecimals={false} />
-                      <Tooltip />
-                      <Bar dataKey="reporting" name="reporting machines" stackId="c" fill={AMBER} />
-                      <Bar dataKey="silent" name="silent machines" stackId="c" fill={INK} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                <Legend items={[
-                  { color: AMBER, label: 'machines_reporting' },
-                  { color: INK, label: 'machines_silent' },
-                ]} />
-              </CardContent>
-            </Card>
+            <div className="rounded-xl border border-[#E5E2DB] bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+              <h3 className="text-base font-semibold text-slate-900">Reporting — last 7 days</h3>
+              <div className="mt-4 h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={compliance} barCategoryGap="30%">
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                    <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={{ stroke: '#E5E7EB' }} interval="preserveStartEnd" />
+                    <YAxis tick={axisTick} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip />
+                    <Bar dataKey="reporting" name="reporting machines" stackId="c" fill={AMBER} />
+                    <Bar dataKey="silent" name="silent machines" stackId="c" fill={INK} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <Legend items={[
+                { color: AMBER, label: 'machines_reporting' },
+                { color: INK, label: 'machines_silent' },
+              ]} />
+            </div>
           </div>
 
           {/* Row 2 mixed */}
           <div className="grid gap-4 md:grid-cols-2">
-            <Card className="rounded-xl shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold">Fuel litres & operating hours</CardTitle>
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Mixed</p>
-              </CardHeader>
-              <CardContent>
-                <div className="h-56">
+            <div className="rounded-xl border border-[#E5E2DB] bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+              <h3 className="text-base font-semibold text-slate-900">Fuel litres & operating hours</h3>
+              <div className="mt-4 h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={dailyOps}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                    <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={{ stroke: '#E5E7EB' }} interval="preserveStartEnd" />
+                    <YAxis yAxisId="l" tick={axisTick} tickLine={false} axisLine={false} />
+                    <YAxis yAxisId="r" orientation="right" tick={axisTick} tickLine={false} axisLine={false} />
+                    <Tooltip />
+                    <Bar yAxisId="l" dataKey="litres" name="litres" fill={GRAY} />
+                    <Line yAxisId="r" type="monotone" dataKey="opHrs" name="operating hours" stroke={AMBER} strokeWidth={2} dot={false} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+              <Legend items={[
+                { color: GRAY, label: 'fuel_logged_in_litres' },
+                { color: AMBER, label: 'time_operating_in_hours' },
+              ]} />
+            </div>
+
+            <div className="rounded-xl border border-[#E5E2DB] bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+              <h3 className="text-base font-semibold text-slate-900">Downtime by reason</h3>
+              <p className="text-xs text-slate-500 mt-1">Hours in selected range</p>
+              {byReason.length === 0 ? (
+                <p className="text-sm text-slate-500 mt-4">No downtime recorded — good shift.</p>
+              ) : (
+                <div className="mt-4 h-56">
                   <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={dailyOps}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                      <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={{ stroke: '#E5E7EB' }} interval="preserveStartEnd" />
-                      <YAxis yAxisId="l" tick={axisTick} tickLine={false} axisLine={false} />
-                      <YAxis yAxisId="r" orientation="right" tick={axisTick} tickLine={false} axisLine={false} />
+                    <BarChart data={byReason} layout="vertical" margin={{ left: 8 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E5E7EB" />
+                      <XAxis type="number" tick={axisTick} tickLine={false} axisLine={false} />
+                      <YAxis type="category" dataKey="reason" tick={axisTick} tickLine={false} axisLine={false} width={110} />
                       <Tooltip />
-                      <Bar yAxisId="l" dataKey="litres" name="litres" fill={GRAY} />
-                      <Line yAxisId="r" type="monotone" dataKey="opHrs" name="operating hours" stroke={AMBER} strokeWidth={2} dot={false} />
-                    </ComposedChart>
+                      <Bar dataKey="hours" name="hours" fill={AMBER} radius={[0, 4, 4, 0]} />
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
-                <Legend items={[
-                  { color: GRAY, label: 'fuel_logged_in_litres' },
-                  { color: AMBER, label: 'time_operating_in_hours' },
-                ]} />
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-xl shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold">Downtime by reason</CardTitle>
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Hours in selected range</p>
-              </CardHeader>
-              <CardContent>
-                {byReason.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No downtime recorded — good shift.</p>
-                ) : (
-                  <div className="h-56">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={byReason} layout="vertical" margin={{ left: 8 }}>
-                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E5E7EB" />
-                        <XAxis type="number" tick={axisTick} tickLine={false} axisLine={false} />
-                        <YAxis type="category" dataKey="reason" tick={axisTick} tickLine={false} axisLine={false} width={110} />
-                        <Tooltip />
-                        <Bar dataKey="hours" name="hours" fill={AMBER} radius={[0, 4, 4, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              )}
+            </div>
           </div>
 
           {/* Bottom: fleet status + maintenance / my entries / alerts */}
           <div className="grid gap-4 xl:grid-cols-2">
-            <Card className="rounded-xl shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                  <Gauge className="h-4 w-4 text-muted-foreground" /> Machine status
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {fleetRows.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No machines yet.</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b text-left text-muted-foreground">
-                          <th className="py-2 pr-2 font-medium">Machine</th>
-                          <th className="py-2 pr-2 font-medium">Sessions</th>
-                          <th className="py-2 pr-2 font-medium">Hours</th>
-                          <th className="py-2 pr-2 font-medium">Status</th>
-                          <th className="py-2 text-right font-medium">Log</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {fleetRows.slice(0, 10).map((m) => (
-                          <tr key={String(m.id)} className="border-b last:border-0 hover:bg-muted/50">
-                            <td className="py-2 pr-2 font-medium">
-                              {String(m.code ?? '—')}
-                              {m._running === true && <span className="ml-2 rounded bg-green-100 px-1.5 py-0.5 text-[11px] font-medium text-green-800">running</span>}
-                            </td>
-                            <td className="py-2 pr-2">{num(m._sessions)}</td>
-                            <td className="py-2 pr-2">{fmt2(num(m._hours))}</td>
-                            <td className="py-2 pr-2">
-                              <span className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadge(String(m._status))}`}>
-                                {String(m._status).replace('_', ' ')}
-                              </span>
-                            </td>
-                            <td className="py-2 text-right">
-                              <Link href="/work-session/new" className="text-xs font-medium text-primary hover:underline">
+            <div className="rounded-xl border border-[#E5E2DB] bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+              <h3 className="flex items-center gap-2 text-base font-semibold text-slate-900">
+                <Gauge className="h-4 w-4 text-slate-500" /> Machine status
+              </h3>
+              {fleetRows.length === 0 ? (
+                <p className="text-sm text-slate-500 mt-4">No machines yet.</p>
+              ) : (
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-[#E5E2DB] text-left text-slate-500">
+                        <th className="py-2 pr-2 font-medium">Machine</th>
+                        <th className="py-2 pr-2 font-medium">Sessions</th>
+                        <th className="py-2 pr-2 font-medium">Hours</th>
+                        <th className="py-2 pr-2 font-medium">Status</th>
+                        <th className="py-2 text-right font-medium">Log</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {fleetRows.slice(0, 10).map((m) => (
+                        <tr key={String(m.id)} className="border-b border-[#E5E2DB] last:border-0 hover:bg-slate-50">
+                          <td className="py-2 pr-2 font-medium">
+                            {String(m.code ?? '—')}
+                            {m._running === true && <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-700">running</span>}
+                          </td>
+                          <td className="py-2 pr-2">{num(m._sessions)}</td>
+                          <td className="py-2 pr-2">{fmt2(num(m._hours))}</td>
+                          <td className="py-2 pr-2">
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge(String(m._status))}`}>
+                              {String(m._status).replace('_', ' ')}
+                            </span>
+                          </td>
+                          <td className="py-2 text-right">
+                            {!isReadOnly && (
+                              <Link href="/work-session/new" className="text-xs font-medium text-blue-600 hover:text-blue-800">
                                 + Entry
                               </Link>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
 
             <div className="space-y-4">
-              <Card className="rounded-xl shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                    <Wrench className="h-4 w-4 text-muted-foreground" /> Maintenance due
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {dueTasks.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Nothing due — fleet is healthy.</p>
-                  ) : (
-                    <ul className="space-y-2 text-sm">
-                      {dueTasks.slice(0, 5).map((t, i) => (
-                        <li key={String(t.task_id ?? t.id ?? i)} className="flex items-center justify-between rounded border p-2">
-                          <span className="font-medium">{String(t._machine ?? '')} · {String(t.task_name ?? t.name ?? 'Task')}</span>
-                          <span className={`rounded px-2 py-0.5 text-xs font-medium ${String(t.status).toLowerCase() === 'overdue' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}`}>
-                            {String(t.status)}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
+              <div className="rounded-xl border border-[#E5E2DB] bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                <h3 className="flex items-center gap-2 text-base font-semibold text-slate-900">
+                  <Wrench className="h-4 w-4 text-slate-500" /> Maintenance due
+                </h3>
+                {dueTasks.length === 0 ? (
+                  <p className="text-sm text-slate-500 mt-4">Nothing due — fleet is healthy.</p>
+                ) : (
+                  <ul className="mt-4 space-y-2 text-sm">
+                    {dueTasks.slice(0, 5).map((t, i) => (
+                      <li key={String(t.task_id ?? t.id ?? i)} className="flex items-center justify-between rounded-lg border border-[#E5E2DB] p-3">
+                        <span className="font-medium text-slate-800">{String(t._machine ?? '')} · {String(t.task_name ?? t.name ?? 'Task')}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${String(t.status).toLowerCase() === 'overdue' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {String(t.status)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
 
-              <Card className="rounded-xl shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                    <ClipboardCheck className="h-4 w-4 text-muted-foreground" /> My entries
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {myEntries.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Nothing logged by you in this range yet.</p>
-                  ) : (
-                    <ul className="space-y-2 text-sm">
-                      {myEntries.map((e) => (
-                        <li key={e.id} className="rounded bg-muted p-2">{e.text}</li>
-                      ))}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
+              <div className="rounded-xl border border-[#E5E2DB] bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                <h3 className="flex items-center gap-2 text-base font-semibold text-slate-900">
+                  <ClipboardCheck className="h-4 w-4 text-slate-500" /> My entries
+                </h3>
+                {myEntries.length === 0 ? (
+                  <p className="text-sm text-slate-500 mt-4">Nothing logged by you in this range yet.</p>
+                ) : (
+                  <ul className="mt-4 space-y-2 text-sm">
+                    {myEntries.map((e) => (
+                      <li key={e.id} className="rounded-lg bg-slate-50 p-3 text-slate-700">{e.text}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
 
-              <Card className="rounded-xl shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                    <Bell className="h-4 w-4 text-muted-foreground" /> Alerts
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {alerts.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No new alerts.</p>
-                  ) : (
-                    <ul className="space-y-2 text-sm">
-                      {alerts.map((a) => (
-                        <li key={String(a.id)} className="flex gap-2 rounded border p-2">
-                          {String(a.severity ?? '').toLowerCase() === 'critical'
-                            ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
-                            : <Pause className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />}
-                          <span>{String(a.message ?? a.type ?? 'Alert')}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
+              <div className="rounded-xl border border-[#E5E2DB] bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                <h3 className="flex items-center gap-2 text-base font-semibold text-slate-900">
+                  <Bell className="h-4 w-4 text-slate-500" /> Alerts
+                </h3>
+                {alerts.length === 0 ? (
+                  <p className="text-sm text-slate-500 mt-4">No new alerts.</p>
+                ) : (
+                  <ul className="mt-4 space-y-2 text-sm">
+                    {alerts.map((a) => (
+                      <li key={String(a.id)} className="flex gap-3 rounded-lg border border-[#E5E2DB] p-3">
+                        {String(a.severity ?? '').toLowerCase() === 'critical'
+                          ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                          : <Pause className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />}
+                        <span className="text-slate-700">{String(a.message ?? a.type ?? 'Alert')}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           </div>
         </>

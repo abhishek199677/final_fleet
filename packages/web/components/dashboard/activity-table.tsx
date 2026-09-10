@@ -1,7 +1,6 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { GlassCard } from './glass-card';
 
 interface Machine {
   code: string;
@@ -17,25 +16,26 @@ interface ActivityTableProps {
 }
 
 const STATUS_CONFIG = {
-  working: { label: 'Working', color: 'bg-emerald-500', bg: 'bg-emerald-500/10', text: 'text-emerald-600' },
-  idle: { label: 'Idle', color: 'bg-amber-500', bg: 'bg-amber-500/10', text: 'text-amber-600' },
-  breakdown: { label: 'Breakdown', color: 'bg-red-500', bg: 'bg-red-500/10', text: 'text-red-600' },
-  transit: { label: 'In Transit', color: 'bg-purple-500', bg: 'bg-purple-500/10', text: 'text-purple-600' },
-  service: { label: 'In Service', color: 'bg-blue-500', bg: 'bg-blue-500/10', text: 'text-blue-600' },
-  log_pending: { label: 'Log Pending', color: 'bg-amber-500', bg: 'bg-amber-500/10', text: 'text-amber-600' },
+  working: { label: 'Working', dot: 'bg-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-700' },
+  idle: { label: 'Idle', dot: 'bg-amber-500', bg: 'bg-amber-50', text: 'text-amber-700' },
+  breakdown: { label: 'Breakdown', dot: 'bg-red-500', bg: 'bg-red-50', text: 'text-red-700' },
+  stopped: { label: 'Stopped', dot: 'bg-red-500', bg: 'bg-red-50', text: 'text-red-700' },
+  transit: { label: 'In transit', dot: 'bg-purple-500', bg: 'bg-purple-50', text: 'text-purple-700' },
+  service: { label: 'In service', dot: 'bg-blue-500', bg: 'bg-blue-50', text: 'text-blue-700' },
+  log_pending: { label: 'Log pending', dot: 'bg-amber-500', bg: 'bg-amber-50', text: 'text-amber-700' },
 };
 
 export function ActivityTable({ machines }: ActivityTableProps) {
   return (
-    <GlassCard className="overflow-hidden">
+    <div className="rounded-xl border border-[#E5E2DB] bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-slate-900">Machine Activity</h3>
+        <h3 className="text-lg font-semibold text-slate-900">Machine activity</h3>
         <p className="text-sm text-slate-500">{machines.length} machines · live operating board</p>
       </div>
 
       <div className="overflow-x-auto">
         <div className="min-w-[480px]">
-          <div className="mb-2 grid grid-cols-[1.5fr_1fr_1fr_auto] gap-3 px-3 text-xs font-medium uppercase tracking-wider text-slate-400 sm:grid-cols-[2fr_1fr_1fr_auto]">
+          <div className="mb-3 grid grid-cols-[1.5fr_1fr_1fr_auto] gap-4 px-4 text-xs font-medium uppercase tracking-wider text-slate-400 sm:grid-cols-[2fr_1fr_1fr_auto]">
             <div>Machine</div>
             <div>Status</div>
             <div>Site</div>
@@ -49,33 +49,33 @@ export function ActivityTable({ machines }: ActivityTableProps) {
                 <div
                   key={machine.code}
                   className={cn(
-                    'grid grid-cols-[1.5fr_1fr_1fr_auto] items-center gap-3 rounded-xl px-3 py-3 sm:grid-cols-[2fr_1fr_1fr_auto]',
-                    'border border-slate-100 bg-white/60',
+                    'grid grid-cols-[1.5fr_1fr_1fr_auto] items-center gap-4 rounded-lg px-4 py-3 sm:grid-cols-[2fr_1fr_1fr_auto]',
+                    'border border-slate-100 bg-slate-50/50',
                     'transition-all duration-200 hover:bg-white hover:shadow-sm'
                   )}
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-slate-900">{machine.code}</p>
-                    <p className="truncate text-xs text-slate-500">{machine.make} {machine.model}</p>
+                    <p className="font-semibold text-slate-900">{machine.code}</p>
+                    <p className="text-xs text-slate-500">{machine.make} {machine.model}</p>
                   </div>
 
                   <div>
                     <span className={cn(
-                      'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium',
+                      'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
                       config.bg, config.text
                     )}>
-                      <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', config.color)} />
+                      <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', config.dot)} />
                       {config.label}
                     </span>
                   </div>
 
                   <div>
-                    <p className="truncate text-sm text-slate-600">{machine.site}</p>
+                    <p className="text-sm text-slate-600">{machine.site}</p>
                   </div>
 
                   <div className="text-right">
                     <span className="whitespace-nowrap text-sm font-medium text-slate-900">
-                      {machine.todayHours ? `+${machine.todayHours}h` : '—'}
+                      {machine.todayHours ? `+${machine.todayHours} hrs` : '—'}
                     </span>
                   </div>
                 </div>
@@ -84,6 +84,6 @@ export function ActivityTable({ machines }: ActivityTableProps) {
           </div>
         </div>
       </div>
-    </GlassCard>
+    </div>
   );
 }
