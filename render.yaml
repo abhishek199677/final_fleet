@@ -1,4 +1,10 @@
 services:
+  - type: postgres
+    name: fleetos-db
+    plan: free
+    databaseName: fleetos
+    user: fleetos
+
   - type: web
     name: fleetos-api
     runtime: docker
@@ -12,8 +18,39 @@ services:
         value: /tmp/uploads
       - key: EXPORT_DIR
         value: /tmp/exports
+      - key: DB_HOST
+        fromDatabase:
+          name: fleetos-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: fleetos-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: fleetos-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: fleetos-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: fleetos-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+    dependsOn:
+      - fleetos-db
 
   - type: web
     name: fleetos-web
     runtime: docker
     dockerfilePath: packages/web/Dockerfile
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://fleetos-api.onrender.com
+      - key: API_URL
+        value: https://fleetos-api.onrender.com
+    dependsOn:
+      - fleetos-api
