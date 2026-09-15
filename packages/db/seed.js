@@ -75,23 +75,6 @@ async function seed() {
       ON CONFLICT (id) DO NOTHING
     `);
 
-    // Create user credentials for local auth (password: demo1234)
-    const { createHash, randomBytes } = require('crypto');
-    const salt1 = randomBytes(16).toString('hex');
-    const salt2 = randomBytes(16).toString('hex');
-    const hash1 = createHash('sha256').update('demo1234' + salt1).digest('hex');
-    const hash2 = createHash('sha256').update('demo1234' + salt2).digest('hex');
-    await client.query(`
-      INSERT INTO tenant.user_credentials (user_id, tenant_id, email, password_hash, salt)
-      VALUES ('00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000001', 'demo@fleetos.com', $1, $2)
-      ON CONFLICT (email) DO NOTHING
-    `, [hash1, salt1]);
-    await client.query(`
-      INSERT INTO tenant.user_credentials (user_id, tenant_id, email, password_hash, salt)
-      VALUES ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000001', 'ops@fleetos.com', $1, $2)
-      ON CONFLICT (email) DO NOTHING
-    `, [hash2, salt2]);
-
     // Create machines
     const machines = [
       { code: 'EXC-001', type: 'excavator', make: 'Caterpillar', model: '320', year: 2020, meter: 4500 },
