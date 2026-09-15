@@ -18,30 +18,12 @@ services:
         value: /tmp/uploads
       - key: EXPORT_DIR
         value: /tmp/exports
-      - key: DB_HOST
+      - key: DATABASE_URL
         fromDatabase:
           name: fleetos-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: fleetos-db
-          property: port
-      - key: DB_NAME
-        fromDatabase:
-          name: fleetos-db
-          property: database
-      - key: DB_USER
-        fromDatabase:
-          name: fleetos-db
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: fleetos-db
-          property: password
+          property: connectionString
       - key: JWT_SECRET
         generateValue: true
-    dependsOn:
-      - fleetos-db
 
   - type: web
     name: fleetos-web
@@ -52,5 +34,3 @@ services:
         value: https://fleetos-api.onrender.com
       - key: API_URL
         value: https://fleetos-api.onrender.com
-    dependsOn:
-      - fleetos-api

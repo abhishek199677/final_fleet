@@ -6,15 +6,24 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private pools: Map<string, Pool> = new Map();
 
   onModuleInit(): void {
-    const config: PoolConfig = {
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432', 10),
-      database: process.env.DB_NAME || 'fleetos',
-      user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || 'postgres',
-      max: 10,
-      ssl: process.env.DB_HOST && process.env.DB_HOST !== 'localhost' ? { rejectUnauthorized: false } : false,
-    };
+    const connectionString = process.env.DATABASE_URL;
+    const isLocal = !process.env.DB_HOST || process.env.DB_HOST === 'localhost';
+
+    const config: PoolConfig = connectionString
+      ? {
+          connectionString,
+          ssl: { rejectUnauthorized: false },
+          max: 10,
+        }
+      : {
+          host: process.env.DB_HOST || 'localhost',
+          port: parseInt(process.env.DB_PORT || '5432', 10),
+          database: process.env.DB_NAME || 'fleetos',
+          user: process.env.DB_USER || 'postgres',
+          password: process.env.DB_PASSWORD || 'postgres',
+          max: 10,
+          ssl: !isLocal ? { rejectUnauthorized: false } : false,
+        };
 
     // Create pools for each role
     this.pools.set('owner', new Pool({ ...config, application_name: 'app_owner' }));

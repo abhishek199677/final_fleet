@@ -11,5 +11,8 @@ pnpm --filter @fleetos/db exec node-pg-migrate up \
   --migrations-dir migrations \
   --database-url-env-var DATABASE_URL || echo "Migration warning (may already be applied)"
 
+echo "Seeding database..."
+pnpm --filter @fleetos/db exec node seed.js || echo "Seed warning (may already be seeded)"
+
 echo "Starting API..."
 exec node packages/api/dist/main.js
