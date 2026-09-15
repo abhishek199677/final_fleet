@@ -18,9 +18,11 @@ COPY packages/web/ packages/web/
 COPY packages/shared/ packages/shared/
 COPY tsconfig.base.json ./
 
-# Set API URLs
-ENV NEXT_PUBLIC_API_URL=https://fleetos-api-rdwp.onrender.com
-ENV API_URL=https://fleetos-api-rdwp.onrender.com
+# Set API URLs (overridden by render.yaml env vars at build time)
+ARG NEXT_PUBLIC_API_URL=https://fleetos-api.onrender.com
+ARG API_URL=https://fleetos-api.onrender.com
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV API_URL=${API_URL}
 
 # Build
 RUN pnpm --filter @fleetos/shared build
