@@ -48,30 +48,21 @@ export class AlertEngineService {
 
   async checkMaintenanceAlerts(tenantId: string): Promise<void> {
     try {
-      // Get machines with maintenance due soon
       const result = await this.db.queryWithTenant(tenantId, 'owner',
-        `SELECT m.id, m.code, mt.task_name, mt.next_due_hours, mt.warning_hours,
-                COALESCE(current_meter.reading, 0) as current_hours
-         FROM tenant.machines m
-         JOIN tenant.maintenance_tasks mt ON mt.machine_id = m.id
-         LEFT JOIN LATERAL (
-           SELECT reading FROM tenant.work_sessions ws
-           WHERE ws.machine_id = m.id AND ws.is_current = true
-           ORDER BY ws.end_time DESC LIMIT 1
-         ) current_meter ON true
-         WHERE mt.is_active = true
-         AND mt.next_due_hours IS NOT NULL
-         AND mt.next_due_hours - COALESCE(current_meter.reading, 0) <= mt.warning_hours`);
+        `SELECT v.machine_id, m.code, v.task_name, v.status, v.units_to_due
+         FROM tenant.v_maintenance_status v
+         JOIN tenant.machines m ON m.id = v.machine_id
+         WHERE v.status IN ('warning', 'overdue')`);
 
       for (const row of result.rows) {
-        const hoursLeft = row.next_due_hours - row.current_hours;
-        const severity = hoursLeft <= 0 ? 'critical' : 'warning';
-        const title = hoursLeft <= 0
+        const severity = row.status === 'overdue' ? 'critical' : 'warning';
+        const unitsLeft = row.units_to_due ?? 0;
+        const title = row.status === 'overdue'
           ? `Maintenance overdue: ${row.task_name}`
           : `Maintenance due soon: ${row.task_name}`;
-        const detail = `Machine ${row.code} needs ${row.task_name}. ${Math.abs(Math.round(hoursLeft))} hours ${hoursLeft <= 0 ? 'overdue' : 'remaining'}.`;
+        const detail = `Machine ${row.code} needs ${row.task_name}. ${Math.abs(Math.round(unitsLeft))} units ${row.status === 'overdue' ? 'overdue' : 'remaining'}.`;
 
-        await this.createAlert(tenantId, 'maintenance_warning', severity, title, detail, row.id, 'machine');
+        await this.createAlert(tenantId, 'maintenance_warning', severity, title, detail, row.machine_id, 'machine');
       }
     } catch (error) {
       this.logger.error(`Failed to check maintenance alerts: ${error}`);
@@ -80,15 +71,14 @@ export class AlertEngineService {
 
   async checkLogPendingAlerts(tenantId: string): Promise<void> {
     try {
-      // Get machines with no session today
       const result = await this.db.queryWithTenant(tenantId, 'owner',
         `SELECT m.id, m.code
          FROM tenant.machines m
-         WHERE m.status != 'retired'
+         WHERE m.status_flag != 'retired'
          AND NOT EXISTS (
            SELECT 1 FROM tenant.work_sessions ws
            WHERE ws.machine_id = m.id
-           AND ws.start_time >= current_date
+           AND ws.start_at >= current_date
          )`);
 
       for (const row of result.rows) {
@@ -109,32 +99,31 @@ export class AlertEngineService {
 
   async checkPaymentDueAlerts(tenantId: string): Promise<void> {
     try {
-      // Get overdue invoices
       const result = await this.db.queryWithTenant(tenantId, 'owner',
-        `SELECT c.id, c.name, v.due_date, v.amount_minor, v.currency
+        `SELECT c.id, c.name, c.payment_terms_days,
+                SUM(CASE WHEN bl.kind != 'adjustment' THEN bl.amount_minor ELSE 0 END) AS total_billed,
+                MAX(bl.entry_date) AS last_billing_date
          FROM tenant.clients c
-         JOIN LATERAL (
-           SELECT due_date, amount_minor, currency
-           FROM tenant.billing_ledger bl
-           WHERE bl.client_id = c.id AND bl.kind = 'invoice' AND bl.due_date IS NOT NULL
-           AND bl.due_date <= current_date
-           ORDER BY bl.due_date ASC LIMIT 1
-         ) v ON true
-         WHERE NOT EXISTS (
-           SELECT 1 FROM tenant.client_money_events cme
-           WHERE cme.client_id = c.id AND cme.kind = 'receipt'
-           AND cme.created_at >= v.due_date
-         )`);
+         JOIN tenant.sites s ON s.client_id = c.id
+         JOIN tenant.deployments d ON d.site_id = s.id
+         JOIN tenant.billing_ledger bl ON bl.deployment_id = d.id
+         WHERE bl.kind != 'adjustment'
+         GROUP BY c.id, c.name, c.payment_terms_days
+         HAVING SUM(CASE WHEN bl.kind != 'adjustment' THEN bl.amount_minor ELSE 0 END) > 0`);
 
       for (const row of result.rows) {
-        const daysOverdue = Math.floor((Date.now() - new Date(row.due_date).getTime()) / (1000 * 60 * 60 * 24));
+        const lastBilling = new Date(row.last_billing_date);
+        const dueDate = new Date(lastBilling.getTime() + (row.payment_terms_days || 30) * 86400000);
+        if (dueDate > new Date()) continue;
+
+        const daysOverdue = Math.floor((Date.now() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
         const severity = daysOverdue > 30 ? 'critical' : 'warning';
         await this.createAlert(
           tenantId,
           'payment_overdue',
           severity,
           `Payment overdue: ${row.name}`,
-          `Client ${row.name} has an overdue payment of ${row.amount_minor} ${row.currency} (${daysOverdue} days overdue).`,
+          `Client ${row.name} has outstanding billing of ${row.total_billed} minor units (${daysOverdue} days overdue).`,
           row.id,
           'client'
         );
@@ -173,33 +162,20 @@ export class AlertEngineService {
 
   async checkCashVarianceAlerts(tenantId: string): Promise<void> {
     try {
-      // Check for large cash variances
       const result = await this.db.queryWithTenant(tenantId, 'owner',
-        `SELECT ca.id, ca.name, 
-                COALESCE(ce.expected_minor, 0) as expected,
-                COALESCE(cc.counted_minor, 0) as counted,
-                ABS(COALESCE(ce.expected_minor, 0) - COALESCE(cc.counted_minor, 0)) as variance
-         FROM tenant.cash_accounts ca
-         LEFT JOIN LATERAL (
-           SELECT expected_minor FROM tenant.cash_expected_by_account v
-           WHERE v.account_id = ca.id LIMIT 1
-         ) ce ON true
-         LEFT JOIN LATERAL (
-           SELECT counted_minor FROM tenant.cash_counts cc
-           WHERE cc.account_id = ca.id
-           ORDER BY cc.count_date DESC LIMIT 1
-         ) cc ON true
-         WHERE ABS(COALESCE(ce.expected_minor, 0) - COALESCE(cc.counted_minor, 0)) > 10000`);
+        `SELECT v.account_id, v.account_name, v.expected_minor, v.last_count_minor, v.variance_minor
+         FROM tenant.v_cash_expected v
+         WHERE ABS(COALESCE(v.variance_minor, 0)) > 10000`);
 
       for (const row of result.rows) {
-        const variance = Math.abs(row.expected - row.counted);
+        const variance = Math.abs(row.variance_minor);
         await this.createAlert(
           tenantId,
           'cash_variance',
           'warning',
-          `Cash variance detected: ${row.name}`,
-          `Cash account ${row.name} has a variance of ${variance} minor units (expected: ${row.expected}, counted: ${row.counted}).`,
-          row.id,
+          `Cash variance detected: ${row.account_name}`,
+          `Cash account ${row.account_name} has a variance of ${variance} minor units (expected: ${row.expected_minor}, counted: ${row.last_count_minor}).`,
+          row.account_id,
           'client'
         );
       }

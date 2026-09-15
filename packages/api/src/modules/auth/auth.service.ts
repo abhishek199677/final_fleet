@@ -6,61 +6,31 @@ import { sign, verify, type JwtPayload } from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const REFRESH_EXPIRES = '30d';
 
-function hashPassword(password: string, salt: string): Buffer {
-  return createHash('sha256').update(password + salt).digest();
+function hashPassword(password: string, salt: string): string {
+  return createHash('sha256').update(password + salt).digest('hex');
 }
 
-function verifyPassword(password: string, salt: string, storedHash: Buffer): boolean {
+function verifyPassword(password: string, salt: string, storedHash: string): boolean {
   const computed = hashPassword(password, salt);
-  return timingSafeEqual(computed, storedHash);
+  return timingSafeEqual(Buffer.from(computed, 'hex'), Buffer.from(storedHash, 'hex'));
 }
-
-interface StoredUser {
-  id: string;
-  email: string;
-  password_hash: Buffer;
-  salt: string;
-  role: string;
-  tenant_id: string;
-}
-
-// Persistent user store backed by DB (survives restarts)
-const localUsers = new Map<string, StoredUser>();
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
-  constructor(private db: DatabaseService) {
-    this.initDemoUsers();
-  }
+  constructor(private db: DatabaseService) {}
 
-  private initDemoUsers() {
-    const salt1 = randomBytes(16).toString('hex');
-    const salt2 = randomBytes(16).toString('hex');
+  async login(email: string, password: string) {
+    const result = await this.db.query('platform',
+      `SELECT u.id, u.email, u.role, u.tenant_id, uc.password_hash, uc.salt
+       FROM tenant.users u
+       JOIN tenant.user_credentials uc ON uc.user_id = u.id
+       WHERE uc.email = $1 AND u.is_active = true`,
+      [email]
+    );
 
-    localUsers.set('demo@fleetos.com', {
-      id: '00000000-0000-0000-0000-000000000010',
-      email: 'demo@fleetos.com',
-      password_hash: hashPassword('demo1234', salt1),
-      salt: salt1,
-      role: 'owner',
-      tenant_id: '00000000-0000-0000-0000-000000000001',
-    });
-
-    localUsers.set('ops@fleetos.com', {
-      id: '00000000-0000-0000-0000-000000000011',
-      email: 'ops@fleetos.com',
-      password_hash: hashPassword('demo1234', salt2),
-      salt: salt2,
-      role: 'ops',
-      tenant_id: '00000000-0000-0000-0000-000000000001',
-    });
-  }
-
-  login(email: string, password: string) {
-    const user = localUsers.get(email);
-
+    const user = result.rows[0];
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -86,7 +56,7 @@ export class AuthService {
       { expiresIn: REFRESH_EXPIRES, issuer: 'fleetos' }
     );
 
-    return Promise.resolve({
+    return {
       token,
       refresh_token: refreshToken,
       expires_in: 86400,
@@ -96,15 +66,22 @@ export class AuthService {
         role: user.role,
         tenant_id: user.tenant_id,
       },
-    });
+    };
   }
 
-  refresh(refreshToken: string): { token: string; expires_in: number } {
+  async refresh(refreshToken: string): Promise<{ token: string; expires_in: number }> {
     try {
       const payload = verify(refreshToken, JWT_SECRET, { issuer: 'fleetos' }) as JwtPayload & { type?: string };
       if (payload.type !== 'refresh') throw new UnauthorizedException('Invalid refresh token');
 
-      const user = Array.from(localUsers.values()).find(u => u.id === payload.sub);
+      const result = await this.db.query('platform',
+        `SELECT u.id, u.email, u.role, u.tenant_id
+         FROM tenant.users u
+         WHERE u.id = $1 AND u.is_active = true`,
+        [payload.sub]
+      );
+
+      const user = result.rows[0];
       if (!user) throw new UnauthorizedException('User not found');
 
       const token = sign(
@@ -125,7 +102,11 @@ export class AuthService {
   }
 
   async register(email: string, password: string, tenantName: string) {
-    if (localUsers.has(email)) {
+    const existing = await this.db.query('platform',
+      `SELECT 1 FROM tenant.user_credentials WHERE email = $1`,
+      [email]
+    );
+    if (existing.rows.length > 0) {
       throw new ConflictException('User already exists');
     }
 
@@ -141,14 +122,17 @@ export class AuthService {
     const passwordHash = hashPassword(password, salt);
     const userId = randomBytes(16).toString('hex');
 
-    localUsers.set(email, {
-      id: userId,
-      email,
-      password_hash: passwordHash,
-      salt,
-      role: 'owner',
-      tenant_id: tenantId,
-    });
+    await this.db.query('platform',
+      `INSERT INTO tenant.users (tenant_id, cognito_sub, email, name, role, is_active, client_uuid)
+       VALUES ($1, $2, $3, $4, 'owner', true, gen_random_uuid())`,
+      [tenantId, userId, email, tenantName]
+    );
+
+    await this.db.query('platform',
+      `INSERT INTO tenant.user_credentials (user_id, tenant_id, email, password_hash, salt)
+       SELECT id, tenant_id, email, $2, $3 FROM tenant.users WHERE cognito_sub = $1`,
+      [userId, passwordHash, salt]
+    );
 
     await this.db.query('platform',
       `INSERT INTO platform.tenant_settings (tenant_id, working_days_per_month, working_units_per_day, evidence_policy, fx_defaults)
@@ -160,12 +144,6 @@ export class AuthService {
       `INSERT INTO platform.entitlements (tenant_id, plan, machine_limit, user_limit)
        VALUES ($1, 'pilot', 50, 20)`,
       [tenantId]
-    );
-
-    await this.db.query('platform',
-      `INSERT INTO tenant.users (tenant_id, cognito_sub, email, name, role, is_active, client_uuid)
-       VALUES ($1, $2, $3, $4, 'owner', true, gen_random_uuid())`,
-      [tenantId, userId, email, tenantName]
     );
 
     const token = sign(

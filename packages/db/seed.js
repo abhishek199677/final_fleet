@@ -75,6 +75,23 @@ async function seed() {
       ON CONFLICT (id) DO NOTHING
     `);
 
+    // Create user credentials for local auth (password: demo1234)
+    const { createHash, randomBytes } = require('crypto');
+    const salt1 = randomBytes(16).toString('hex');
+    const salt2 = randomBytes(16).toString('hex');
+    const hash1 = createHash('sha256').update('demo1234' + salt1).digest('hex');
+    const hash2 = createHash('sha256').update('demo1234' + salt2).digest('hex');
+    await client.query(`
+      INSERT INTO tenant.user_credentials (user_id, tenant_id, email, password_hash, salt)
+      VALUES ('00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000001', 'demo@fleetos.com', $1, $2)
+      ON CONFLICT (email) DO NOTHING
+    `, [hash1, salt1]);
+    await client.query(`
+      INSERT INTO tenant.user_credentials (user_id, tenant_id, email, password_hash, salt)
+      VALUES ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000001', 'ops@fleetos.com', $1, $2)
+      ON CONFLICT (email) DO NOTHING
+    `, [hash2, salt2]);
+
     // Create machines
     const machines = [
       { code: 'EXC-001', type: 'excavator', make: 'Caterpillar', model: '320', year: 2020, meter: 4500 },
@@ -138,6 +155,7 @@ async function seed() {
     await seedDemoHistory(client);
     await seedDemoBilling(client);
     await seedDemoAlerts(client);
+    await seedAlertTriggerData(client);
   } catch (error) {
     console.error('❌ Seed failed:', error);
     throw error;
@@ -343,6 +361,134 @@ async function seedDemoAlerts(client) {
   }
 
   console.log('✅ Demo alerts seeded (4 alerts)');
+}
+
+/**
+ * Seed additional data to trigger all alert engine checks.
+ * Creates: recent large fuel logs, cash counts with variance, duplicate expenses,
+ * ongoing downtime, and varied expense categories.
+ */
+async function seedAlertTriggerData(client) {
+  const TENANT = '00000000-0000-0000-0000-000000000001';
+  const OWNER = '00000000-0000-0000-0000-000000000010';
+
+  const existing = await client.query(
+    `SELECT 1 FROM tenant.fuel_logs WHERE tenant_id = $1 AND litres > 500 AND created_at >= NOW() - INTERVAL '7 days' LIMIT 1`,
+    [TENANT]
+  );
+  if (existing.rows.length > 0) {
+    console.log('ℹ️  Alert trigger data already present — skipping');
+    return;
+  }
+
+  const q = async (text, params = []) => (await client.query(text, params)).rows;
+
+  const machines = await q(`SELECT id, code FROM tenant.machines WHERE tenant_id = $1 ORDER BY code`, [TENANT]);
+  const acct = (await q(`SELECT id FROM tenant.cash_accounts WHERE tenant_id = $1 LIMIT 1`, [TENANT]))[0];
+  const fuelCat = (await q(`SELECT id FROM tenant.expense_categories WHERE tenant_id = $1 AND name = 'Fuel'`, [TENANT]))[0];
+  const maintCat = (await q(`SELECT id FROM tenant.expense_categories WHERE tenant_id = $1 AND name = 'Maintenance'`, [TENANT]))[0];
+  const partsCat = (await q(`SELECT id FROM tenant.expense_categories WHERE tenant_id = $1 AND name = 'Parts'`, [TENANT]))[0];
+  const labourCat = (await q(`SELECT id FROM tenant.expense_categories WHERE tenant_id = $1 AND name = 'Labour'`, [TENANT]))[0];
+
+  // 1. Large recent fuel logs (triggers diesel_anomaly: >500L in 7 days)
+  if (machines.length > 0) {
+    await q(
+      `INSERT INTO tenant.fuel_logs (tenant_id, machine_id, litres, cost_minor, currency, base_minor, created_by, client_uuid, created_at)
+       VALUES ($1, $2, 600, 5700000, 'INR', 5700000, $3, gen_random_uuid(), NOW() - INTERVAL '2 days')`,
+      [TENANT, machines[0].id, OWNER]
+    );
+    await q(
+      `INSERT INTO tenant.fuel_logs (tenant_id, machine_id, litres, cost_minor, currency, base_minor, created_by, client_uuid, created_at)
+       VALUES ($1, $2, 150, 1425000, 'INR', 1425000, $3, gen_random_uuid(), NOW() - INTERVAL '1 day')`,
+      [TENANT, machines[0].id, OWNER]
+    );
+  }
+
+  // 2. Cash count with large variance (triggers cash_variance)
+  if (acct) {
+    await q(
+      `INSERT INTO tenant.cash_counts (tenant_id, cash_account_id, count_date, counted, created_by, client_uuid)
+       VALUES ($1, $2, CURRENT_DATE, '[{"denomination": 500, "quantity": 10}]'::jsonb, $3, gen_random_uuid())`,
+      [TENANT, acct.id, OWNER]
+    );
+  }
+
+  // 3. Duplicate expenses (triggers duplicate_expense: same category, month, ±1% amount)
+  if (fuelCat) {
+    await q(
+      `INSERT INTO tenant.expenses (tenant_id, date, category_id, description, currency, amount_minor, base_minor, cash_account_id, paid_by, allocation_type, created_by, client_uuid)
+       VALUES ($1, CURRENT_DATE - 1, $2, 'Diesel fill-up EXC-001', 'INR', 4750000, 4750000, $3, 'Demo Ops', 'machine', $4, gen_random_uuid())`,
+      [TENANT, fuelCat.id, acct?.id, OWNER]
+    );
+    await q(
+      `INSERT INTO tenant.expenses (tenant_id, date, category_id, description, currency, amount_minor, base_minor, cash_account_id, paid_by, allocation_type, created_by, client_uuid)
+       VALUES ($1, CURRENT_DATE - 3, $2, 'Diesel fill-up EXC-002', 'INR', 4760000, 4760000, $3, 'Demo Ops', 'machine', $4, gen_random_uuid())`,
+      [TENANT, fuelCat.id, acct?.id, OWNER]
+    );
+  }
+
+  // 4. More expenses in different categories (for concentration check)
+  if (maintCat) {
+    await q(
+      `INSERT INTO tenant.expenses (tenant_id, date, category_id, description, currency, amount_minor, base_minor, cash_account_id, paid_by, allocation_type, created_by, client_uuid)
+       VALUES ($1, CURRENT_DATE - 1, $2, 'Grease and oil top-up', 'INR', 250000, 250000, $3, 'Demo Ops', 'machine', $4, gen_random_uuid())`,
+      [TENANT, maintCat.id, acct?.id, OWNER]
+    );
+  }
+  if (partsCat) {
+    await q(
+      `INSERT INTO tenant.expenses (tenant_id, date, category_id, description, currency, amount_minor, base_minor, cash_account_id, paid_by, allocation_type, created_by, client_uuid)
+       VALUES ($1, CURRENT_DATE - 1, $2, 'Hydraulic filter replacement', 'INR', 180000, 180000, $3, 'Demo Ops', 'machine', $4, gen_random_uuid())`,
+      [TENANT, partsCat.id, acct?.id, OWNER]
+    );
+  }
+  if (labourCat) {
+    await q(
+      `INSERT INTO tenant.expenses (tenant_id, date, category_id, description, currency, amount_minor, base_minor, cash_account_id, paid_by, allocation_type, created_by, client_uuid)
+       VALUES ($1, CURRENT_DATE - 1, $2, 'Overtime mechanic', 'INR', 350000, 350000, $3, 'Demo Ops', 'overhead', $4, gen_random_uuid())`,
+      [TENANT, labourCat.id, acct?.id, OWNER]
+    );
+  }
+
+  // 5. Ongoing downtime segment (triggers stopped_long: >8h with no ended_at)
+  if (machines.length > 1) {
+    await q(
+      `INSERT INTO tenant.downtime_segments (tenant_id, machine_id, started_at, reason_code, note, created_by, client_uuid)
+       VALUES ($1, $2, NOW() - INTERVAL '12 hours', 'breakdown', 'Engine overheating — awaiting parts', $3, gen_random_uuid())`,
+      [TENANT, machines[1].id, OWNER]
+    );
+  }
+
+  // 6. Second client with overdue billing (triggers payment_overdue)
+  const client2 = (await q(
+    `INSERT INTO tenant.clients (tenant_id, name, currency, payment_terms_days, client_uuid)
+     VALUES ($1, 'AfriBuild Ltd', 'USD', 15, gen_random_uuid()) RETURNING id`,
+    [TENANT]
+  ))[0];
+  if (client2 && machines.length > 2) {
+    const site2 = (await q(
+      `INSERT INTO tenant.sites (tenant_id, client_id, name, location, client_uuid)
+       VALUES ($1, $2, 'Lagos Site', 'Lagos, Nigeria', gen_random_uuid()) RETURNING id`,
+      [TENANT, client2.id]
+    ))[0];
+    if (site2) {
+      const dep2 = (await q(
+        `INSERT INTO tenant.deployments (tenant_id, machine_id, site_id, start_date, status, client_uuid)
+         VALUES ($1, $2, $3, CURRENT_DATE - 45, 'active', gen_random_uuid()) RETURNING id`,
+        [TENANT, machines[2].id, site2.id]
+      ))[0];
+      if (dep2) {
+        // Billing entry from 45 days ago (well past 15-day terms)
+        await q(
+          `INSERT INTO tenant.billing_ledger (tenant_id, deployment_id, entry_date, kind, units, currency, amount_minor, created_at)
+           VALUES ($1, $2, CURRENT_DATE - 45, 'monthly_hire', 26, 'USD', 13000000, NOW() - INTERVAL '45 days')`,
+          [TENANT, dep2.id]
+        );
+      }
+    }
+  }
+
+  console.log('✅ Alert trigger data seeded (diesel, cash variance, duplicates, stopped-long, payment overdue)');
 }
 
 seed();
