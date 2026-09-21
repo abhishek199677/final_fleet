@@ -57,10 +57,10 @@ function statusOf(m: Row, activeIds: Set<string>): string {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; dot: string; bg: string; text: string }> = {
-  working: { label: 'Working', dot: 'bg-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-700' },
+  working: { label: 'Working', dot: 'text-gray-800', bg: 'bg-emerald-50', text: 'text-emerald-700' },
   log_pending: { label: 'Idle', dot: 'bg-amber-500', bg: 'bg-amber-50', text: 'text-amber-700' },
   stopped: { label: 'Stopped', dot: 'bg-red-500', bg: 'bg-red-50', text: 'text-red-700' },
-  service: { label: 'In service', dot: 'bg-blue-500', bg: 'bg-blue-50', text: 'text-blue-700' },
+  service: { label: 'In service', dot: 'bg-gray-500', bg: 'bg-gray-50', text: 'text-gray-700' },
   transit: { label: 'In transit', dot: 'bg-violet-500', bg: 'bg-violet-50', text: 'text-violet-700' },
 };
 
@@ -303,7 +303,7 @@ function DashboardInner() {
             </div>
             <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-gray-100">
               <div
-                className="h-full rounded-full bg-emerald-500 transition-all duration-700"
+                className="h-full rounded-full text-gray-800 transition-all duration-700"
                 style={{ width: `${utilisation}%` }}
               />
             </div>
@@ -314,8 +314,8 @@ function DashboardInner() {
         <div className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-xs transition-all hover:shadow-sm">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-gray-500">Revenue</p>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50">
-              <Clock className="h-4 w-4 text-blue-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50">
+              <Clock className="h-4 w-4 text-gray-700" />
             </div>
           </div>
           <div className="mt-3">
@@ -438,7 +438,7 @@ function DashboardInner() {
               </div>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="h-1.5 w-1.5 rounded-full text-gray-800 animate-pulse" />
                   <span className="text-xs font-medium text-emerald-700">Live</span>
                 </div>
                 <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-50 hover:text-gray-600">
@@ -492,7 +492,7 @@ function DashboardInner() {
             </div>
             {machineActivity.length > 0 && (
               <div className="border-t border-gray-100 px-5 py-3">
-                <button className="flex items-center gap-1 text-sm font-medium text-brand-700 hover:text-brand-600">
+                <button className="flex items-center gap-1 text-sm font-medium text-gray-900 hover:text-gray-800">
                   View all machines
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -511,11 +511,11 @@ function DashboardInner() {
             </div>
             <div className="space-y-3">
               {[
-                { label: 'Working', count: statusCounts.working || 0, color: 'bg-emerald-500', bg: 'bg-emerald-50' },
+                { label: 'Working', count: statusCounts.working || 0, color: 'text-gray-800', bg: 'bg-emerald-50' },
                 { label: 'Idle', count: statusCounts.log_pending || 0, color: 'bg-amber-500', bg: 'bg-amber-50' },
                 { label: 'Stopped', count: statusCounts.stopped || 0, color: 'bg-red-500', bg: 'bg-red-50' },
                 { label: 'In transit', count: statusCounts.transit || 0, color: 'bg-violet-500', bg: 'bg-violet-50' },
-                { label: 'In service', count: statusCounts.service || 0, color: 'bg-blue-500', bg: 'bg-blue-50' },
+                { label: 'In service', count: statusCounts.service || 0, color: 'bg-gray-500', bg: 'bg-gray-50' },
               ].map((s) => (
                 <div key={s.label} className={cn('flex items-center justify-between rounded-xl p-3', s.bg)}>
                   <div className="flex items-center gap-3">

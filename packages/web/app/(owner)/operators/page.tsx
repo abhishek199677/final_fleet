@@ -65,7 +65,7 @@ export default function OwnerOperators() {
           <p className="text-muted-foreground mt-1">Manage your machine operators and assignments</p>
         </div>
         <Link href="/operators/new">
-          <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600">
+          <Button className="bg-gradient-to-r from-gray-950 to-gray-900 hover:from-blue-600 hover:to-cyan-600">
             <span className="mr-2">+</span> Add Operator
           </Button>
         </Link>
@@ -88,7 +88,7 @@ export default function OwnerOperators() {
             <div className="text-6xl mb-4">👷</div>
             <p className="text-gray-500 text-lg mb-2">No operators yet</p>
             <p className="text-gray-400 text-sm">Add your first operator to get started</p>
-            <Button className="mt-6 bg-gradient-to-r from-blue-500 to-cyan-500">
+            <Button className="mt-6 bg-gradient-to-r from-gray-950 to-gray-900">
               <span className="mr-2">+</span> Add First Operator
             </Button>
           </CardContent>
@@ -97,7 +97,7 @@ export default function OwnerOperators() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {uniqueOperators.map((o) => (
             <Card key={o.id} className={`hover:shadow-lg transition-all overflow-hidden ${!o.is_active ? 'opacity-75' : ''}`}>
-              <div className={`h-1.5 ${o.is_active ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gradient-to-r from-gray-400 to-gray-500'}`} />
+              <div className={`h-1.5 ${o.is_active ? 'bg-gradient-to-r from-gray-900 to-gray-800' : 'bg-gradient-to-r from-gray-400 to-gray-500'}`} />
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -144,7 +144,7 @@ export default function OwnerOperators() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Truck className="h-4 w-4 text-blue-500" />
-                        <span className="text-sm font-medium text-blue-600">{o.assigned_machine}</span>
+                        <span className="text-sm font-medium text-gray-700">{o.assigned_machine}</span>
                       </div>
                       {o.site && (
                         <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -160,7 +160,7 @@ export default function OwnerOperators() {
                 <div className="flex items-center gap-1 mt-3 pt-3 border-t border-gray-100">
                   <button
                     onClick={() => router.push(`/operators/${o.id}`)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
                     title="Edit"
                   >
                     <Pencil className="h-3.5 w-3.5" />

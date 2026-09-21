@@ -117,7 +117,7 @@ export default function CashPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <div className="flex items-center gap-2">
               <Wallet className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{money(totalBalance)}</p>
@@ -126,7 +126,7 @@ export default function CashPage() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-4">
+          <div className="bg-gradient-to-r from-gray-950 to-gray-900 p-4">
             <div className="flex items-center gap-2">
               <ArrowRightLeft className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{transfers.length}</p>
@@ -135,7 +135,7 @@ export default function CashPage() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-violet-500 to-purple-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <div className="flex items-center gap-2">
               <Banknote className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{accounts.length}</p>
@@ -169,16 +169,16 @@ export default function CashPage() {
                   onClick={() => setAccountId(String(a.id))}
                 >
                   <div className={`h-1.5 ${
-                    num(a.balance_minor) > 1000000 ? 'bg-gradient-to-r from-green-500 to-emerald-500' :
-                    num(a.balance_minor) > 500000 ? 'bg-gradient-to-r from-blue-500 to-cyan-500' :
-                    'bg-gradient-to-r from-amber-500 to-orange-500'
+                    num(a.balance_minor) > 1000000 ? 'bg-gradient-to-r from-gray-900 to-gray-800' :
+                    num(a.balance_minor) > 500000 ? 'bg-gradient-to-r from-gray-950 to-gray-900' :
+                    'bg-gradient-to-r from-gray-800 to-gray-700'
                   }`} />
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-white ${
                           String(a.type) === 'bank' ? 'bg-gradient-to-br from-blue-500 to-blue-600' :
-                          String(a.type) === 'petty' ? 'bg-gradient-to-br from-amber-500 to-orange-500' :
+                          String(a.type) === 'petty' ? 'bg-gradient-to-br from-gray-700 to-gray-600' :
                           'bg-gradient-to-br from-emerald-500 to-teal-600'
                         }`}>
                           <Wallet className="h-5 w-5" />
@@ -224,7 +224,7 @@ export default function CashPage() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Card className="overflow-hidden">
-              <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-4">
+              <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
                 <CardTitle className="text-white flex items-center gap-2">
                   <ArrowRightLeft className="h-5 w-5" /> New Remittance
                 </CardTitle>
@@ -261,7 +261,7 @@ export default function CashPage() {
                       <Input value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} className="mt-1" />
                     </div>
                   </div>
-                  <Button type="submit" className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600">
+                  <Button type="submit" className="w-full bg-gradient-to-r from-gray-900 to-gray-800 hover:from-emerald-600 hover:to-teal-600">
                     Transfer
                   </Button>
                 </form>
@@ -269,7 +269,7 @@ export default function CashPage() {
             </Card>
 
             <Card className="overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-4">
+              <div className="bg-gradient-to-r from-gray-950 to-gray-900 p-4">
                 <CardTitle className="text-white flex items-center gap-2">
                   <Clock className="h-5 w-5" /> Recent Transfers
                 </CardTitle>
@@ -291,7 +291,7 @@ export default function CashPage() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-blue-600">{money(t.amount_minor)}</p>
+                          <p className="font-bold text-gray-700">{money(t.amount_minor)}</p>
                           <p className="text-[10px] text-gray-500">{String(t.from_name ?? '')} → {String(t.to_name ?? '')}</p>
                         </div>
                       </div>
@@ -303,7 +303,7 @@ export default function CashPage() {
           </div>
 
           <Card className="overflow-hidden">
-            <div className="bg-gradient-to-r from-violet-500 to-purple-500 p-4">
+            <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
               <CardTitle className="text-white flex items-center gap-2">
                 <CheckCircle className="h-5 w-5" /> Physical Counts {accountId ? `(${counts.length})` : ''}
               </CardTitle>

@@ -68,7 +68,7 @@ export default function LandingPage() {
       <div className="flex min-h-screen items-center justify-center bg-surface-base">
         <div className="text-center space-y-6">
           <div className="flex justify-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-700 shadow-lg shadow-brand-600/20">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 shadow-lg shadow-gray-900/20">
               <Truck className="h-7 w-7 text-white" />
             </div>
           </div>
@@ -76,7 +76,7 @@ export default function LandingPage() {
           <p className="text-gray-500">Welcome back, {user.email}</p>
           <Link
             href={href}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-700 px-6 text-sm font-semibold text-white shadow-md shadow-brand-700/20 transition-all hover:bg-brand-600 hover:shadow-lg hover:shadow-brand-600/25"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-gray-900 px-6 text-sm font-semibold text-white shadow-md shadow-gray-900/20 transition-all hover:bg-gray-800 hover:shadow-lg hover:shadow-brand-600/25"
           >
             Go to Dashboard
             <ArrowRight className="h-4 w-4" />
@@ -92,7 +92,7 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-brand-700">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-gray-900 to-gray-800">
               <Truck className="h-5 w-5 text-white" />
             </div>
             <span className="text-lg font-bold tracking-tight text-gray-900">Fleet OS</span>
@@ -111,7 +111,7 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/register"
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-brand-700 px-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-600"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-gray-800"
             >
               Get Started
               <ArrowRight className="h-3.5 w-3.5" />
@@ -125,14 +125,14 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-brand-50/50 to-white" />
         <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-1.5 text-sm font-medium text-brand-700">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-100 px-4 py-1.5 text-sm font-medium text-gray-900">
               <Zap className="h-3.5 w-3.5" />
               Built for heavy-equipment operators
             </div>
             <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
               Know your fleet.
               <br />
-              <span className="bg-gradient-to-r from-brand-600 to-brand-700 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-gray-950 to-gray-900 bg-clip-text text-transparent">
                 Bill with confidence.
               </span>
             </h1>
@@ -143,7 +143,7 @@ export default function LandingPage() {
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Link
                 href="/register"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-700 px-8 text-base font-semibold text-white shadow-lg shadow-brand-700/25 transition-all hover:bg-brand-600 hover:shadow-xl hover:shadow-brand-600/30 hover:-translate-y-0.5"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gray-900 px-8 text-base font-semibold text-white shadow-lg shadow-brand-700/25 transition-all hover:bg-gray-800 hover:shadow-xl hover:shadow-brand-600/30 hover:-translate-y-0.5"
               >
                 Start free trial
                 <ArrowRight className="h-4 w-4" />
@@ -182,7 +182,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             {METRICS.map((m) => (
               <div key={m.label} className="text-center">
-                <p className="text-3xl font-bold tracking-tight text-brand-700 sm:text-4xl">{m.value}</p>
+                <p className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{m.value}</p>
                 <p className="mt-2 text-sm text-gray-500">{m.label}</p>
               </div>
             ))}
@@ -207,7 +207,7 @@ export default function LandingPage() {
                 key={f.title}
                 className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-xs transition-all hover:shadow-md hover:border-gray-300"
               >
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700 transition-colors group-hover:bg-brand-600 group-hover:text-white">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-100 text-gray-900 transition-colors group-hover:bg-gray-800 group-hover:text-white">
                   <f.icon className="h-5 w-5" />
                 </div>
                 <h3 className="mt-4 text-base font-semibold text-gray-900">{f.title}</h3>
@@ -240,7 +240,7 @@ export default function LandingPage() {
                   'Multi-factor authentication for admins',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-gray-800" />
                     <span className="text-sm text-gray-600">{item}</span>
                   </li>
                 ))}
@@ -266,8 +266,8 @@ export default function LandingPage() {
                   </div>
                   <div className="h-px bg-gray-100" />
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
-                      <Lock className="h-5 w-5 text-blue-600" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-50">
+                      <Lock className="h-5 w-5 text-gray-700" />
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-gray-900">Finance Data Isolation</p>
@@ -304,7 +304,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="border-t border-gray-100 bg-gradient-to-b from-brand-50 to-white py-20">
+      <section className="border-t border-gray-100 bg-gradient-to-b from-gray-50 to-white py-20">
         <div className="mx-auto max-w-3xl text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
             Ready to take control of your fleet?
@@ -315,7 +315,7 @@ export default function LandingPage() {
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
               href="/register"
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-700 px-8 text-base font-semibold text-white shadow-lg shadow-brand-700/25 transition-all hover:bg-brand-600 hover:shadow-xl hover:-translate-y-0.5"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gray-900 px-8 text-base font-semibold text-white shadow-lg shadow-brand-700/25 transition-all hover:bg-gray-800 hover:shadow-xl hover:-translate-y-0.5"
             >
               Start free trial
               <ArrowRight className="h-4 w-4" />
@@ -329,7 +329,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-800">
                 <Truck className="h-4 w-4 text-white" />
               </div>
               <span className="text-sm font-semibold text-white">Fleet OS</span>

@@ -98,7 +98,7 @@ function statusBadge(status: string) {
     working: 'bg-green-100 text-green-700',
     log_pending: 'bg-amber-100 text-amber-700',
     stopped: 'bg-red-100 text-red-700',
-    service: 'bg-blue-100 text-blue-700',
+    service: 'bg-gray-100 text-gray-700',
     transit: 'bg-violet-100 text-violet-700',
   };
   return map[status] ?? 'bg-slate-100 text-slate-700';
@@ -322,7 +322,7 @@ export default function OpsToday() {
   return (
     <div className="space-y-6">
       {/* Title + quick actions */}
-      <div className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 shadow-lg">
+      <div className="rounded-xl bg-gradient-to-r from-gray-950 to-gray-900 p-6 shadow-lg">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white tracking-tight">Fleet OS Today</h1>
@@ -332,7 +332,7 @@ export default function OpsToday() {
             {!isReadOnly && (
               <>
                 <Link href="/work-session/new">
-                  <Button size="sm" className="bg-white text-blue-600 hover:bg-blue-50">
+                  <Button size="sm" className="bg-white text-gray-700 hover:bg-gray-50">
                     <Play className="mr-2 h-4 w-4" /> Start Session
                   </Button>
                 </Link>
@@ -361,7 +361,7 @@ export default function OpsToday() {
                 <button
                   key={r.key}
                   onClick={() => setRange(r.key)}
-                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${range === r.key ? 'bg-white text-blue-600 shadow-sm' : 'text-white/80 hover:text-white'}`}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${range === r.key ? 'bg-white text-gray-700 shadow-sm' : 'text-white/80 hover:text-white'}`}
                 >
                   {r.label}
                 </button>
@@ -381,12 +381,12 @@ export default function OpsToday() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
             {kpiCards.map((k, i) => {
               const gradients = [
-                'from-emerald-500 to-teal-500',
-                'from-amber-500 to-orange-500',
-                'from-blue-500 to-indigo-500',
+                'from-gray-800 to-gray-700',
+                'from-gray-700 to-gray-600',
+                'from-gray-900 to-gray-800',
                 'from-cyan-500 to-blue-500',
                 'from-slate-500 to-gray-600',
-                'from-red-500 to-rose-500',
+                'from-gray-700 to-gray-600',
               ];
               return (
                 <div key={k.title} className={`overflow-hidden rounded-xl bg-gradient-to-br ${gradients[i]} p-4 shadow-lg`}>
@@ -533,7 +533,7 @@ export default function OpsToday() {
                           </td>
                           <td className="py-2 text-right">
                             {!isReadOnly && (
-                              <Link href="/work-session/new" className="text-xs font-medium text-blue-600 hover:text-blue-800">
+                              <Link href="/work-session/new" className="text-xs font-medium text-gray-700 hover:text-blue-800">
                                 + Entry
                               </Link>
                             )}

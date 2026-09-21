@@ -70,7 +70,7 @@ export default function OwnerClients() {
           <p className="text-muted-foreground mt-1">Manage your client relationships and projects</p>
         </div>
         <Link href="/clients/new">
-          <Button className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600">
+          <Button className="bg-gradient-to-r from-gray-900 to-gray-800 hover:from-emerald-600 hover:to-teal-600">
             <span className="mr-2">+</span> Add Client
           </Button>
         </Link>
@@ -78,7 +78,7 @@ export default function OwnerClients() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-4">
+          <div className="bg-gradient-to-r from-gray-950 to-gray-900 p-4">
             <div className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{uniqueClients.length}</p>
@@ -87,7 +87,7 @@ export default function OwnerClients() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <div className="flex items-center gap-2">
               <Briefcase className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{activeClients}</p>
@@ -96,7 +96,7 @@ export default function OwnerClients() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <div className="flex items-center gap-2">
               <IndianRupee className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">₹{(totalRevenue / 100000).toFixed(1)}L</p>
@@ -123,7 +123,7 @@ export default function OwnerClients() {
             <div className="text-6xl mb-4">🏢</div>
             <p className="text-gray-500 text-lg mb-2">No clients yet</p>
             <p className="text-gray-400 text-sm">Add your first client to start managing projects</p>
-            <Button className="mt-6 bg-gradient-to-r from-emerald-500 to-teal-500">
+            <Button className="mt-6 bg-gradient-to-r from-gray-900 to-gray-800">
               <span className="mr-2">+</span> Add First Client
             </Button>
           </CardContent>
@@ -134,7 +134,7 @@ export default function OwnerClients() {
             <Link key={c.id} href={`/clients/${c.id}`}>
               <Card className="hover:shadow-lg transition-all cursor-pointer group overflow-hidden h-full">
                 <div className={`h-1.5 ${
-                  c.status === 'active' ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gradient-to-r from-gray-400 to-gray-500'
+                  c.status === 'active' ? 'bg-gradient-to-r from-gray-900 to-gray-800' : 'bg-gradient-to-r from-gray-400 to-gray-500'
                 }`} />
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between mb-4">
@@ -195,7 +195,7 @@ export default function OwnerClients() {
                   <div className="flex items-center gap-1 mt-2">
                     <button
                       onClick={(e) => { e.preventDefault(); router.push(`/clients/${c.id}`); }}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
                       title="Edit"
                     >
                       <Pencil className="h-3.5 w-3.5" />

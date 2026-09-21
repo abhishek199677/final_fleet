@@ -158,7 +158,7 @@ export default function BillingPage() {
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-4">
+          <div className="bg-gradient-to-r from-gray-950 to-gray-900 p-4">
             <div className="flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{money(totalBilled)}</p>
@@ -167,7 +167,7 @@ export default function BillingPage() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <div className="flex items-center gap-2">
               <IndianRupee className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{money(totalReceived)}</p>
@@ -176,7 +176,7 @@ export default function BillingPage() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-4">
+          <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-4">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{money(totalOutstanding)}</p>
@@ -185,7 +185,7 @@ export default function BillingPage() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-violet-500 to-purple-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <div className="flex items-center gap-2">
               <Receipt className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{extras.length}</p>
@@ -261,7 +261,7 @@ export default function BillingPage() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Card className="overflow-hidden">
-              <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-4">
+              <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
                 <CardTitle className="text-white flex items-center gap-2">
                   <Plus className="h-5 w-5" /> New Rate Card
                 </CardTitle>
@@ -303,7 +303,7 @@ export default function BillingPage() {
                       <Input type="date" value={form.effective_from} onChange={(e) => setForm({ ...form, effective_from: e.target.value })} required className="mt-1" />
                     </div>
                   </div>
-                  <Button type="submit" className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600">
+                  <Button type="submit" className="w-full bg-gradient-to-r from-gray-900 to-gray-800 hover:from-emerald-600 hover:to-teal-600">
                     Save Rate Card
                   </Button>
                 </form>
@@ -325,7 +325,7 @@ export default function BillingPage() {
             </Card>
 
             <Card className="overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-4">
+              <div className="bg-gradient-to-r from-gray-950 to-gray-900 p-4">
                 <CardTitle className="text-white flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" /> Machine Contribution
                 </CardTitle>
@@ -363,7 +363,7 @@ export default function BillingPage() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Card className="overflow-hidden">
-              <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-4">
+              <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-4">
                 <CardTitle className="text-white flex items-center gap-2">
                   <AlertCircle className="h-5 w-5" /> Receivables
                 </CardTitle>
@@ -388,7 +388,7 @@ export default function BillingPage() {
             </Card>
 
             <Card className="overflow-hidden">
-              <div className="bg-gradient-to-r from-violet-500 to-purple-500 p-4">
+              <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
                 <CardTitle className="text-white flex items-center gap-2">
                   <Receipt className="h-5 w-5" /> Extra Charges ({extras.length})
                 </CardTitle>

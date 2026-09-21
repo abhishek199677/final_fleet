@@ -53,7 +53,7 @@ export default function CashCount() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div className="rounded-xl bg-gradient-to-r from-violet-500 to-purple-500 p-6 text-white">
+      <div className="rounded-xl bg-gradient-to-r from-gray-900 to-gray-800 p-6 text-white">
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-white/20 p-2">
             <Calculator className="h-6 w-6" />

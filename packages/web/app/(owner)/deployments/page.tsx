@@ -54,7 +54,7 @@ export default function DeploymentsList() {
           <p className="text-muted-foreground mt-1">Track machine assignments across all sites</p>
         </div>
         <Link href="/deployments/new">
-          <Button className="bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600">
+          <Button className="bg-gradient-to-r from-gray-900 to-gray-800 hover:from-violet-600 hover:to-purple-600">
             <span className="mr-2">+</span> New Deployment
           </Button>
         </Link>
@@ -77,7 +77,7 @@ export default function DeploymentsList() {
             <div className="text-6xl mb-4">🚜</div>
             <p className="text-gray-500 text-lg mb-2">No deployments yet</p>
             <p className="text-gray-400 text-sm">Create one to assign a machine to a site</p>
-            <Button className="mt-6 bg-gradient-to-r from-violet-500 to-purple-500">
+            <Button className="mt-6 bg-gradient-to-r from-gray-900 to-gray-800">
               <span className="mr-2">+</span> Create First Deployment
             </Button>
           </CardContent>
@@ -88,9 +88,9 @@ export default function DeploymentsList() {
             <Link key={d.id} href={`/deployments/${d.id}`}>
               <Card className="hover:shadow-lg transition-all cursor-pointer group overflow-hidden h-full">
                 <div className={`h-1.5 ${
-                  d.status === 'active' ? 'bg-gradient-to-r from-green-500 to-emerald-500' :
-                  d.status === 'pending' ? 'bg-gradient-to-r from-amber-500 to-orange-500' :
-                  d.status === 'on_hold_payment' ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' :
+                  d.status === 'active' ? 'bg-gradient-to-r from-gray-900 to-gray-800' :
+                  d.status === 'pending' ? 'bg-gradient-to-r from-gray-800 to-gray-700' :
+                  d.status === 'on_hold_payment' ? 'bg-gradient-to-r from-gray-600 to-gray-500' :
                   'bg-gradient-to-r from-gray-400 to-gray-500'
                 }`} />
                 <CardContent className="p-5">
@@ -134,7 +134,7 @@ export default function DeploymentsList() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={(e) => { e.preventDefault(); router.push(`/deployments/${d.id}`); }}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
                         title="Edit"
                       >
                         <Pencil className="h-3.5 w-3.5" />

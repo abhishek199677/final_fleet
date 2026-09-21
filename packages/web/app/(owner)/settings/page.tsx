@@ -20,13 +20,13 @@ interface TenantSettings {
 }
 
 const TAB_CONFIG = [
-  { id: 'users', label: 'Users', icon: Users, color: 'from-blue-500 to-cyan-500' },
-  { id: 'machines', label: 'Machines', icon: Truck, color: 'from-green-500 to-emerald-500' },
-  { id: 'categories', label: 'Categories', icon: Tag, color: 'from-violet-500 to-purple-500' },
-  { id: 'fx', label: 'FX', icon: DollarSign, color: 'from-amber-500 to-orange-500' },
+  { id: 'users', label: 'Users', icon: Users, color: 'from-gray-900 to-gray-800' },
+  { id: 'machines', label: 'Machines', icon: Truck, color: 'from-gray-800 to-gray-700' },
+  { id: 'categories', label: 'Categories', icon: Tag, color: 'from-gray-800 to-gray-700' },
+  { id: 'fx', label: 'FX', icon: DollarSign, color: 'from-gray-700 to-gray-600' },
   { id: 'evidence', label: 'Evidence', icon: Camera, color: 'from-pink-500 to-rose-500' },
-  { id: 'thresholds', label: 'Thresholds', icon: Shield, color: 'from-indigo-500 to-blue-500' },
-  { id: 'notifications', label: 'Notifications', icon: Bell, color: 'from-emerald-500 to-teal-500' },
+  { id: 'thresholds', label: 'Thresholds', icon: Shield, color: 'from-gray-900 to-gray-800' },
+  { id: 'notifications', label: 'Notifications', icon: Bell, color: 'from-gray-800 to-gray-700' },
   { id: 'periodClose', label: 'Period Close', icon: Clock, color: 'from-slate-600 to-slate-700' },
   { id: 'language', label: 'Language', icon: Globe, color: 'from-purple-500 to-pink-500' },
 ] as const;
@@ -114,7 +114,7 @@ export default function Settings() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-4">
+          <div className="bg-gradient-to-r from-gray-950 to-gray-900 p-4">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{users.length}</p>
@@ -123,7 +123,7 @@ export default function Settings() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <div className="flex items-center gap-2">
               <Truck className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{machines.length}</p>
@@ -132,7 +132,7 @@ export default function Settings() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-violet-500 to-purple-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <div className="flex items-center gap-2">
               <SettingsIcon className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{periodCloses.length}</p>
@@ -177,7 +177,7 @@ export default function Settings() {
         <>
           {tab === 'users' && (
             <Card className="overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-4">
+              <div className="bg-gradient-to-r from-gray-950 to-gray-900 p-4">
                 <CardTitle className="text-white flex items-center gap-2">
                   <Users className="h-5 w-5" /> User Management
                 </CardTitle>
@@ -208,7 +208,7 @@ export default function Settings() {
           {tab === 'machines' && (
             <div className="space-y-6">
               <Card className="overflow-hidden">
-                <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4">
+                <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
                   <CardTitle className="text-white flex items-center gap-2">
                     <Truck className="h-5 w-5" /> Machine Configuration
                   </CardTitle>
@@ -242,7 +242,7 @@ export default function Settings() {
               </Card>
 
               <Card className="overflow-hidden">
-                <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-4">
+                <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-4">
                   <CardTitle className="text-white flex items-center gap-2">
                     <Wrench className="h-5 w-5" /> Maintenance Tasks
                   </CardTitle>
@@ -274,7 +274,7 @@ export default function Settings() {
 
           {tab === 'categories' && (
             <Card className="overflow-hidden">
-              <div className="bg-gradient-to-r from-violet-500 to-purple-500 p-4">
+              <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
                 <CardTitle className="text-white flex items-center gap-2">
                   <Tag className="h-5 w-5" /> Expense Categories
                 </CardTitle>
@@ -301,7 +301,7 @@ export default function Settings() {
 
           {tab === 'fx' && (
             <Card className="overflow-hidden">
-              <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-4">
+              <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-4">
                 <CardTitle className="text-white flex items-center gap-2">
                   <DollarSign className="h-5 w-5" /> FX Defaults
                 </CardTitle>
@@ -332,7 +332,7 @@ export default function Settings() {
                     fxDefaults[currency] = { currency, rate: parseFloat(rate) || 1 };
                   });
                   void saveSettings({ fx_defaults: fxDefaults });
-                }} disabled={saving} className="mt-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600">
+                }} disabled={saving} className="mt-4 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-amber-600 hover:to-orange-600">
                   {saving ? 'Saving...' : 'Save FX Rates'}
                 </Button>
               </CardContent>
@@ -373,7 +373,7 @@ export default function Settings() {
 
           {tab === 'thresholds' && settings && (
             <Card className="overflow-hidden">
-              <div className="bg-gradient-to-r from-indigo-500 to-blue-500 p-4">
+              <div className="bg-gradient-to-r from-gray-950 to-gray-900 p-4">
                 <CardTitle className="text-white flex items-center gap-2">
                   <Shield className="h-5 w-5" /> Thresholds & Working Hours
                 </CardTitle>
@@ -393,7 +393,7 @@ export default function Settings() {
                     <Input type="number" value={settings.working_days_per_month} onChange={(e) => { void saveSettings({ working_days_per_month: parseInt(e.target.value) || 26 }); }} className="mt-1" />
                   </div>
                 </div>
-                <Button onClick={() => { void saveSettings(settings); }} disabled={saving} className="mt-4 bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600">
+                <Button onClick={() => { void saveSettings(settings); }} disabled={saving} className="mt-4 bg-gradient-to-r from-gray-950 to-gray-900 hover:from-indigo-600 hover:to-blue-600">
                   {saving ? 'Saving...' : 'Save Thresholds'}
                 </Button>
               </CardContent>
@@ -402,7 +402,7 @@ export default function Settings() {
 
           {tab === 'notifications' && (
             <Card className="overflow-hidden">
-              <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-4">
+              <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
                 <CardTitle className="text-white flex items-center gap-2">
                   <Bell className="h-5 w-5" /> Notification Preferences
                 </CardTitle>

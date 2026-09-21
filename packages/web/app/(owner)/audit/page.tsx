@@ -16,7 +16,7 @@ interface Row extends Record<string, unknown> {
 const TABLES = ['', 'work_sessions', 'fuel_logs', 'downtime_segments', 'expenses', 'client_money_events', 'cash_transfers', 'cash_counts', 'maintenance_visits'];
 
 const TABLE_COLORS: Record<string, string> = {
-  work_sessions: 'bg-blue-100 text-blue-700',
+  work_sessions: 'bg-gray-100 text-gray-700',
   fuel_logs: 'bg-green-100 text-green-700',
   downtime_segments: 'bg-amber-100 text-amber-700',
   expenses: 'bg-red-100 text-red-700',
@@ -159,7 +159,7 @@ export default function AuditPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-4">
+          <div className="bg-gradient-to-r from-gray-950 to-gray-900 p-4">
             <div className="flex items-center gap-2">
               <History className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{allRows.length}</p>
@@ -168,7 +168,7 @@ export default function AuditPage() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{allRows.filter(r => r.operation === 'INSERT').length}</p>
@@ -177,7 +177,7 @@ export default function AuditPage() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-4">
+          <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-4">
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{allRows.filter(r => r.operation === 'UPDATE').length}</p>
@@ -239,7 +239,7 @@ export default function AuditPage() {
       </Card>
 
       <Card className="overflow-hidden">
-        <div className="bg-gradient-to-r from-violet-500 to-purple-500 p-4">
+        <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
           <CardTitle className="text-white flex items-center gap-2">
             <FileText className="h-5 w-5" /> Entries ({rows.length})
           </CardTitle>

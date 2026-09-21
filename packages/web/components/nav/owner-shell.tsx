@@ -69,12 +69,12 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
       {/* Logo */}
       <div className={cn('flex h-16 items-center border-b border-gray-100 px-5', collapsed && 'justify-center px-3')}>
         <Link href="/home" className="flex items-center gap-2.5" onClick={onNavigate}>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-700 shadow-sm shadow-brand-600/20">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-900 shadow-sm shadow-gray-900/20">
             <Truck className="h-4 w-4 text-white" />
           </div>
           {!collapsed && (
             <span className="text-base font-bold tracking-tight text-gray-900">
-              Fleet<span className="text-brand-700">OS</span>
+              Fleet<span className="text-gray-900">OS</span>
             </span>
           )}
         </Link>
@@ -103,13 +103,13 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-fast',
                 collapsed && 'justify-center px-2',
                 isActive(pathname, entry.href!)
-                  ? 'bg-brand-50 text-brand-700'
+                  ? 'bg-gray-100 text-gray-900'
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
               )}
             >
               <entry.icon className={cn(
                 'h-[18px] w-[18px] shrink-0',
-                isActive(pathname, entry.href!) ? 'text-brand-600' : 'text-gray-400',
+                isActive(pathname, entry.href!) ? 'text-gray-900' : 'text-gray-400',
               )} />
               {!collapsed && <span>{t(entry.labelKey!)}</span>}
               {!collapsed && entry.badge && entry.badge > 0 && (
@@ -141,7 +141,7 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
           'flex items-center gap-3 rounded-lg bg-gray-50 p-2.5',
           collapsed && 'justify-center',
         )}>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-700">
             OW
           </div>
           {!collapsed && (
@@ -271,7 +271,7 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
             {/* User menu */}
             <div className="relative group">
               <button className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-gray-100">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-700">
                   OW
                 </div>
                 <ChevronDown className="hidden h-4 w-4 text-gray-400 sm:block" />

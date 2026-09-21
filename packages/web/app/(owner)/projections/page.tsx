@@ -115,7 +115,7 @@ export default function ProjectionsPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-4">
+          <div className="bg-gradient-to-r from-gray-950 to-gray-900 p-4">
             <div className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{money(totalBilling)}</p>
@@ -124,7 +124,7 @@ export default function ProjectionsPage() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{money(totalContribution)}</p>
@@ -133,7 +133,7 @@ export default function ProjectionsPage() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-violet-500 to-purple-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <div className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{savedProjections.length}</p>
@@ -145,7 +145,7 @@ export default function ProjectionsPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <CardTitle className="text-white flex items-center gap-2">
               <Calculator className="h-5 w-5" /> Projection Inputs
             </CardTitle>
@@ -172,7 +172,7 @@ export default function ProjectionsPage() {
                   <Input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} className="mt-1" />
                 </div>
               </div>
-              <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600">
+              <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-gray-900 to-gray-800 hover:from-emerald-600 hover:to-teal-600">
                 {loading ? 'Projecting…' : 'Calculate Projection'}
               </Button>
             </form>
@@ -180,7 +180,7 @@ export default function ProjectionsPage() {
         </Card>
 
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-4">
+          <div className="bg-gradient-to-r from-gray-950 to-gray-900 p-4">
             <CardTitle className="text-white flex items-center gap-2">
               <Target className="h-5 w-5" /> Projection Result
             </CardTitle>
@@ -194,10 +194,10 @@ export default function ProjectionsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="rounded-xl bg-gradient-to-r from-blue-50 to-cyan-50 p-4 border border-blue-100">
+                <div className="rounded-xl bg-gradient-to-r from-blue-50 to-cyan-50 p-4 border border-gray-100">
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600">Projected Billing</span>
-                    <span className="text-xl font-bold text-blue-600">{money(result.projected_billing_minor)}</span>
+                    <span className="text-xl font-bold text-gray-700">{money(result.projected_billing_minor)}</span>
                   </div>
                 </div>
                 <div className="rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 p-4 border border-amber-100">
@@ -248,7 +248,7 @@ export default function ProjectionsPage() {
                     <td className="py-3 pr-2">{p.working_days}</td>
                     <td className="py-3 pr-2">{p.units_per_day}</td>
                     <td className="py-3 pr-2">{money(p.rate_minor)}/unit</td>
-                    <td className="py-3 pr-2 font-bold text-blue-600">{money(p.projected_billing_minor)}</td>
+                    <td className="py-3 pr-2 font-bold text-gray-700">{money(p.projected_billing_minor)}</td>
                     <td className="py-3 pr-2 font-bold text-green-600">{money(p.projected_contribution_minor)}</td>
                     <td className="py-3 pr-2">
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${

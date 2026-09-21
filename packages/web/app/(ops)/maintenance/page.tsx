@@ -117,7 +117,7 @@ export default function MaintenanceVisitPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl bg-gradient-to-r from-sky-500 to-blue-500 p-6 text-white">
+      <div className="rounded-xl bg-gradient-to-r from-gray-950 to-gray-900 p-6 text-white">
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-white/20 p-2">
             <Wrench className="h-6 w-6" />

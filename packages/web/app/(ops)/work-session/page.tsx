@@ -46,7 +46,7 @@ export default function OpsWorkSession() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 p-6 shadow-lg">
+      <div className="rounded-xl bg-gradient-to-r from-gray-800 to-gray-700 p-6 shadow-lg">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white tracking-tight">Work Sessions</h1>
@@ -67,28 +67,28 @@ export default function OpsWorkSession() {
           <Link href="/work-session/new">
             <div className="group rounded-xl border border-[#E5E2DB] bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-md transition-all cursor-pointer">
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center group-hover:scale-105 transition-transform">
                   <Play className="h-6 w-6 text-white" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-slate-900">Start New Session</h3>
                   <p className="text-sm text-slate-500">Begin tracking a new machine session</p>
                 </div>
-                <ArrowRight className="h-5 w-5 text-slate-400 ml-auto group-hover:text-blue-600 transition-colors" />
+                <ArrowRight className="h-5 w-5 text-slate-400 ml-auto group-hover:text-gray-600 transition-colors" />
               </div>
             </div>
           </Link>
           <Link href="/today">
             <div className="group rounded-xl border border-[#E5E2DB] bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-md transition-all cursor-pointer">
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center group-hover:scale-105 transition-transform">
                   <Clock className="h-6 w-6 text-white" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-slate-900">Back to Today</h3>
                   <p className="text-sm text-slate-500">View fleet dashboard</p>
                 </div>
-                <ArrowRight className="h-5 w-5 text-slate-400 ml-auto group-hover:text-blue-600 transition-colors" />
+                <ArrowRight className="h-5 w-5 text-slate-400 ml-auto group-hover:text-gray-600 transition-colors" />
               </div>
             </div>
           </Link>
@@ -98,7 +98,7 @@ export default function OpsWorkSession() {
       {/* Active Sessions */}
       {activeSessions.length > 0 && (
         <div className="rounded-xl border border-[#E5E2DB] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
               <Play className="h-5 w-5" /> Active Sessions ({activeSessions.length})
             </h2>
@@ -107,7 +107,7 @@ export default function OpsWorkSession() {
             {activeSessions.map((session: Record<string, unknown>) => (
               <div key={session.id as string} className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors">
                 <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-gray-700 to-gray-600 flex items-center justify-center">
                     <Gauge className="h-5 w-5 text-white" />
                   </div>
                   <div>
@@ -131,7 +131,7 @@ export default function OpsWorkSession() {
       {/* Recent Completed Sessions */}
       {completedSessions.length > 0 && (
         <div className="rounded-xl border border-[#E5E2DB] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
-          <div className="bg-gradient-to-r from-slate-600 to-gray-700 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
               <CheckCircle className="h-5 w-5" /> Recent Sessions
             </h2>
@@ -170,7 +170,7 @@ export default function OpsWorkSession() {
           <p className="text-slate-500 mb-6">Start your first work session to begin tracking machine activity.</p>
           {!isReadOnly && (
             <Link href="/work-session/new">
-              <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600">
+              <Button className="bg-gradient-to-r from-gray-800 to-gray-700 hover:from-amber-600 hover:to-orange-600">
                 <Play className="mr-2 h-4 w-4" /> Start First Session
               </Button>
             </Link>

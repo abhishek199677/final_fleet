@@ -31,7 +31,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen">
       {/* Left panel — brand */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-brand-700 via-brand-600 to-teal-600">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wOCkiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IGZpbGw9InVybCgjZykiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIvPjwvc3ZnPg==')] opacity-40" />
         <div className="relative flex flex-col justify-between p-12 text-white">
           <div className="flex items-center gap-3">
@@ -75,7 +75,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm space-y-8">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 lg:hidden">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-brand-700">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-gray-900 to-gray-800">
               <Truck className="h-5 w-5 text-white" />
             </div>
             <span className="text-xl font-bold text-gray-900">Fleet OS</span>
@@ -119,7 +119,7 @@ export default function LoginPage() {
                 </label>
                 <button
                   type="button"
-                  className="text-xs font-medium text-brand-700 hover:text-brand-600"
+                  className="text-xs font-medium text-gray-900 hover:text-gray-800"
                 >
                   Forgot password?
                 </button>
@@ -146,7 +146,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="h-11 w-full bg-brand-700 text-white hover:bg-brand-600 shadow-sm shadow-brand-700/20"
+              className="h-11 w-full bg-gray-900 text-white hover:bg-gray-800 shadow-sm shadow-gray-900/20"
               disabled={loading}
             >
               {loading ? (
@@ -171,7 +171,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-gray-500">
             Don&apos;t have an account?{' '}
-            <Link href="/register" className="font-semibold text-brand-700 hover:text-brand-600">
+            <Link href="/register" className="font-semibold text-gray-900 hover:text-gray-800">
               Start free trial
             </Link>
           </p>

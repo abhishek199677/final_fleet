@@ -14,7 +14,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   working: { label: 'Working', color: 'text-green-700', bg: 'bg-green-100', icon: CheckCircle },
   service: { label: 'In Service', color: 'text-amber-700', bg: 'bg-amber-100', icon: Clock },
   stopped: { label: 'Stopped', color: 'text-red-700', bg: 'bg-red-100', icon: AlertCircle },
-  transit: { label: 'In Transit', color: 'text-blue-700', bg: 'bg-blue-100', icon: Truck },
+  transit: { label: 'In Transit', color: 'text-gray-700', bg: 'bg-blue-100', icon: Truck },
 };
 
 export default function OwnerMachines() {
@@ -53,7 +53,7 @@ export default function OwnerMachines() {
           <p className="text-muted-foreground mt-1">Manage your heavy equipment fleet</p>
         </div>
         <Link href="/machines/new">
-          <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600">
+          <Button className="bg-gradient-to-r from-gray-950 to-gray-900 hover:from-blue-600 hover:to-cyan-600">
             <span className="mr-2">+</span> Add Machine
           </Button>
         </Link>
@@ -61,7 +61,7 @@ export default function OwnerMachines() {
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-4">
+          <div className="bg-gradient-to-r from-gray-950 to-gray-900 p-4">
             <div className="flex items-center gap-2">
               <Truck className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{machines.length}</p>
@@ -70,7 +70,7 @@ export default function OwnerMachines() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{workingCount}</p>
@@ -79,7 +79,7 @@ export default function OwnerMachines() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-4">
+          <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-4">
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{serviceCount}</p>
@@ -88,7 +88,7 @@ export default function OwnerMachines() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-red-500 to-rose-500 p-4">
+          <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-4">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{stoppedCount}</p>
@@ -115,7 +115,7 @@ export default function OwnerMachines() {
             <div className="text-6xl mb-4">🚜</div>
             <p className="text-gray-500 text-lg mb-2">No machines yet</p>
             <p className="text-gray-400 text-sm">Add your first machine to get started</p>
-            <Button className="mt-6 bg-gradient-to-r from-blue-500 to-cyan-500">
+            <Button className="mt-6 bg-gradient-to-r from-gray-950 to-gray-900">
               <span className="mr-2">+</span> Add First Machine
             </Button>
           </CardContent>
@@ -130,10 +130,10 @@ export default function OwnerMachines() {
               <Link key={m.id as string} href={`/machines/${m.id}`}>
                 <Card className="hover:shadow-lg transition-all cursor-pointer group overflow-hidden h-full">
                   <div className={`h-1.5 ${
-                    m.status_flag === 'working' ? 'bg-gradient-to-r from-green-500 to-emerald-500' :
-                    m.status_flag === 'service' ? 'bg-gradient-to-r from-amber-500 to-orange-500' :
-                    m.status_flag === 'stopped' ? 'bg-gradient-to-r from-red-500 to-rose-500' :
-                    'bg-gradient-to-r from-blue-500 to-cyan-500'
+                    m.status_flag === 'working' ? 'bg-gradient-to-r from-gray-900 to-gray-800' :
+                    m.status_flag === 'service' ? 'bg-gradient-to-r from-gray-800 to-gray-700' :
+                    m.status_flag === 'stopped' ? 'bg-gradient-to-r from-gray-800 to-gray-700' :
+                    'bg-gradient-to-r from-gray-950 to-gray-900'
                   }`} />
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between mb-4">
@@ -142,7 +142,7 @@ export default function OwnerMachines() {
                           <Truck className="h-6 w-6" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-gray-800 group-hover:text-blue-600 transition-colors text-lg">
+                          <h3 className="font-bold text-gray-800 group-hover:text-gray-600 transition-colors text-lg">
                             {m.code as string}
                           </h3>
                           <p className="text-xs text-gray-500">{m.type as string}</p>
@@ -170,7 +170,7 @@ export default function OwnerMachines() {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={(e) => { e.preventDefault(); router.push(`/machines/${m.id}`); }}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
                           title="Edit"
                         >
                           <Pencil className="h-3.5 w-3.5" />

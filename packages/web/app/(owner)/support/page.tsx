@@ -13,7 +13,7 @@ interface Row extends Record<string, unknown> {
 }
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; icon: typeof Clock }> = {
-  open: { bg: 'bg-blue-100', text: 'text-blue-700', icon: Clock },
+  open: { bg: 'bg-blue-100', text: 'text-gray-700', icon: Clock },
   pending: { bg: 'bg-amber-100', text: 'text-amber-700', icon: AlertCircle },
   resolved: { bg: 'bg-green-100', text: 'text-green-700', icon: CheckCircle },
   closed: { bg: 'bg-gray-100', text: 'text-gray-700', icon: CheckCircle },
@@ -74,7 +74,7 @@ export default function SupportPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-4">
+          <div className="bg-gradient-to-r from-gray-950 to-gray-900 p-4">
             <div className="flex items-center gap-2">
               <Headphones className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{tickets.length}</p>
@@ -83,7 +83,7 @@ export default function SupportPage() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-4">
+          <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-4">
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{tickets.filter(t => String(t.status) === 'open' || String(t.status) === 'pending').length}</p>
@@ -92,7 +92,7 @@ export default function SupportPage() {
           </div>
         </Card>
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-white" />
               <p className="text-white font-bold text-2xl">{tickets.filter(t => String(t.status) === 'resolved' || String(t.status) === 'closed').length}</p>
@@ -104,7 +104,7 @@ export default function SupportPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <CardTitle className="text-white flex items-center gap-2">
               <MessageCircle className="h-5 w-5" /> Report a Problem
             </CardTitle>
@@ -133,7 +133,7 @@ export default function SupportPage() {
               <Button 
                 type="submit" 
                 disabled={sending}
-                className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 gap-2"
+                className="w-full bg-gradient-to-r from-gray-900 to-gray-800 hover:from-emerald-600 hover:to-teal-600 gap-2"
               >
                 {sending ? (
                   <>Sending…</>
@@ -149,12 +149,12 @@ export default function SupportPage() {
               )}
             </form>
             
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-100">
               <div className="flex items-start gap-3">
                 <HelpCircle className="h-5 w-5 text-blue-500 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-blue-800">How it works</p>
-                  <p className="text-xs text-blue-600 mt-1">
+                  <p className="text-xs text-gray-700 mt-1">
                     Your ticket is sent directly to the Perceptiqx support team via WhatsApp. 
                     They typically respond within 30 minutes during business hours.
                   </p>
@@ -165,7 +165,7 @@ export default function SupportPage() {
         </Card>
 
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-violet-500 to-purple-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <CardTitle className="text-white flex items-center gap-2">
               <Headphones className="h-5 w-5" /> My Tickets ({tickets.length})
             </CardTitle>

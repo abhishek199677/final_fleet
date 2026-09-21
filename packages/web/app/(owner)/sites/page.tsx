@@ -64,7 +64,7 @@ export default function SitesList() {
           <p className="text-muted-foreground mt-1">Manage your project locations and deployments</p>
         </div>
         <Link href="/sites/new">
-          <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600">
+          <Button className="bg-gradient-to-r from-gray-950 to-gray-900 hover:from-blue-600 hover:to-cyan-600">
             <span className="mr-2">+</span> New Site
           </Button>
         </Link>
@@ -87,7 +87,7 @@ export default function SitesList() {
             <div className="text-6xl mb-4">🏗️</div>
             <p className="text-gray-500 text-lg mb-2">No sites yet</p>
             <p className="text-gray-400 text-sm">Create your first site to start deploying machines</p>
-            <Button className="mt-6 bg-gradient-to-r from-blue-500 to-cyan-500">
+            <Button className="mt-6 bg-gradient-to-r from-gray-950 to-gray-900">
               <span className="mr-2">+</span> Create First Site
             </Button>
           </CardContent>
@@ -98,14 +98,14 @@ export default function SitesList() {
             <Link key={s.id} href={`/sites/${s.id}`}>
               <Card className="hover:shadow-lg transition-all cursor-pointer group overflow-hidden">
                 <div className={`h-2 ${
-                  s.status === 'active' ? 'bg-gradient-to-r from-green-500 to-emerald-500' :
-                  s.status === 'planning' ? 'bg-gradient-to-r from-blue-500 to-cyan-500' :
+                  s.status === 'active' ? 'bg-gradient-to-r from-gray-900 to-gray-800' :
+                  s.status === 'planning' ? 'bg-gradient-to-r from-gray-950 to-gray-900' :
                   'bg-gradient-to-r from-gray-400 to-gray-500'
                 }`} />
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h3 className="text-lg font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
+                      <h3 className="text-lg font-bold text-gray-800 group-hover:text-gray-600 transition-colors">
                         {s.name}
                       </h3>
                       <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
@@ -115,7 +115,7 @@ export default function SitesList() {
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       s.status === 'active' ? 'bg-green-100 text-green-700' :
-                      s.status === 'planning' ? 'bg-blue-100 text-blue-700' :
+                      s.status === 'planning' ? 'bg-gray-100 text-gray-700' :
                       'bg-gray-100 text-gray-600'
                     }`}>
                       {s.status}
@@ -149,7 +149,7 @@ export default function SitesList() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={(e) => { e.preventDefault(); router.push(`/sites/${s.id}`); }}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
                         title="Edit"
                       >
                         <Pencil className="h-3.5 w-3.5" />

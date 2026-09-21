@@ -34,7 +34,7 @@ function myId(): string | null {
 }
 
 const KIND_STYLES: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
-  Session: { bg: 'bg-blue-50', text: 'text-blue-700', icon: <Fuel className="h-3 w-3" /> },
+  Session: { bg: 'bg-gray-50', text: 'text-gray-700', icon: <Fuel className="h-3 w-3" /> },
   Fuel: { bg: 'bg-amber-50', text: 'text-amber-700', icon: <Droplets className="h-3 w-3" /> },
   Downtime: { bg: 'bg-slate-50', text: 'text-slate-700', icon: <Clock className="h-3 w-3" /> },
   Expense: { bg: 'bg-red-50', text: 'text-red-700', icon: <Receipt className="h-3 w-3" /> },
@@ -92,7 +92,7 @@ export default function HistoryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl bg-gradient-to-r from-indigo-500 to-blue-500 p-6 text-white">
+      <div className="rounded-xl bg-gradient-to-r from-gray-950 to-gray-900 p-6 text-white">
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-white/20 p-2">
             <HistoryIcon className="h-6 w-6" />

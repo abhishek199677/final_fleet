@@ -51,9 +51,9 @@ function fmtMoney(amount: number, currency = 'INR'): string {
 
 function healthColor(score: number): string {
   if (score >= 90) return 'text-white bg-gradient-to-r from-emerald-500 to-green-500';
-  if (score >= 70) return 'text-white bg-gradient-to-r from-blue-500 to-cyan-500';
-  if (score >= 50) return 'text-white bg-gradient-to-r from-amber-500 to-orange-500';
-  return 'text-white bg-gradient-to-r from-red-500 to-rose-500';
+  if (score >= 70) return 'text-white bg-gradient-to-r from-gray-950 to-gray-900';
+  if (score >= 50) return 'text-white bg-gradient-to-r from-gray-800 to-gray-700';
+  return 'text-white bg-gradient-to-r from-gray-800 to-gray-700';
 }
 
 function healthLabel(score: number): string {
@@ -268,7 +268,7 @@ export default function Insights() {
         </Card>
 
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-br from-amber-500 to-orange-500 p-3">
+          <div className="bg-gradient-to-br from-gray-700 to-gray-600 p-3">
             <div className="flex items-center gap-2">
               <Wrench className="h-5 w-5 text-white/90" />
               <p className="text-white font-bold text-xl">{fmtHours(totalDowntime)}</p>
@@ -278,7 +278,7 @@ export default function Insights() {
         </Card>
 
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-br from-emerald-500 to-teal-500 p-3">
+          <div className="bg-gradient-to-br from-gray-800 to-gray-700 p-3">
             <div className="flex items-center gap-2">
               <Coins className="h-5 w-5 text-white/90" />
               <p className="text-white font-bold text-base truncate">{fmtMoney(fleetMonthlyEarnings)}</p>

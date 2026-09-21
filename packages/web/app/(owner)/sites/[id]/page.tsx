@@ -49,7 +49,7 @@ export default function SiteDetail() {
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-4">
+          <div className="bg-gradient-to-r from-gray-950 to-gray-900 p-4">
             <CardTitle className="text-white flex items-center gap-2">
               <span className="text-2xl">📍</span> Site Information
             </CardTitle>
@@ -69,7 +69,7 @@ export default function SiteDetail() {
         </Card>
 
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <CardTitle className="text-white flex items-center gap-2">
               <span className="text-2xl">📅</span> Timeline
             </CardTitle>
@@ -93,7 +93,7 @@ export default function SiteDetail() {
 
       {deployments.length > 0 && (
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-r from-violet-500 to-purple-500 p-4">
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4">
             <CardTitle className="text-white flex items-center gap-2">
               <span className="text-2xl">🚜</span> Deployed Machines ({deployments.length})
             </CardTitle>
@@ -108,7 +108,7 @@ export default function SiteDetail() {
                   <div key={d.id as string} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                        <span className="text-blue-600 font-bold">🔧</span>
+                        <span className="text-gray-700 font-bold">🔧</span>
                       </div>
                       <div>
                         <p className="font-semibold text-gray-800">{machineCode}</p>
@@ -137,7 +137,7 @@ export default function SiteDetail() {
             </div>
           )}
           <Link href={`/deployments/new?site_id=${params.id}`}>
-            <Button className="bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600">
+            <Button className="bg-gradient-to-r from-gray-900 to-gray-800 hover:from-violet-600 hover:to-purple-600">
               <span className="mr-2">+</span> Deploy Machine
             </Button>
           </Link>

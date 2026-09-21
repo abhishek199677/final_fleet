@@ -50,7 +50,7 @@ export default function OpsFuel() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 p-6 text-white">
+      <div className="rounded-xl bg-gradient-to-r from-gray-800 to-gray-700 p-6 text-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-white/20 p-2">
