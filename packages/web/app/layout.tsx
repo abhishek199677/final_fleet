@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { AmbientBackground } from '@/components/fx';
+import { AmbientBackground } from '@/components/fx/ambient-background';
 import { AuthProvider } from '@/lib/auth/context';
 import { I18nProvider } from '@/components/i18n-provider';
 

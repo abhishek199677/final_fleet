@@ -1,19 +1,131 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, ChangeEvent } from 'react';
 import { useAuth } from '@/lib/auth/context';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import { Truck, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Ripple, AuthTabs, TechOrbitDisplay } from '@/components/blocks/modern-animated-sign-in';
+import {
+  Truck, MapPin, BarChart3, Wrench, Shield, Clock, Fuel, FileText,
+} from 'lucide-react';
+
+const iconsArray = [
+  {
+    component: () => (
+      <div className="flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-teal-500/15">
+        <Truck className="h-[18px] w-[18px] text-teal-400" />
+      </div>
+    ),
+    className: 'size-[40px]',
+    duration: 20,
+    delay: 0,
+    radius: 100,
+    path: false,
+    reverse: false,
+  },
+  {
+    component: () => (
+      <div className="flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-emerald-500/15">
+        <MapPin className="h-[18px] w-[18px] text-emerald-400" />
+      </div>
+    ),
+    className: 'size-[40px]',
+    duration: 20,
+    delay: 10,
+    radius: 100,
+    path: false,
+    reverse: false,
+  },
+  {
+    component: () => (
+      <div className="flex h-[40px] w-[40px] items-center justify-center rounded-xl bg-blue-500/15">
+        <BarChart3 className="h-[22px] w-[22px] text-blue-400" />
+      </div>
+    ),
+    className: 'size-[48px]',
+    duration: 25,
+    delay: 5,
+    radius: 180,
+    path: false,
+    reverse: false,
+  },
+  {
+    component: () => (
+      <div className="flex h-[40px] w-[40px] items-center justify-center rounded-xl bg-amber-500/15">
+        <Wrench className="h-[22px] w-[22px] text-amber-400" />
+      </div>
+    ),
+    className: 'size-[48px]',
+    duration: 25,
+    delay: 15,
+    radius: 180,
+    path: false,
+    reverse: false,
+  },
+  {
+    component: () => (
+      <div className="flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-violet-500/15">
+        <Shield className="h-[18px] w-[18px] text-violet-400" />
+      </div>
+    ),
+    className: 'size-[40px]',
+    duration: 30,
+    delay: 8,
+    radius: 240,
+    path: false,
+    reverse: true,
+  },
+  {
+    component: () => (
+      <div className="flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-rose-500/15">
+        <Clock className="h-[18px] w-[18px] text-rose-400" />
+      </div>
+    ),
+    className: 'size-[40px]',
+    duration: 30,
+    delay: 18,
+    radius: 240,
+    path: false,
+    reverse: true,
+  },
+  {
+    component: () => (
+      <div className="flex h-[44px] w-[44px] items-center justify-center rounded-xl bg-cyan-500/15">
+        <Fuel className="h-[24px] w-[24px] text-cyan-400" />
+      </div>
+    ),
+    className: 'size-[52px]',
+    duration: 35,
+    delay: 3,
+    radius: 300,
+    path: false,
+    reverse: true,
+  },
+  {
+    component: () => (
+      <div className="flex h-[44px] w-[44px] items-center justify-center rounded-xl bg-orange-500/15">
+        <FileText className="h-[24px] w-[24px] text-orange-400" />
+      </div>
+    ),
+    className: 'size-[52px]',
+    duration: 35,
+    delay: 22,
+    radius: 300,
+    path: false,
+    reverse: false,
+  },
+];
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>, field: string) => {
+    if (field === 'email') setEmail(e.target.value);
+    else setPassword(e.target.value);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,155 +140,106 @@ export default function LoginPage() {
     }
   };
 
+  const formFields = {
+    login: {
+      header: 'Welcome back',
+      subHeader: 'Sign in to your account to continue',
+      fields: [
+        {
+          label: 'Email',
+          type: 'email',
+          placeholder: 'you@company.com',
+          required: true,
+          onChange: (e: ChangeEvent<HTMLInputElement>) => handleInputChange(e, 'email'),
+        },
+        {
+          label: 'Password',
+          type: 'password',
+          placeholder: 'Enter your password',
+          required: true,
+          onChange: (e: ChangeEvent<HTMLInputElement>) => handleInputChange(e, 'password'),
+        },
+      ],
+      submitButton: loading ? 'Signing in...' : 'Sign in',
+      textVariantButton: 'Forgot password?',
+    },
+    signup: {
+      header: 'Create account',
+      subHeader: 'Start your free trial today',
+      fields: [
+        {
+          label: 'Company Name',
+          type: 'text',
+          placeholder: 'Acme Construction',
+          required: true,
+          onChange: () => {},
+        },
+        {
+          label: 'Email',
+          type: 'email',
+          placeholder: 'you@company.com',
+          required: true,
+          onChange: () => {},
+        },
+        {
+          label: 'Password',
+          type: 'password',
+          placeholder: 'At least 8 characters',
+          required: true,
+          onChange: () => {},
+        },
+      ],
+      submitButton: loading ? 'Creating account...' : 'Get started',
+    },
+  };
+
   return (
-    <div className="flex min-h-screen">
-      {/* Left panel — brand */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wOCkiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IGZpbGw9InVybCgjZykiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIvPjwvc3ZnPg==')] opacity-40" />
-        <div className="relative flex flex-col justify-between p-12 text-white">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
-              <Truck className="h-5 w-5" />
-            </div>
-            <span className="text-xl font-bold">Fleet OS</span>
-          </div>
+    <section className="flex min-h-screen max-lg:justify-center">
+      {/* Left Side — animated orbit */}
+      <span className="relative flex w-1/2 flex-col justify-center overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 max-lg:hidden">
+        <Ripple mainCircleSize={100} />
+        <TechOrbitDisplay iconsArray={iconsArray} orbits={4} />
 
-          <div className="max-w-md">
-            <h1 className="text-4xl font-bold leading-tight tracking-tight">
-              Manage your fleet with confidence
-            </h1>
-            <p className="mt-4 text-lg text-white/80">
-              Real-time visibility into work, billing, cash, and maintenance
-              — all in one platform.
-            </p>
-            <div className="mt-8 grid grid-cols-2 gap-4">
-              {[
-                { label: 'Active tenants', value: '50+' },
-                { label: 'Machines tracked', value: '2,000+' },
-                { label: 'Uptime SLA', value: '99.5%' },
-                { label: 'Support response', value: '<4h' },
-              ].map((s) => (
-                <div key={s.label} className="rounded-xl bg-white/10 p-4 backdrop-blur-sm">
-                  <p className="text-2xl font-bold">{s.value}</p>
-                  <p className="text-sm text-white/70">{s.label}</p>
-                </div>
-              ))}
+        {/* Brand overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-10">
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-emerald-500 shadow-md shadow-teal-500/20">
+              <svg className="h-4.5 w-4.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" />
+                <path d="M15 18H9" />
+                <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14" />
+                <circle cx="17" cy="18" r="2" />
+                <circle cx="7" cy="18" r="2" />
+              </svg>
             </div>
+            <span className="text-xl font-bold text-white">FleetOS</span>
           </div>
-
-          <p className="text-sm text-white/50">
-            © 2026 Perceptiqx. All rights reserved.
-          </p>
+          <h2 className="text-2xl font-bold text-white">
+            Fleet management,<br />
+            <span className="text-teal-400/80">simplified.</span>
+          </h2>
         </div>
-      </div>
+      </span>
 
-      {/* Right panel — form */}
-      <div className="flex w-full items-center justify-center bg-white px-4 sm:px-6 lg:w-1/2">
-        <div className="w-full max-w-sm space-y-8">
-          {/* Mobile logo */}
-          <div className="flex items-center gap-3 lg:hidden">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-gray-900 to-gray-800">
-              <Truck className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">Fleet OS</span>
+      {/* Right Side — auth form */}
+      <span className="flex h-[100dvh] w-1/2 flex-col items-center justify-center bg-gray-950 px-[10%] max-lg:w-full max-lg:px-[8%]">
+        {error && (
+          <div className="mb-4 w-full max-w-[380px] rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            {error}
           </div>
-
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight text-gray-900">
-              Welcome back
-            </h2>
-            <p className="mt-2 text-sm text-gray-500">
-              Sign in to your account to continue
-            </p>
-          </div>
-
-          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-5">
-            {error && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {error}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                required
-                className="h-11"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label htmlFor="password" className="text-sm font-medium text-gray-700">
-                  Password
-                </label>
-                <button
-                  type="button"
-                  className="text-xs font-medium text-gray-900 hover:text-gray-800"
-                >
-                  Forgot password?
-                </button>
-              </div>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="h-11 pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
-            <Button
-              type="submit"
-              className="h-11 w-full bg-gray-900 text-white hover:bg-gray-800 shadow-sm shadow-gray-900/20"
-              disabled={loading}
-            >
-              {loading ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              ) : (
-                <>
-                  Sign in
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </Button>
-          </form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-white px-2 text-gray-400">or</span>
-            </div>
-          </div>
-
-          <p className="text-center text-sm text-gray-500">
-            Don&apos;t have an account?{' '}
-            <Link href="/register" className="font-semibold text-gray-900 hover:text-gray-800">
-              Start free trial
-            </Link>
-          </p>
-        </div>
-      </div>
-    </div>
+        )}
+        <AuthTabs
+          formFields={formFields}
+          handleSubmit={handleSubmit}
+          defaultTab="login"
+        />
+        <p className="mt-8 text-center text-sm text-white/30 max-w-[380px]">
+          Don&apos;t have an account?{' '}
+          <Link href="/register" className="font-semibold text-teal-400/60 hover:text-teal-300 transition-colors">
+            Start free trial
+          </Link>
+        </p>
+      </span>
+    </section>
   );
 }

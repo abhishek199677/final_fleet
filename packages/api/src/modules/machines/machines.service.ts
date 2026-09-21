@@ -61,10 +61,74 @@ export class MachinesService {
   async remove(tenantId: string, id: string) {
     const existing = await this.repo.findById(tenantId, id);
     if (!existing) throw new NotFoundException('Machine not found');
+
+    // Delete related records in the correct order to respect foreign key constraints.
+    // Order matters: child tables must be deleted before parent tables.
+
+    // 1. Delete maintenance_parts (references maintenance_visits)
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.maintenance_parts
+       WHERE visit_id IN (SELECT id FROM tenant.maintenance_visits WHERE machine_id = $1)`, [id]);
+
+    // 2. Delete maintenance_visit_tasks (references maintenance_visits and maintenance_tasks)
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.maintenance_visit_tasks
+       WHERE visit_id IN (SELECT id FROM tenant.maintenance_visits WHERE machine_id = $1)
+          OR task_id IN (SELECT id FROM tenant.maintenance_tasks WHERE machine_id = $1)`, [id]);
+
+    // 3. Delete maintenance_visits (references machines)
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.maintenance_visits WHERE machine_id = $1`, [id]);
+
+    // 4. Delete maintenance_tasks (references machines)
     await this.db.queryWithTenant(tenantId, 'owner',
       `DELETE FROM tenant.maintenance_tasks WHERE machine_id = $1`, [id]);
+
+    // 5. Delete billing_ledger (references work_sessions)
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.billing_ledger
+       WHERE work_session_id IN (SELECT id FROM tenant.work_sessions WHERE machine_id = $1)`, [id]);
+
+    // 6. Delete work_sessions (references machines)
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.work_sessions WHERE machine_id = $1`, [id]);
+
+    // 7. Delete fuel_logs (references machines)
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.fuel_logs WHERE machine_id = $1`, [id]);
+
+    // 8. Delete downtime_segments (references machines)
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.downtime_segments WHERE machine_id = $1`, [id]);
+
+    // 9. Delete rate_cards, extra_charges, advance_consumptions (references deployments)
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.advance_consumptions
+       WHERE billing_ledger_id IN (SELECT id FROM tenant.billing_ledger
+       WHERE deployment_id IN (SELECT id FROM tenant.deployments WHERE machine_id = $1))`, [id]);
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.rate_cards
+       WHERE deployment_id IN (SELECT id FROM tenant.deployments WHERE machine_id = $1)`, [id]);
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.extra_charges
+       WHERE deployment_id IN (SELECT id FROM tenant.deployments WHERE machine_id = $1)`, [id]);
+
+    // 10. Delete deployments (references machines)
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.deployments WHERE machine_id = $1`, [id]);
+
+    // 11. Delete machine_financials (references machines)
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.machine_financials WHERE machine_id = $1`, [id]);
+
+    // 12. Delete expenses referencing this machine
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.expenses WHERE machine_id = $1`, [id]);
+
+    // 13. Finally, delete the machine itself
     await this.db.queryWithTenant(tenantId, 'owner',
       `DELETE FROM tenant.machines WHERE id = $1`, [id]);
+
     return { deleted: true };
   }
 }

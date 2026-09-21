@@ -44,8 +44,22 @@ export class OperatorsService {
   async remove(tenantId: string, id: string) {
     const existing = await this.findById(tenantId, id);
     if (!existing) throw new NotFoundException('Operator not found');
-    await this.db.queryWithTenant(tenantId, 'ops',
+
+    // Delete related records in the correct order to respect foreign key constraints.
+
+    // 1. Delete billing_ledger (references work_sessions)
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.billing_ledger
+       WHERE work_session_id IN (SELECT id FROM tenant.work_sessions WHERE operator_id = $1)`, [id]);
+
+    // 2. Delete work_sessions (references operators)
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.work_sessions WHERE operator_id = $1`, [id]);
+
+    // 3. Finally, delete the operator itself
+    await this.db.queryWithTenant(tenantId, 'owner',
       `DELETE FROM tenant.operators WHERE id = $1`, [id]);
+
     return { deleted: true };
   }
 }

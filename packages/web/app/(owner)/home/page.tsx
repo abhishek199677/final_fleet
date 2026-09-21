@@ -7,13 +7,16 @@ import {
   Bar, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import {
-  Download, RefreshCw, Calendar, Clock, TrendingUp, AlertTriangle,
-  ArrowUpRight, ArrowDownRight, MoreHorizontal, Filter, ChevronRight,
+  Download, RefreshCw, TrendingUp, AlertTriangle,
+  ArrowUpRight, ArrowDownRight, MoreHorizontal, ChevronRight,
 } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchList } from '@/lib/api/fetch-list';
 import { useAuth } from '@/lib/auth/context';
 import { cn } from '@/lib/utils';
+import { GlassCard } from '@/components/dashboard/glass-card';
+import { GlareCard } from '@/components/fx/glare-card';
+import { Reveal } from '@/components/fx/reveal';
 
 interface Row extends Record<string, unknown> {
   id?: string;
@@ -63,6 +66,62 @@ const STATUS_CONFIG: Record<string, { label: string; dot: string; bg: string; te
   service: { label: 'In service', dot: 'bg-gray-500', bg: 'bg-gray-50', text: 'text-gray-700' },
   transit: { label: 'In transit', dot: 'bg-violet-500', bg: 'bg-violet-50', text: 'text-violet-700' },
 };
+
+/* ── Animated KPI ── */
+function AnimatedKPI({ value, duration = 1200 }: { value: number; duration?: number }) {
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    const steps = 60;
+    const increment = value / steps;
+    let current = 0;
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= value) {
+        setDisplay(value);
+        clearInterval(timer);
+      } else {
+        setDisplay(Math.floor(current));
+      }
+    }, duration / steps);
+    return () => clearInterval(timer);
+  }, [value, duration]);
+
+  return <>{fmtInt(display)}</>;
+}
+
+/* ── Progress ring for utilisation ── */
+function ProgressRing({ value, size = 44, stroke = 4 }: { value: number; size?: number; stroke?: number }) {
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (value / 100) * circumference;
+
+  return (
+    <svg width={size} height={size} className="shrink-0 -rotate-90">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={stroke}
+        className="text-gray-100 dark:text-white/10"
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={stroke}
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        className="text-emerald-500 transition-all duration-1000 ease-out"
+      />
+    </svg>
+  );
+}
 
 function DashboardInner() {
   const t = useTranslations('dashboard');
@@ -217,18 +276,15 @@ function DashboardInner() {
   if (loading) {
     return (
       <div className="space-y-6">
-        {/* Header skeleton */}
-        <div className="h-24 rounded-2xl bg-gray-100 animate-pulse" />
-        {/* KPI skeletons */}
+        <div className="h-24 rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-xl animate-pulse" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 rounded-2xl bg-gray-100 animate-pulse" />
+            <div key={i} className="h-36 rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-xl animate-pulse" />
           ))}
         </div>
-        {/* Content skeletons */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="h-80 rounded-2xl bg-gray-100 animate-pulse lg:col-span-2" />
-          <div className="h-80 rounded-2xl bg-gray-100 animate-pulse" />
+          <div className="h-80 rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-xl animate-pulse lg:col-span-2" />
+          <div className="h-80 rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-xl animate-pulse" />
         </div>
       </div>
     );
@@ -237,142 +293,163 @@ function DashboardInner() {
   return (
     <div className="min-w-0 space-y-6">
       {/* Header */}
-      <div className="rounded-2xl bg-white border border-gray-200 p-6 shadow-xs">
-        <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-              Welcome back, {userName}
-            </h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Here&apos;s what&apos;s happening with your fleet · {todayStr}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-3">
-            {/* Period toggle */}
-            <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 p-1">
-              {(['today', 'month', 'year'] as const).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPeriod(p)}
-                  className={cn(
-                    'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all',
-                    period === p
-                      ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
-                      : 'text-gray-500 hover:text-gray-700',
-                  )}
-                >
-                  {p === 'today' ? 'Today' : p === 'month' ? 'Month' : 'Year'}
-                </button>
-              ))}
+      <Reveal delay={0}>
+        <GlassCard hover={false}>
+          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+                Welcome back, {userName}
+              </h1>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Here&apos;s what&apos;s happening with your fleet · {todayStr}
+              </p>
             </div>
-            <button
-              onClick={() => setNonce((n) => n + 1)}
-              aria-label="Refresh"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-all hover:bg-gray-50 hover:text-gray-700"
-            >
-              <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
-            </button>
-            <button className="flex h-9 items-center gap-2 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition-all hover:bg-gray-800">
-              <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Export</span>
-            </button>
+            <div className="flex shrink-0 items-center gap-3">
+              {/* Period toggle */}
+              <div className="flex items-center rounded-lg border border-white/20 bg-white/40 dark:bg-white/5 p-1 backdrop-blur-md">
+                {(['today', 'month', 'year'] as const).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPeriod(p)}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200',
+                      period === p
+                        ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-50 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
+                    )}
+                  >
+                    {p === 'today' ? 'Today' : p === 'month' ? 'Month' : 'Year'}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setNonce((n) => n + 1)}
+                aria-label="Refresh"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/40 dark:bg-white/5 text-gray-500 backdrop-blur-md transition-all hover:bg-white/60 dark:hover:bg-white/10 hover:text-gray-700"
+              >
+                <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
+              </button>
+              <button className="flex h-9 items-center gap-2 rounded-lg bg-gray-900 dark:bg-gray-100 px-4 text-sm font-medium text-white dark:text-gray-900 shadow-sm transition-all hover:bg-gray-800 dark:hover:bg-gray-200">
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Export</span>
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
+        </GlassCard>
+      </Reveal>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Working now */}
-        <div className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-xs transition-all hover:shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-gray-500">Working now</p>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50">
-              <TrendingUp className="h-4 w-4 text-emerald-600" />
+        <Reveal delay={0}>
+          <GlareCard className="h-full">
+            <div className="rounded-2xl border border-white/18 bg-white/72 dark:bg-white/5 backdrop-blur-xl p-5 shadow-[0_8px_32px_rgba(0,0,0,0.06)] transition-all duration-300 hover:bg-white/82 dark:hover:bg-white/8 hover:shadow-[0_12px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 h-full">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Working now</p>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20">
+                  <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+                  <AnimatedKPI value={workingNow} />
+                  <span className="text-lg font-normal text-gray-400">/{totalMachines}</span>
+                </p>
+              </div>
+              <div className="mt-3 flex items-center gap-3">
+                <ProgressRing value={utilisation} />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span>Fleet utilisation</span>
+                    <span className="font-medium text-gray-700 dark:text-gray-200">{utilisation}%</span>
+                  </div>
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                    <div
+                      className="h-full rounded-full bg-emerald-500 transition-all duration-1000 ease-out"
+                      style={{ width: `${utilisation}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="mt-3">
-            <p className="text-3xl font-bold tracking-tight text-gray-900">
-              {workingNow}
-              <span className="text-lg font-normal text-gray-400">/{totalMachines}</span>
-            </p>
-          </div>
-          <div className="mt-3">
-            <div className="flex items-center justify-between text-xs text-gray-500">
-              <span>Fleet utilisation</span>
-              <span className="font-medium text-gray-700">{utilisation}%</span>
-            </div>
-            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-gray-100">
-              <div
-                className="h-full rounded-full bg-gray-900 transition-all duration-700"
-                style={{ width: `${utilisation}%` }}
-              />
-            </div>
-          </div>
-        </div>
+          </GlareCard>
+        </Reveal>
 
         {/* Revenue */}
-        <div className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-xs transition-all hover:shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-gray-500">Revenue</p>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50">
-              <Clock className="h-4 w-4 text-gray-700" />
+        <Reveal delay={1}>
+          <GlareCard className="h-full">
+            <div className="rounded-2xl border border-white/18 bg-white/72 dark:bg-white/5 backdrop-blur-xl p-5 shadow-[0_8px_32px_rgba(0,0,0,0.06)] transition-all duration-300 hover:bg-white/82 dark:hover:bg-white/8 hover:shadow-[0_12px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 h-full">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Revenue</p>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20">
+                  <ArrowUpRight className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+                  {minorToMoney(totalBilled || 187338300)}
+                </p>
+              </div>
+              <div className="mt-3 flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                  <ArrowUpRight className="h-3 w-3" />
+                  12%
+                </span>
+                <span className="text-xs text-gray-400">vs last period</span>
+              </div>
             </div>
-          </div>
-          <div className="mt-3">
-            <p className="text-3xl font-bold tracking-tight text-gray-900">
-              {minorToMoney(totalBilled || 187338300)}
-            </p>
-          </div>
-          <div className="mt-3 flex items-center gap-1.5">
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-              <ArrowUpRight className="h-3 w-3" />
-              12%
-            </span>
-            <span className="text-xs text-gray-400">vs last period</span>
-          </div>
-        </div>
+          </GlareCard>
+        </Reveal>
 
         {/* Expenses */}
-        <div className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-xs transition-all hover:shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-gray-500">Expenses</p>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50">
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
+        <Reveal delay={2}>
+          <GlareCard className="h-full">
+            <div className="rounded-2xl border border-white/18 bg-white/72 dark:bg-white/5 backdrop-blur-xl p-5 shadow-[0_8px_32px_rgba(0,0,0,0.06)] transition-all duration-300 hover:bg-white/82 dark:hover:bg-white/8 hover:shadow-[0_12px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 h-full">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Expenses</p>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 dark:bg-amber-500/20">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+                  {minorToMoney(totalExpenses || 93669150)}
+                </p>
+              </div>
+              <div className="mt-3 flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-red-500/10 dark:bg-red-500/20 px-2 py-0.5 text-xs font-medium text-red-600 dark:text-red-400">
+                  <ArrowDownRight className="h-3 w-3" />
+                  3%
+                </span>
+                <span className="text-xs text-gray-400">vs last period</span>
+              </div>
             </div>
-          </div>
-          <div className="mt-3">
-            <p className="text-3xl font-bold tracking-tight text-gray-900">
-              {minorToMoney(totalExpenses || 93669150)}
-            </p>
-          </div>
-          <div className="mt-3 flex items-center gap-1.5">
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
-              <ArrowDownRight className="h-3 w-3" />
-              3%
-            </span>
-            <span className="text-xs text-gray-400">vs last period</span>
-          </div>
-        </div>
+          </GlareCard>
+        </Reveal>
 
         {/* Outstanding */}
-        <div className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-xs transition-all hover:shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-gray-500">Outstanding</p>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50">
-              <TrendingUp className="h-4 w-4 text-violet-600" />
+        <Reveal delay={2}>
+          <GlareCard className="h-full">
+            <div className="rounded-2xl border border-white/18 bg-white/72 dark:bg-white/5 backdrop-blur-xl p-5 shadow-[0_8px_32px_rgba(0,0,0,0.06)] transition-all duration-300 hover:bg-white/82 dark:hover:bg-white/8 hover:shadow-[0_12px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 h-full">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Outstanding</p>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 dark:bg-violet-500/20">
+                  <TrendingUp className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+                  {minorToMoney(receivables.reduce((a, r) => a + num(r.amount_minor), 0) || 69200000)}
+                </p>
+              </div>
+              <div className="mt-3">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {receivables.length || 3} clients with pending balance
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="mt-3">
-            <p className="text-3xl font-bold tracking-tight text-gray-900">
-              {minorToMoney(receivables.reduce((a, r) => a + num(r.amount_minor), 0) || 69200000)}
-            </p>
-          </div>
-          <div className="mt-3">
-            <p className="text-xs text-gray-500">
-              {receivables.length || 3} clients with pending balance
-            </p>
-          </div>
-        </div>
+          </GlareCard>
+        </Reveal>
       </div>
 
       {/* Main content grid */}
@@ -380,232 +457,246 @@ function DashboardInner() {
         {/* Left column — chart + table */}
         <div className="min-w-0 space-y-6 lg:col-span-2">
           {/* Revenue chart */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs">
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-semibold text-gray-900">Revenue vs Operating Cost</h3>
-                <p className="text-sm text-gray-500">Last 7 days · INR thousands</p>
+          <Reveal delay={0}>
+            <GlassCard hover={false}>
+              <div className="mb-5 flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">Revenue vs Operating Cost</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Last 7 days · INR thousands</p>
+                </div>
+                <div className="flex items-center gap-4 text-xs">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-gray-900 dark:bg-gray-100" />
+                    Revenue
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-gray-300 dark:bg-gray-600" />
+                    Operating cost
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-4 text-xs">
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-gray-900" />
-                  Revenue
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-gray-300" />
-                  Operating cost
-                </span>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 12, fill: 'hsl(var(--fleet-gray-400))' }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 12, fill: 'hsl(var(--fleet-gray-400))' }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={45}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: 'hsl(222 47% 11%)',
+                        border: '1px solid hsl(220 18% 20%)',
+                        borderRadius: 12,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                        padding: '8px 12px',
+                        color: 'hsl(210 40% 96%)',
+                      }}
+                    />
+                    <Bar dataKey="revenue" name="Revenue" fill="hsl(var(--fleet-gray-900))" radius={[4, 4, 0, 0]} barSize={24} />
+                    <Bar dataKey="cost" name="Operating cost" fill="hsl(var(--fleet-gray-300))" radius={[4, 4, 0, 0]} barSize={24} />
+                  </ComposedChart>
+                </ResponsiveContainer>
               </div>
-            </div>
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f2f4f7" />
-                  <XAxis
-                    dataKey="label"
-                    tick={{ fontSize: 12, fill: '#98a2b3' }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12, fill: '#98a2b3' }}
-                    tickLine={false}
-                    axisLine={false}
-                    width={45}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      background: 'hsl(222 47% 11%)',
-                      border: '1px solid hsl(220 18% 20%)',
-                      borderRadius: 12,
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                      padding: '8px 12px',
-                      color: 'hsl(210 40% 96%)',
-                    }}
-                  />
-                  <Bar dataKey="revenue" name="Revenue" fill="#101828" radius={[4, 4, 0, 0]} barSize={24} />
-                  <Bar dataKey="cost" name="Operating cost" fill="#d0d5dd" radius={[4, 4, 0, 0]} barSize={24} />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+            </GlassCard>
+          </Reveal>
 
           {/* Machine activity table */}
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-xs overflow-hidden">
-            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-              <div>
-                <h3 className="text-base font-semibold text-gray-900">Machine activity</h3>
-                <p className="text-sm text-gray-500">{machines.length} machines · live status</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-xs font-medium text-emerald-700">Live</span>
+          <Reveal delay={1}>
+            <GlassCard hover={false} className="overflow-hidden !p-0">
+              <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">Machine activity</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{machines.length} machines · live status</p>
                 </div>
-                <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-50 hover:text-gray-600">
-                  <MoreHorizontal className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 px-2.5 py-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Live</span>
+                  </div>
+                  <button className="rounded-lg p-1.5 text-gray-400 hover:bg-white/40 dark:hover:bg-white/10 hover:text-gray-600">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 text-left">
-                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-gray-400">Machine</th>
-                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-gray-400">Status</th>
-                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-gray-400">Site</th>
-                    <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400">Today</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {machineActivity.map((m) => {
-                    const config = STATUS_CONFIG[m.status] || STATUS_CONFIG.log_pending;
-                    return (
-                      <tr key={m.code} className="border-b border-gray-50 last:border-0 transition-colors hover:bg-gray-50/50">
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100">
-                              <span className="text-xs font-bold text-gray-600">{m.code.slice(0, 2)}</span>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10 text-left">
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-gray-400">Machine</th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-gray-400">Status</th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-gray-400">Site</th>
+                      <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400">Today</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {machineActivity.map((m) => {
+                      const config = STATUS_CONFIG[m.status] || STATUS_CONFIG.log_pending;
+                      return (
+                        <tr key={m.code} className="border-b border-white/5 last:border-0 transition-colors hover:bg-white/30 dark:hover:bg-white/5">
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/40 dark:bg-white/10">
+                                <span className="text-xs font-bold text-gray-600 dark:text-gray-300">{m.code.slice(0, 2)}</span>
+                              </div>
+                              <div>
+                                <p className="font-semibold text-gray-900 dark:text-gray-50">{m.code}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{m.make} {m.model}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-semibold text-gray-900">{m.code}</p>
-                              <p className="text-xs text-gray-500">{m.make} {m.model}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium', config.bg, config.text)}>
-                            <span className={cn('h-1.5 w-1.5 rounded-full', config.dot)} />
-                            {config.label}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3.5 text-sm text-gray-600">{m.site}</td>
-                        <td className="px-5 py-3.5 text-right">
-                          <span className={cn('font-semibold', m.todayHours > 0 ? 'text-gray-900' : 'text-gray-300')}>
-                            {m.todayHours > 0 ? `+${m.todayHours} hrs` : '—'}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            {machineActivity.length > 0 && (
-              <div className="border-t border-gray-100 px-5 py-3">
-                <button className="flex items-center gap-1 text-sm font-medium text-gray-900 hover:text-gray-800">
-                  View all machines
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium', config.bg, config.text)}>
+                              <span className={cn('h-1.5 w-1.5 rounded-full', config.dot)} />
+                              {config.label}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3.5 text-sm text-gray-600 dark:text-gray-300">{m.site}</td>
+                          <td className="px-5 py-3.5 text-right">
+                            <span className={cn('font-semibold', m.todayHours > 0 ? 'text-gray-900 dark:text-gray-50' : 'text-gray-300 dark:text-gray-600')}>
+                              {m.todayHours > 0 ? `+${m.todayHours} hrs` : '—'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            )}
-          </div>
+              {machineActivity.length > 0 && (
+                <div className="border-t border-white/10 px-5 py-3">
+                  <button className="flex items-center gap-1 text-sm font-medium text-gray-900 dark:text-gray-50 hover:text-gray-800 dark:hover:text-gray-200">
+                    View all machines
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </GlassCard>
+          </Reveal>
         </div>
 
         {/* Right column — fleet status + alerts */}
         <div className="min-w-0 space-y-6">
           {/* Fleet status */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-gray-900">Fleet status</h3>
-              <span className="text-sm text-gray-500">{totalMachines} machines</span>
-            </div>
-            <div className="space-y-3">
-              {[
-                { label: 'Working', count: statusCounts.working || 0, color: 'bg-emerald-500', bg: 'bg-emerald-50' },
-                { label: 'Idle', count: statusCounts.log_pending || 0, color: 'bg-amber-500', bg: 'bg-amber-50' },
-                { label: 'Stopped', count: statusCounts.stopped || 0, color: 'bg-red-500', bg: 'bg-red-50' },
-                { label: 'In transit', count: statusCounts.transit || 0, color: 'bg-violet-500', bg: 'bg-violet-50' },
-                { label: 'In service', count: statusCounts.service || 0, color: 'bg-gray-500', bg: 'bg-gray-50' },
-              ].map((s) => (
-                <div key={s.label} className={cn('flex items-center justify-between rounded-xl p-3', s.bg)}>
-                  <div className="flex items-center gap-3">
-                    <div className={cn('h-2.5 w-2.5 rounded-full', s.color)} />
-                    <span className="text-sm font-medium text-gray-700">{s.label}</span>
+          <Reveal delay={0}>
+            <GlassCard hover={false}>
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">Fleet status</h3>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{totalMachines} machines</span>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { label: 'Working', count: statusCounts.working || 0, color: 'bg-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
+                  { label: 'Idle', count: statusCounts.log_pending || 0, color: 'bg-amber-500', bg: 'bg-amber-50 dark:bg-amber-500/10' },
+                  { label: 'Stopped', count: statusCounts.stopped || 0, color: 'bg-red-500', bg: 'bg-red-50 dark:bg-red-500/10' },
+                  { label: 'In transit', count: statusCounts.transit || 0, color: 'bg-violet-500', bg: 'bg-violet-50 dark:bg-violet-500/10' },
+                  { label: 'In service', count: statusCounts.service || 0, color: 'bg-gray-500', bg: 'bg-gray-50 dark:bg-gray-500/10' },
+                ].map((s) => (
+                  <div key={s.label} className={cn('flex items-center justify-between rounded-xl p-3', s.bg)}>
+                    <div className="flex items-center gap-3">
+                      <div className={cn('h-2.5 w-2.5 rounded-full', s.color)} />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{s.label}</span>
+                    </div>
+                    <span className="text-lg font-bold text-gray-900 dark:text-gray-50">{s.count}</span>
                   </div>
-                  <span className="text-lg font-bold text-gray-900">{s.count}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+                ))}
+              </div>
+            </GlassCard>
+          </Reveal>
 
           {/* Alerts */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-gray-900">Needs attention</h3>
-              {alerts.length > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
-                  {alerts.length}
-                </span>
-              )}
-            </div>
-            <div className="space-y-3">
-              {(alerts.length > 0
-                ? alerts.map((a) => ({
-                    id: String(a.id),
-                    message: String(a.title ?? a.type ?? 'Alert'),
-                    subtitle: String(a.message ?? a.machine_code ?? ''),
-                    severity: String(a.severity ?? 'warning'),
-                  }))
-                : [
-                    { id: '1', message: 'BLR-005 hydraulic failure', subtitle: 'Overdue repair', severity: 'critical' },
-                    { id: '2', message: 'EXC-001 fuel efficiency dropped', subtitle: '15% this week', severity: 'warning' },
-                    { id: '3', message: 'CRN-003 service due', subtitle: 'In 2 operating hours', severity: 'info' },
-                  ]
-              ).map((alert) => {
-                const isCritical = alert.severity === 'critical' || alert.severity === 'urgent';
-                const isWarning = alert.severity === 'warning';
-                return (
-                  <div
-                    key={alert.id}
-                    className={cn(
-                      'rounded-xl border p-3',
-                      isCritical ? 'border-red-200 bg-red-50' : isWarning ? 'border-amber-200 bg-amber-50' : 'border-gray-100 bg-gray-50',
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={cn(
-                        'mt-0.5 h-2 w-2 rounded-full shrink-0',
-                        isCritical ? 'bg-red-500' : isWarning ? 'bg-amber-500' : 'bg-gray-400',
-                      )} />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-gray-900 truncate">{alert.message}</p>
-                        <p className="mt-0.5 text-xs text-gray-500">{alert.subtitle}</p>
+          <Reveal delay={1}>
+            <GlassCard hover={false}>
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">Needs attention</h3>
+                {alerts.length > 0 && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                    {alerts.length}
+                  </span>
+                )}
+              </div>
+              <div className="space-y-3">
+                {(alerts.length > 0
+                  ? alerts.map((a) => ({
+                      id: String(a.id),
+                      message: String(a.title ?? a.type ?? 'Alert'),
+                      subtitle: String(a.message ?? a.machine_code ?? ''),
+                      severity: String(a.severity ?? 'warning'),
+                    }))
+                  : [
+                      { id: '1', message: 'BLR-005 hydraulic failure', subtitle: 'Overdue repair', severity: 'critical' },
+                      { id: '2', message: 'EXC-001 fuel efficiency dropped', subtitle: '15% this week', severity: 'warning' },
+                      { id: '3', message: 'CRN-003 service due', subtitle: 'In 2 operating hours', severity: 'info' },
+                    ]
+                ).map((alert) => {
+                  const isCritical = alert.severity === 'critical' || alert.severity === 'urgent';
+                  const isWarning = alert.severity === 'warning';
+                  return (
+                    <div
+                      key={alert.id}
+                      className={cn(
+                        'rounded-xl border p-3 transition-all duration-200 hover:shadow-sm',
+                        isCritical
+                          ? 'border-red-200/30 bg-red-500/10 dark:bg-red-500/15'
+                          : isWarning
+                          ? 'border-amber-200/30 bg-amber-500/10 dark:bg-amber-500/15'
+                          : 'border-white/10 bg-white/30 dark:bg-white/5',
+                      )}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={cn(
+                          'mt-0.5 h-2 w-2 rounded-full shrink-0',
+                          isCritical ? 'bg-red-500' : isWarning ? 'bg-amber-500' : 'bg-gray-400',
+                        )} />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-50 truncate">{alert.message}</p>
+                          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{alert.subtitle}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                  );
+                })}
+              </div>
+            </GlassCard>
+          </Reveal>
 
           {/* Quick stats */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs">
-            <h3 className="mb-4 text-base font-semibold text-gray-900">Quick stats</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">Active deployments</span>
-                <span className="text-sm font-semibold text-gray-900">{deployments.length || 4}</span>
+          <Reveal delay={2}>
+            <GlassCard hover={false}>
+              <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-50">Quick stats</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Active deployments</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-50">{deployments.length || 4}</span>
+                </div>
+                <div className="h-px bg-white/10" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Active clients</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-50">{clients.length || 3}</span>
+                </div>
+                <div className="h-px bg-white/10" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Unused advances</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-50">
+                    {minorToMoney(advances.reduce((a, adv) => a + num(adv.amount_minor) - num(adv.consumed_minor), 0) || 4500000)}
+                  </span>
+                </div>
+                <div className="h-px bg-white/10" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Sites</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-50">{sites.length || 2}</span>
+                </div>
               </div>
-              <div className="h-px bg-gray-100" />
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">Active clients</span>
-                <span className="text-sm font-semibold text-gray-900">{clients.length || 3}</span>
-              </div>
-              <div className="h-px bg-gray-100" />
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">Unused advances</span>
-                <span className="text-sm font-semibold text-gray-900">
-                  {minorToMoney(advances.reduce((a, adv) => a + num(adv.amount_minor) - num(adv.consumed_minor), 0) || 4500000)}
-                </span>
-              </div>
-              <div className="h-px bg-gray-100" />
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">Sites</span>
-                <span className="text-sm font-semibold text-gray-900">{sites.length || 2}</span>
-              </div>
-            </div>
-          </div>
+            </GlassCard>
+          </Reveal>
         </div>
       </div>
     </div>
@@ -617,10 +708,10 @@ export default function OwnerHome() {
     <Suspense
       fallback={
         <div className="space-y-6">
-          <div className="h-24 rounded-2xl bg-gray-100 animate-pulse" />
+          <div className="h-24 rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-xl animate-pulse" />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 rounded-2xl bg-gray-100 animate-pulse" />
+              <div key={i} className="h-36 rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur-xl animate-pulse" />
             ))}
           </div>
         </div>

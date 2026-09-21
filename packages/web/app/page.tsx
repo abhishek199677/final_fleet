@@ -4,39 +4,46 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth/context';
 import {
   ArrowRight, BarChart3, Shield, Zap, Globe, Users, CheckCircle2,
-  Truck, Clock, FileText, ChevronRight, Building2, TrendingUp,
+  Truck, Clock, FileText, Building2, TrendingUp,
 } from 'lucide-react';
+import { LiquidButton } from '@/components/ui/liquid-glass-button';
 
 const FEATURES = [
   {
     icon: BarChart3,
     title: 'Real-time Fleet Intelligence',
     desc: 'Live dashboards show utilisation, billing, and maintenance across every machine — by the hour.',
+    gradient: 'from-teal-500 to-emerald-500',
   },
   {
     icon: Shield,
     title: 'Enterprise-Grade Security',
     desc: 'Row-level tenant isolation, append-only records, and role-based access enforced at the database level.',
+    gradient: 'from-blue-500 to-indigo-500',
   },
   {
     icon: Zap,
     title: 'Automated Billing Engine',
     desc: 'Hourly, daily, and monthly rate strategies with automatic invoice generation and receivable tracking.',
+    gradient: 'from-amber-500 to-orange-500',
   },
   {
     icon: Globe,
     title: 'Multi-Currency & Multi-Site',
     desc: 'Any ISO currency, per-row FX rates, and unlimited site deployments across geographies.',
+    gradient: 'from-violet-500 to-purple-500',
   },
   {
     icon: Clock,
     title: 'Maintenance Predictive Alerts',
     desc: 'Meter-interval and calendar-interval tasks with alerts before failure — never miss a service.',
+    gradient: 'from-rose-500 to-pink-500',
   },
   {
     icon: FileText,
     title: 'Photo Evidence & OCR',
     desc: 'Camera capture with automatic meter reading verification. Audit-ready documentation.',
+    gradient: 'from-cyan-500 to-sky-500',
   },
 ];
 
@@ -56,8 +63,8 @@ export default function LandingPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-surface-base">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-brand-600" />
+      <div style={{ colorScheme: 'light' }} className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-teal-600" />
       </div>
     );
   }
@@ -65,10 +72,10 @@ export default function LandingPage() {
   if (user) {
     const href = user.role === 'ops' ? '/today' : '/home';
     return (
-      <div className="flex min-h-screen items-center justify-center bg-surface-base">
+      <div style={{ colorScheme: 'light' }} className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="text-center space-y-6">
           <div className="flex justify-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 shadow-lg shadow-gray-900/20">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-600 shadow-lg shadow-teal-600/30">
               <Truck className="h-7 w-7 text-white" />
             </div>
           </div>
@@ -76,7 +83,7 @@ export default function LandingPage() {
           <p className="text-gray-500">Welcome back, {user.email}</p>
           <Link
             href={href}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-gray-900 px-6 text-sm font-semibold text-white shadow-md shadow-gray-900/20 transition-all hover:bg-gray-800 hover:shadow-lg hover:shadow-brand-600/25"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 px-6 text-sm font-semibold text-white shadow-lg shadow-teal-600/25 transition-all hover:from-teal-500 hover:to-emerald-500 hover:shadow-xl hover:shadow-teal-600/30 hover:-translate-y-0.5"
           >
             Go to Dashboard
             <ArrowRight className="h-4 w-4" />
@@ -87,12 +94,12 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div style={{ colorScheme: 'light' }} className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-xl">
+      <nav className="sticky top-0 z-50 border-b border-gray-100/80 bg-white/70 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-gray-900 to-gray-800">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-teal-600 to-emerald-600 shadow-md shadow-teal-600/20">
               <Truck className="h-5 w-5 text-white" />
             </div>
             <span className="text-lg font-bold tracking-tight text-gray-900">Fleet OS</span>
@@ -105,13 +112,13 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="inline-flex h-9 items-center justify-center rounded-lg px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
+              className="inline-flex h-9 items-center justify-center rounded-lg px-4 text-sm font-medium text-gray-600 transition-all hover:text-gray-900 hover:bg-gray-100/80"
             >
               Sign in
             </Link>
             <Link
               href="/register"
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-gray-800"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-gray-800 hover:shadow-md"
             >
               Get Started
               <ArrowRight className="h-3.5 w-3.5" />
@@ -120,56 +127,75 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero */}
+      {/* Hero — dramatic gradient background */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-50/50 to-white" />
-        <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-100 px-4 py-1.5 text-sm font-medium text-gray-900">
+        {/* Gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-teal-900" />
+        {/* Subtle grid overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+            backgroundSize: '60px 60px',
+          }}
+        />
+        {/* Glow orbs */}
+        <div className="absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-teal-500/20 blur-[120px]" />
+        <div className="absolute -bottom-40 -left-40 h-[400px] w-[400px] rounded-full bg-emerald-500/15 blur-[100px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[300px] w-[300px] rounded-full bg-cyan-500/10 blur-[80px]" />
+
+        <div className="relative mx-auto max-w-7xl px-4 py-28 sm:px-6 sm:py-36 lg:px-8">
+          <div className="mx-auto max-w-4xl text-center">
+            {/* Badge */}
+            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-medium text-teal-300 backdrop-blur-sm">
               <Zap className="h-3.5 w-3.5" />
               Built for heavy-equipment operators
             </div>
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+
+            {/* Headline */}
+            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl xl:text-7xl">
               Know your fleet.
               <br />
-              <span className="bg-gradient-to-r from-gray-950 to-gray-900 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-teal-300 via-emerald-300 to-cyan-300 bg-clip-text text-transparent">
                 Bill with confidence.
               </span>
             </h1>
-            <p className="mt-6 text-lg leading-relaxed text-gray-500 sm:text-xl">
+
+            {/* Subheading */}
+            <p className="mt-6 text-lg leading-relaxed text-gray-300 sm:text-xl max-w-2xl mx-auto">
               Fleet OS gives equipment operators real-time visibility into daily work, billing,
               cash flow, and maintenance — without spreadsheets or manual data entry.
             </p>
+
+            {/* CTA buttons */}
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <Link
-                href="/register"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gray-900 px-8 text-base font-semibold text-white shadow-lg shadow-brand-700/25 transition-all hover:bg-gray-800 hover:shadow-xl hover:shadow-brand-600/30 hover:-translate-y-0.5"
-              >
+              <LiquidButton href="/register" size="lg">
                 Start free trial
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-8 text-base font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:border-gray-400"
-              >
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+              </LiquidButton>
+              <LiquidButton href="/login" size="lg" className="!bg-white/[0.04] !border-white/12">
                 Sign in to existing account
-              </Link>
+              </LiquidButton>
             </div>
           </div>
         </div>
+
+        {/* Bottom fade */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
       </section>
 
       {/* Social proof */}
-      <section className="border-y border-gray-100 bg-gray-25 py-12">
+      <section className="py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-sm font-medium text-gray-400 uppercase tracking-wider">
+          <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
             Trusted by leading equipment operators
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
             {LOGOS.map((name) => (
-              <div key={name} className="flex items-center gap-2 text-gray-300">
+              <div key={name} className="flex items-center gap-2 text-gray-300 transition-colors hover:text-gray-400">
                 <Building2 className="h-5 w-5" />
-                <span className="text-sm font-semibold">{name}</span>
+                <span className="text-sm font-semibold tracking-tight">{name}</span>
               </div>
             ))}
           </div>
@@ -177,7 +203,7 @@ export default function LandingPage() {
       </section>
 
       {/* Metrics */}
-      <section id="metrics" className="py-20">
+      <section id="metrics" className="py-20 bg-gray-50/50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             {METRICS.map((m) => (
@@ -191,7 +217,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section id="features" className="border-t border-gray-100 bg-gray-25 py-20">
+      <section id="features" className="py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
@@ -201,16 +227,16 @@ export default function LandingPage() {
               From daily work logging to monthly billing — one platform, zero spreadsheets.
             </p>
           </div>
-          <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f) => (
               <div
                 key={f.title}
-                className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-xs transition-all hover:shadow-md hover:border-gray-300"
+                className="group relative rounded-2xl border border-gray-200/80 bg-white p-7 shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-gray-200/50 hover:border-gray-300/80 hover:-translate-y-1"
               >
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-100 text-gray-900 transition-colors group-hover:bg-gray-800 group-hover:text-white">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${f.gradient} text-white shadow-lg transition-shadow duration-300 group-hover:shadow-xl`}>
                   <f.icon className="h-5 w-5" />
                 </div>
-                <h3 className="mt-4 text-base font-semibold text-gray-900">{f.title}</h3>
+                <h3 className="mt-5 text-base font-semibold text-gray-900">{f.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-gray-500">{f.desc}</p>
               </div>
             ))}
@@ -219,7 +245,7 @@ export default function LandingPage() {
       </section>
 
       {/* Security */}
-      <section id="security" className="py-20">
+      <section id="security" className="py-24 bg-gray-50/50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
@@ -240,61 +266,60 @@ export default function LandingPage() {
                   'Multi-factor authentication for admins',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-gray-800" />
+                    <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-teal-100">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-teal-600" />
+                    </div>
                     <span className="text-sm text-gray-600">{item}</span>
                   </li>
                 ))}
               </ul>
             </div>
             <div className="relative">
-              <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg">
+              <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-xl shadow-gray-200/30">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50">
-                      <Shield className="h-5 w-5 text-green-600" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-emerald-500">
+                      <Shield className="h-5 w-5 text-white" />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-900">Tenant Isolation</p>
                       <p className="text-xs text-gray-500">RLS enforced on every table</p>
                     </div>
-                    <div className="ml-auto">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">
-                        <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                        Active
-                      </span>
-                    </div>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-teal-500 animate-pulse" />
+                      Active
+                    </span>
                   </div>
                   <div className="h-px bg-gray-100" />
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-50">
-                      <Lock className="h-5 w-5 text-gray-700" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500">
+                      <svg className="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-900">Finance Data Isolation</p>
                       <p className="text-xs text-gray-500">Operations cannot access billing</p>
                     </div>
-                    <div className="ml-auto">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">
-                        <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                        Active
-                      </span>
-                    </div>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                      Active
+                    </span>
                   </div>
                   <div className="h-px bg-gray-100" />
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50">
-                      <FileText className="h-5 w-5 text-purple-600" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-purple-500">
+                      <FileText className="h-5 w-5 text-white" />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-900">Append-Only Records</p>
                       <p className="text-xs text-gray-500">No deletes, only corrections</p>
                     </div>
-                    <div className="ml-auto">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">
-                        <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                        Active
-                      </span>
-                    </div>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-violet-500 animate-pulse" />
+                      Active
+                    </span>
                   </div>
                 </div>
               </div>
@@ -304,22 +329,25 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="border-t border-gray-100 bg-gradient-to-b from-gray-50 to-white py-20">
-        <div className="mx-auto max-w-3xl text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+      <section className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-teal-900" />
+        <div className="absolute -top-40 -right-40 h-[400px] w-[400px] rounded-full bg-teal-500/15 blur-[100px]" />
+        <div className="absolute -bottom-40 -left-40 h-[300px] w-[300px] rounded-full bg-emerald-500/10 blur-[80px]" />
+        <div className="relative mx-auto max-w-3xl text-center px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
             Ready to take control of your fleet?
           </h2>
-          <p className="mt-4 text-lg text-gray-500">
+          <p className="mt-4 text-lg text-gray-300">
             Start your free trial today. No credit card required.
           </p>
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <Link
-              href="/register"
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gray-900 px-8 text-base font-semibold text-white shadow-lg shadow-brand-700/25 transition-all hover:bg-gray-800 hover:shadow-xl hover:-translate-y-0.5"
-            >
+            <LiquidButton href="/register" size="lg">
               Start free trial
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+            </LiquidButton>
+            <LiquidButton href="/login" size="lg" className="!bg-white/[0.04] !border-white/12">
+              Sign in to existing account
+            </LiquidButton>
           </div>
         </div>
       </section>
@@ -329,7 +357,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-800">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-emerald-500">
                 <Truck className="h-4 w-4 text-white" />
               </div>
               <span className="text-sm font-semibold text-white">Fleet OS</span>
@@ -341,14 +369,5 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
-  );
-}
-
-function Lock(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
   );
 }

@@ -64,8 +64,77 @@ export class ClientsService {
   async remove(tenantId: string, id: string) {
     const existing = await this.repo.findById(tenantId, id);
     if (!existing) throw new NotFoundException('Client not found');
+
+    // Delete related records in the correct order to respect foreign key constraints.
+    // Chain: clients → sites → deployments → work_sessions, billing_ledger, rate_cards, extra_charges
+
+    // 1. Delete advance_consumptions for this client's billing
+    await this.repo['db'].queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.advance_consumptions
+       WHERE billing_ledger_id IN (
+         SELECT bl.id FROM tenant.billing_ledger bl
+         JOIN tenant.deployments d ON d.id = bl.deployment_id
+         JOIN tenant.sites s ON s.id = d.site_id
+         WHERE s.client_id = $1
+       )`, [id]);
+
+    // 2. Delete billing_ledger for this client's deployments
+    await this.repo['db'].queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.billing_ledger
+       WHERE deployment_id IN (
+         SELECT d.id FROM tenant.deployments d
+         JOIN tenant.sites s ON s.id = d.site_id
+         WHERE s.client_id = $1
+       )`, [id]);
+
+    // 3. Delete extra_charges for this client's deployments
+    await this.repo['db'].queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.extra_charges
+       WHERE deployment_id IN (
+         SELECT d.id FROM tenant.deployments d
+         JOIN tenant.sites s ON s.id = d.site_id
+         WHERE s.client_id = $1
+       )`, [id]);
+
+    // 4. Delete rate_cards for this client's deployments
+    await this.repo['db'].queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.rate_cards
+       WHERE deployment_id IN (
+         SELECT d.id FROM tenant.deployments d
+         JOIN tenant.sites s ON s.id = d.site_id
+         WHERE s.client_id = $1
+       )`, [id]);
+
+    // 5. Delete work_sessions for this client's deployments
+    await this.repo['db'].queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.work_sessions
+       WHERE deployment_id IN (
+         SELECT d.id FROM tenant.deployments d
+         JOIN tenant.sites s ON s.id = d.site_id
+         WHERE s.client_id = $1
+       )`, [id]);
+
+    // 6. Delete deployments for this client's sites
+    await this.repo['db'].queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.deployments
+       WHERE site_id IN (SELECT id FROM tenant.sites WHERE client_id = $1)`, [id]);
+
+    // 7. Delete client_money_events for this client
+    await this.repo['db'].queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.client_money_events WHERE client_id = $1`, [id]);
+
+    // 8. Delete client_credit for this client
+    await this.repo['db'].queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.client_credit WHERE client_id = $1`, [id]);
+
+    // 9. Delete sites for this client
+    await this.repo['db'].queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.sites WHERE client_id = $1`, [id]);
+
+    // 10. Finally, delete the client itself
     await this.repo['db'].queryWithTenant(tenantId, 'owner',
       `DELETE FROM tenant.clients WHERE id = $1`, [id]);
+
     return { deleted: true };
   }
 }
