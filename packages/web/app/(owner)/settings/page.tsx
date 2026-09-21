@@ -227,7 +227,7 @@ export default function Settings() {
                           </div>
                         </div>
                         <span className="text-sm font-medium text-gray-600">
-                          {m.current_meter as number} {m.meter_unit_label as string}
+                          {m.current_meter as number} {(m.meter_unit_label || m.primary_meter_type || 'hrs') as string}
                         </span>
                       </div>
                     ))}

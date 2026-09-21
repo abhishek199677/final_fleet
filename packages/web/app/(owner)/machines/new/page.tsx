@@ -73,7 +73,6 @@ export default function NewMachine() {
     year: '',
     chassis_no: '',
     primary_meter_type: 'hours',
-    meter_unit_label: 'hours',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -99,7 +98,7 @@ export default function NewMachine() {
           year: formData.year ? parseInt(formData.year) : undefined,
           chassis_no: formData.chassis_no || undefined,
           primary_meter_type: formData.primary_meter_type,
-          meter_unit_label: formData.meter_unit_label || formData.primary_meter_type,
+          meter_unit_label: formData.primary_meter_type,
           client_uuid: crypto.randomUUID(),
         }),
       });
@@ -207,32 +206,20 @@ export default function NewMachine() {
               </div>
             </div>
 
-            {/* Meter Type & Label */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Meter Type *</label>
-                <select
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
-                  value={formData.primary_meter_type}
-                  onChange={(e) => {
-                    set('primary_meter_type', e.target.value);
-                    set('meter_unit_label', e.target.value);
-                  }}
-                  required
-                >
-                  {METER_TYPES.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Meter Unit Label *</label>
-                <Input
-                  value={formData.meter_unit_label}
-                  onChange={(e) => set('meter_unit_label', e.target.value)}
-                  required
-                />
-              </div>
+            {/* Meter Type */}
+            <div>
+              <label className="text-sm font-medium">Meter Type *</label>
+              <select
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+                value={formData.primary_meter_type}
+                onChange={(e) => set('primary_meter_type', e.target.value)}
+                required
+              >
+                {METER_TYPES.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">Used for tracking usage — hours, distance, cycles, etc.</p>
             </div>
 
             {error && <p className="text-sm text-red-600">{error}</p>}
