@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchList } from '@/lib/api/fetch-list';
+import { useAuth } from '@/lib/auth/context';
 
 interface NavEntry {
   section?: 'overview' | 'manage' | 'tools';
@@ -48,6 +49,7 @@ function isActive(pathname: string, href: string) {
 function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
   const t = useTranslations('sidebar');
+  const { logout } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
@@ -149,7 +151,7 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
             </div>
           )}
           {!collapsed && (
-            <button className="rounded-md p-1 text-gray-400 hover:text-gray-600">
+            <button onClick={logout} className="rounded-md p-1 text-gray-400 hover:text-gray-600">
               <LogOut className="h-4 w-4" />
             </button>
           )}
@@ -161,6 +163,7 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
 
 export function OwnerShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations('sidebar');
+  const { logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
@@ -266,12 +269,28 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
             <div className="hidden h-6 w-px bg-gray-200 sm:block" />
 
             {/* User menu */}
-            <button className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-gray-100">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700">
-                OW
+            <div className="relative group">
+              <button className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-gray-100">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700">
+                  OW
+                </div>
+                <ChevronDown className="hidden h-4 w-4 text-gray-400 sm:block" />
+              </button>
+              {/* Dropdown */}
+              <div className="invisible group-hover:visible absolute right-0 top-full mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg z-50">
+                <div className="px-3 py-2 border-b border-gray-100">
+                  <p className="text-sm font-medium text-gray-900">Owner</p>
+                  <p className="text-xs text-gray-500">demo@fleetos.com</p>
+                </div>
+                <button
+                  onClick={logout}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Log out
+                </button>
               </div>
-              <ChevronDown className="hidden h-4 w-4 text-gray-400 sm:block" />
-            </button>
+            </div>
           </div>
         </header>
 
