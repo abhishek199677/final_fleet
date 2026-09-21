@@ -50,7 +50,12 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
   const pathname = usePathname();
   const t = useTranslations('sidebar');
   const { logout } = useAuth();
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('fleetos_dark') === '1';
+    }
+    return false;
+  });
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains('dark');
