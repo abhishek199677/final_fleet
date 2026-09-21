@@ -4,10 +4,11 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * AmbientBackground — app-wide Chat Bucket backdrop.
- * Fixed, pointer-events-none, aria-hidden. Grid + top glare + 3 drifting
- * orbs + noise + hairline beam. Disabled motion under prefers-reduced-motion
- * via CSS. Must render once in root layout, never per-page.
+ * AmbientBackground — Elegant Dark Pattern backdrop.
+ * Fixed, pointer-events-none, aria-hidden. Sophisticated mesh gradients,
+ * dot pattern, top glare, drifting orbs, noise, beam, and vignette.
+ * Disabled motion under prefers-reduced-motion via CSS.
+ * Must render once in root layout, never per-page.
  */
 export function AmbientBackground({ className }: { className?: string }) {
   return (
@@ -19,6 +20,7 @@ export function AmbientBackground({ className }: { className?: string }) {
       <div className="fleet-ambient-topglare" />
       <div className="fleet-ambient-beam" />
       <div className="fleet-ambient-noise" />
+      <div className="fleet-ambient-vignette" />
     </div>
   );
 }
