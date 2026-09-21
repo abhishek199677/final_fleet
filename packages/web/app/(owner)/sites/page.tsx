@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Calendar, Users, Briefcase } from 'lucide-react';
+import { MapPin, Calendar, Users, Briefcase, Pencil, Trash2 } from 'lucide-react';
 import { fetchList } from '@/lib/api/fetch-list';
-import { sampleSites } from '@/lib/sample-data';
+import { apiDelete, confirmDelete } from '@/lib/api/mutations';
 
 interface SiteEntry {
   id: string;
@@ -23,16 +24,37 @@ interface SiteEntry {
 }
 
 export default function SitesList() {
+  const router = useRouter();
   const [sites, setSites] = useState<SiteEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     void fetchList<SiteEntry>('/api/v1/sites').then((data) => {
-      setSites(data.length > 0 ? data : sampleSites);
+      setSites(data);
     }).catch(() => {
-      setSites(sampleSites);
+      setSites([]);
     }).finally(() => setLoading(false));
   }, []);
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!(await confirmDelete(name))) return;
+    try {
+      await apiDelete(`/api/v1/sites/${id}`);
+      setSites((prev) => prev.filter((s) => s.id !== id));
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Delete failed');
+    }
+  };
+
+  const uniqueSites = useMemo(() => {
+    const seen = new Set<string>();
+    return sites.filter((s) => {
+      const name = String(s.name ?? '');
+      if (seen.has(name)) return false;
+      seen.add(name);
+      return true;
+    });
+  }, [sites]);
 
   return (
     <div className="space-y-6">
@@ -59,7 +81,7 @@ export default function SitesList() {
             </Card>
           ))}
         </div>
-      ) : sites.length === 0 ? (
+      ) : uniqueSites.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center">
             <div className="text-6xl mb-4">🏗️</div>
@@ -72,7 +94,7 @@ export default function SitesList() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {sites.map((s) => (
+          {uniqueSites.map((s) => (
             <Link key={s.id} href={`/sites/${s.id}`}>
               <Card className="hover:shadow-lg transition-all cursor-pointer group overflow-hidden">
                 <div className={`h-2 ${
@@ -124,9 +146,22 @@ export default function SitesList() {
                         <span className="text-xs text-gray-500">+{(s.machine_count ?? 0) - 3} more</span>
                       )}
                     </div>
-                    <span className="text-sm font-medium text-blue-600 group-hover:underline">
-                      View Details →
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={(e) => { e.preventDefault(); router.push(`/sites/${s.id}`); }}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                        title="Edit"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.preventDefault(); void handleDelete(s.id, s.name); }}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

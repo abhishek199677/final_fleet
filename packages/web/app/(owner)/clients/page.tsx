@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Building2, Phone, Mail, MapPin, Briefcase, IndianRupee, ArrowRight } from 'lucide-react';
+import { Building2, Phone, Mail, MapPin, Briefcase, IndianRupee, ArrowRight, Pencil, Trash2 } from 'lucide-react';
 import { fetchList } from '@/lib/api/fetch-list';
-import { sampleClients } from '@/lib/sample-data';
+import { apiDelete, confirmDelete } from '@/lib/api/mutations';
 
 interface ClientEntry {
   id: string;
@@ -23,22 +24,43 @@ interface ClientEntry {
 }
 
 export default function OwnerClients() {
+  const router = useRouter();
   const [clients, setClients] = useState<ClientEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchList<ClientEntry>('/api/v1/clients')
       .then((data) => {
-        setClients(data.length > 0 ? data : sampleClients);
+        setClients(data);
       })
       .catch(() => {
-        setClients(sampleClients);
+        setClients([]);
       })
       .finally(() => setLoading(false));
   }, []);
 
-  const activeClients = clients.filter(c => c.status === 'active').length;
-  const totalRevenue = clients.reduce((sum, c) => sum + (c.total_revenue ?? 0), 0);
+  const handleDelete = async (id: string, name: string) => {
+    if (!(await confirmDelete(name))) return;
+    try {
+      await apiDelete(`/api/v1/clients/${id}`);
+      setClients((prev) => prev.filter((c) => c.id !== id));
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Delete failed');
+    }
+  };
+
+  const uniqueClients = useMemo(() => {
+    const seen = new Set<string>();
+    return clients.filter((c) => {
+      const name = String(c.name ?? '');
+      if (seen.has(name)) return false;
+      seen.add(name);
+      return true;
+    });
+  }, [clients]);
+
+  const activeClients = uniqueClients.filter(c => c.status === 'active').length;
+  const totalRevenue = uniqueClients.reduce((sum, c) => sum + (c.total_revenue ?? 0), 0);
 
   return (
     <div className="space-y-6">
@@ -59,7 +81,7 @@ export default function OwnerClients() {
           <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-4">
             <div className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-white" />
-              <p className="text-white font-bold text-2xl">{clients.length}</p>
+              <p className="text-white font-bold text-2xl">{uniqueClients.length}</p>
             </div>
             <p className="text-blue-100 text-xs mt-1">Total Clients</p>
           </div>
@@ -95,7 +117,7 @@ export default function OwnerClients() {
             </Card>
           ))}
         </div>
-      ) : clients.length === 0 ? (
+      ) : uniqueClients.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center">
             <div className="text-6xl mb-4">🏢</div>
@@ -108,7 +130,7 @@ export default function OwnerClients() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {clients.map((c) => (
+          {uniqueClients.map((c) => (
             <Link key={c.id} href={`/clients/${c.id}`}>
               <Card className="hover:shadow-lg transition-all cursor-pointer group overflow-hidden h-full">
                 <div className={`h-1.5 ${
@@ -169,6 +191,22 @@ export default function OwnerClients() {
                       </div>
                     </div>
                     <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all" />
+                  </div>
+                  <div className="flex items-center gap-1 mt-2">
+                    <button
+                      onClick={(e) => { e.preventDefault(); router.push(`/clients/${c.id}`); }}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                      title="Edit"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.preventDefault(); void handleDelete(c.id, c.name); }}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </CardContent>
               </Card>

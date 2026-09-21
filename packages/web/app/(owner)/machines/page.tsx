@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Truck, MapPin, Clock, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react';
+import { Truck, MapPin, Clock, CheckCircle, AlertCircle, ArrowRight, Pencil, Trash2 } from 'lucide-react';
 import { fetchList } from '@/lib/api/fetch-list';
+import { apiDelete, confirmDelete } from '@/lib/api/mutations';
 import { sampleMachines } from '@/lib/sample-data';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: typeof CheckCircle }> = {
@@ -16,21 +18,28 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
 };
 
 export default function OwnerMachines() {
+  const router = useRouter();
   const [machines, setMachines] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadMachines = () => {
     fetchList<Record<string, unknown>>('/api/v1/machines')
-      .then(data => {
-        if (data.length > 0) {
-          setMachines(data);
-        } else {
-          setMachines(sampleMachines);
-        }
-      })
+      .then(data => setMachines(data))
       .catch(() => setMachines(sampleMachines))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadMachines(); }, []);
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!(await confirmDelete(name))) return;
+    try {
+      await apiDelete(`/api/v1/machines/${id}`);
+      setMachines((prev) => prev.filter((m) => m.id !== id));
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Delete failed');
+    }
+  };
 
   const workingCount = machines.filter(m => m.status_flag === 'working').length;
   const serviceCount = machines.filter(m => m.status_flag === 'service').length;
@@ -158,7 +167,22 @@ export default function OwnerMachines() {
                          m.status_flag === 'service' ? 'Under maintenance' :
                          m.status_flag === 'stopped' ? 'Out of service' : 'Moving to site'}
                       </div>
-                      <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={(e) => { e.preventDefault(); router.push(`/machines/${m.id}`); }}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.preventDefault(); void handleDelete(m.id as string, m.code as string); }}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

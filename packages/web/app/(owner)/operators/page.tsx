@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { User, Phone, Award, MapPin, Truck } from 'lucide-react';
+import { User, Phone, Award, MapPin, Truck, Pencil, Trash2 } from 'lucide-react';
 import { fetchList } from '@/lib/api/fetch-list';
-import { sampleOperators } from '@/lib/sample-data';
+import { apiDelete, confirmDelete } from '@/lib/api/mutations';
 
 interface OperatorEntry {
   id: string;
@@ -21,19 +22,40 @@ interface OperatorEntry {
 }
 
 export default function OwnerOperators() {
+  const router = useRouter();
   const [operators, setOperators] = useState<OperatorEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchList<OperatorEntry>('/api/v1/operators')
       .then((data) => {
-        setOperators(data.length > 0 ? data : sampleOperators);
+        setOperators(data);
       })
       .catch(() => {
-        setOperators(sampleOperators);
+        setOperators([]);
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!(await confirmDelete(name))) return;
+    try {
+      await apiDelete(`/api/v1/operators/${id}`);
+      setOperators((prev) => prev.filter((o) => o.id !== id));
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Delete failed');
+    }
+  };
+
+  const uniqueOperators = useMemo(() => {
+    const seen = new Set<string>();
+    return operators.filter((o) => {
+      const name = String(o.name ?? '');
+      if (seen.has(name)) return false;
+      seen.add(name);
+      return true;
+    });
+  }, [operators]);
 
   return (
     <div className="space-y-6">
@@ -73,7 +95,7 @@ export default function OwnerOperators() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {operators.map((o) => (
+          {uniqueOperators.map((o) => (
             <Card key={o.id} className={`hover:shadow-lg transition-all overflow-hidden ${!o.is_active ? 'opacity-75' : ''}`}>
               <div className={`h-1.5 ${o.is_active ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gradient-to-r from-gray-400 to-gray-500'}`} />
               <CardContent className="p-5">
@@ -134,6 +156,22 @@ export default function OwnerOperators() {
                   ) : (
                     <p className="text-sm text-gray-400 text-center">No assignment</p>
                   )}
+                </div>
+                <div className="flex items-center gap-1 mt-3 pt-3 border-t border-gray-100">
+                  <button
+                    onClick={() => router.push(`/operators/${o.id}`)}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    title="Edit"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => void handleDelete(o.id, o.name)}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </CardContent>
             </Card>

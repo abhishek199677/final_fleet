@@ -46,4 +46,26 @@ export class ClientsService {
   async create(tenantId: string, data: Record<string, unknown>, clientUuid: string) {
     return this.repo.create(tenantId, data, clientUuid);
   }
+
+  async update(tenantId: string, id: string, data: Record<string, unknown>) {
+    const existing = await this.repo.findById(tenantId, id);
+    if (!existing) throw new NotFoundException('Client not found');
+    const result = await this.repo['db'].queryWithTenant(tenantId, 'owner',
+      `UPDATE tenant.clients SET
+        name = COALESCE($2, name), contact = COALESCE($3, contact),
+        phone = COALESCE($4, phone), whatsapp = COALESCE($5, whatsapp),
+        address = COALESCE($6, address), currency = COALESCE($7, currency),
+        payment_terms_days = COALESCE($8, payment_terms_days)
+       WHERE id = $1 RETURNING *`,
+      [id, data.name ?? null, data.contact ?? null, data.phone ?? null, data.whatsapp ?? null, data.address ?? null, data.currency ?? null, data.payment_terms_days ?? null]);
+    return result.rows[0];
+  }
+
+  async remove(tenantId: string, id: string) {
+    const existing = await this.repo.findById(tenantId, id);
+    if (!existing) throw new NotFoundException('Client not found');
+    await this.repo['db'].queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.clients WHERE id = $1`, [id]);
+    return { deleted: true };
+  }
 }

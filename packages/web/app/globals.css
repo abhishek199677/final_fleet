@@ -3,337 +3,459 @@
 @tailwind utilities;
 
 /*
- * Fleet OS — Chat Bucket motion / glare / background system
- * TSD §8 (Web). Cross-cutting, no BRD functional change.
- * Light-first ambient layer. All values are semantic tokens (no raw hex in components).
+ * Fleet OS — Enterprise Design System
+ * Clean, professional, MNC-ready. Light-first with dark mode.
  */
 
 :root {
-  /* ---- Chat Bucket mapped to semantic tokens (light theme) ---- */
-  --fleet-text-primary: #101828;
-  --fleet-text-secondary: #475467;
-  --fleet-text-tertiary: #667085;
-  --fleet-text-inverse: rgba(255, 255, 255, 0.92);
-  --fleet-surface-base: #f6f8fb;
-  --fleet-surface-muted: rgba(16, 24, 40, 0.06);
+  /* ---- Brand ---- */
+  --fleet-brand: #0f766e;
+  --fleet-brand-light: #14b8a6;
+  --fleet-brand-dark: #0d5c56;
+  --fleet-brand-50: #f0fdfa;
+  --fleet-brand-100: #ccfbf1;
+  --fleet-brand-500: #14b8a6;
+  --fleet-brand-600: #0d9488;
+  --fleet-brand-700: #0f766e;
+  --fleet-brand-900: #134e4a;
+
+  /* ---- Neutral palette ---- */
+  --fleet-gray-25: #fcfcfd;
+  --fleet-gray-50: #f9fafb;
+  --fleet-gray-100: #f2f4f7;
+  --fleet-gray-200: #eaecf0;
+  --fleet-gray-300: #d0d5dd;
+  --fleet-gray-400: #98a2b3;
+  --fleet-gray-500: #667085;
+  --fleet-gray-600: #475467;
+  --fleet-gray-700: #344054;
+  --fleet-gray-800: #1d2939;
+  --fleet-gray-900: #101828;
+  --fleet-gray-950: #0c111d;
+
+  /* ---- Semantic tokens ---- */
+  --fleet-text-primary: var(--fleet-gray-900);
+  --fleet-text-secondary: var(--fleet-gray-600);
+  --fleet-text-tertiary: var(--fleet-gray-400);
+  --fleet-text-inverse: #ffffff;
+
+  --fleet-surface-base: var(--fleet-gray-50);
   --fleet-surface-raised: #ffffff;
-  --fleet-surface-strong: #ffffff;
-  --fleet-line: rgba(16, 24, 40, 0.1);
-  --fleet-glare: rgba(16, 24, 40, 0.07);
-  --fleet-glow-a: rgba(99, 102, 241, 0.14);
-  --fleet-glow-b: rgba(34, 211, 238, 0.12);
-  --fleet-glow-c: rgba(168, 85, 247, 0.12);
+  --fleet-surface-muted: var(--fleet-gray-100);
+  --fleet-surface-sunken: var(--fleet-gray-25);
+
+  --fleet-border: var(--fleet-gray-200);
+  --fleet-border-strong: var(--fleet-gray-300);
+  --fleet-border-focus: var(--fleet-brand);
+
+  /* ---- Status ---- */
+  --status-success: #12b76a;
+  --status-success-bg: #d1fadf;
+  --status-success-text: #067647;
+  --status-warning: #f79009;
+  --status-warning-bg: #fef0c7;
+  --status-warning-text: #b54708;
+  --status-error: #f04438;
+  --status-error-bg: #fecdca;
+  --status-error-text: #b42318;
+  --status-info: #3b82f6;
+  --status-info-bg: #d1e9ff;
+  --status-info-text: #175cd3;
 
   /* ---- Type ---- */
-  --fleet-font-primary: ui-sans-serif, -apple-system, 'SF Pro Text', 'SF Pro Display',
-    Inter, system-ui, sans-serif;
-  --fleet-font-size-xs: 14px;
-  --fleet-font-size-sm: 16px;
-  --fleet-font-size-md: 18px;
-  --fleet-font-size-lg: 20px;
-  --fleet-font-size-xl: 24px;
-  --fleet-font-size-2xl: 30px;
-  --fleet-font-size-3xl: 36px;
-  --fleet-font-size-4xl: 48px;
+  --fleet-font-sans: 'Inter', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --fleet-font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 
-  /* ---- Spacing (token-locked, no one-offs) ---- */
+  /* ---- Spacing scale (4px base) ---- */
+  --fleet-space-0: 0px;
   --fleet-space-1: 4px;
   --fleet-space-2: 8px;
-  --fleet-space-3: 10px;
-  --fleet-space-4: 12px;
-  --fleet-space-5: 16px;
-  --fleet-space-6: 20px;
-  --fleet-space-7: 24px;
-  --fleet-space-8: 32px;
+  --fleet-space-3: 12px;
+  --fleet-space-4: 16px;
+  --fleet-space-5: 20px;
+  --fleet-space-6: 24px;
+  --fleet-space-7: 32px;
+  --fleet-space-8: 40px;
+  --fleet-space-9: 48px;
+  --fleet-space-10: 64px;
 
   /* ---- Radius ---- */
-  --fleet-radius-xs: 6px;
-  --fleet-radius-sm: 10px;
-  --fleet-radius-md: 14px;
-  --fleet-radius-lg: 20px;
-  --fleet-radius-pill: 9999px; /* source token 16777200px normalises to pill */
+  --fleet-radius-xs: 4px;
+  --fleet-radius-sm: 6px;
+  --fleet-radius-md: 8px;
+  --fleet-radius-lg: 12px;
+  --fleet-radius-xl: 16px;
+  --fleet-radius-2xl: 20px;
+  --fleet-radius-pill: 9999px;
 
-  /* ---- Motion (Chat Bucket: instant 150ms, fast 300ms) ---- */
-  --fleet-motion-instant: 150ms;
-  --fleet-motion-fast: 300ms;
-  --fleet-motion-slow: 600ms;
-  --fleet-motion-drift: 14000ms;
-  --fleet-motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --fleet-motion-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* ---- Shadows ---- */
+  --fleet-shadow-xs: 0px 1px 2px rgba(16, 24, 40, 0.05);
+  --fleet-shadow-sm: 0px 1px 3px rgba(16, 24, 40, 0.1), 0px 1px 2px rgba(16, 24, 40, 0.06);
+  --fleet-shadow-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.1), 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
+  --fleet-shadow-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03);
+  --fleet-shadow-xl: 0px 20px 24px -4px rgba(16, 24, 40, 0.08), 0px 8px 8px -4px rgba(16, 24, 40, 0.03);
 
-  /* ---- Night dashboard surface (machine detail) ---- */
-  --fleet-night-base: #101014;
-  --fleet-night-card: #1b1b21;
-  --fleet-night-raised: #26262e;
-  --fleet-night-line: rgba(255, 255, 255, 0.08);
-  --fleet-night-text: #f4f4f5;
-  --fleet-night-muted: #a1a1aa;
+  /* ---- Motion ---- */
+  --fleet-duration-fast: 150ms;
+  --fleet-duration-normal: 200ms;
+  --fleet-duration-slow: 300ms;
+  --fleet-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 
-  /* ---- Glassmorphism tokens ---- */
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-bg-hover: rgba(255, 255, 255, 0.82);
-  --glass-border: rgba(255, 255, 255, 0.18);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
-  --glass-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.1);
-  --glass-blur: blur(12px);
+  /* ---- Sidebar ---- */
+  --fleet-sidebar-width: 260px;
+  --fleet-sidebar-collapsed: 72px;
+  --fleet-topbar-height: 64px;
 
-  /* ---- Dark slate palette ---- */
-  --slate-950: #020617;
-  --slate-900: #0f172a;
-  --slate-800: #1e293b;
-  --slate-700: #334155;
-  --slate-600: #475569;
-
-  /* ---- Status colors (vibrant) ---- */
-  --status-working: #10b981;
-  --status-idle: #f59e0b;
-  --status-breakdown: #ef4444;
-  --status-transit: #8b5cf6;
-  --status-service: #3b82f6;
-
-  /* ---- KPI sparkline colors ---- */
-  --sparkline-revenue: #10b981;
-  --sparkline-cost: #ef4444;
-  --sparkline-profit: #3b82f6;
-
-  /* ---- shadcn compat (light-first) ---- */
-  --background: 0 0% 100%;
-  --foreground: 222 47% 11%;
+  /* ---- shadcn compat ---- */
+  --background: 0 0% 98%;
+  --foreground: 220 14% 10%;
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --primary: 222 47% 11%;
+  --card-foreground: 220 14% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 14% 10%;
+  --primary: 174 62% 26%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 220 14% 96%;
-  --secondary-foreground: 222 47% 11%;
-  --muted: 220 14% 96%;
-  --muted-foreground: 220 9% 38%;
-  --accent: 220 14% 94%;
-  --accent-foreground: 222 47% 11%;
-  --border: 220 13% 91%;
-  --input: 220 13% 82%;
-  --ring: 222 47% 30%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 220 14% 10%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 220 9% 40%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 220 14% 10%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 174 62% 26%;
+  --chart-1: 174 62% 26%;
+  --chart-2: 220 70% 50%;
+  --chart-3: 262 83% 58%;
+  --chart-4: 38 92% 50%;
+  --chart-5: 0 84% 60%;
+  --radius: 8px;
+}
+
+/* ---- Dark mode ---- */
+.dark {
+  /* Reverse the gray palette so Tailwind utilities auto-invert */
+  --fleet-gray-25: #0c111d;
+  --fleet-gray-50: #101828;
+  --fleet-gray-100: #1d2939;
+  --fleet-gray-200: #344054;
+  --fleet-gray-300: #475467;
+  --fleet-gray-400: #667085;
+  --fleet-gray-500: #98a2b3;
+  --fleet-gray-600: #d0d5dd;
+  --fleet-gray-700: #eaecf0;
+  --fleet-gray-800: #f2f4f7;
+  --fleet-gray-900: #f9fafb;
+  --fleet-gray-950: #fcfcfd;
+
+  --fleet-text-primary: #f2f4f7;
+  --fleet-text-secondary: #98a2b3;
+  --fleet-text-tertiary: #667085;
+
+  --fleet-surface-base: #101828;
+  --fleet-surface-raised: #1d2939;
+  --fleet-surface-muted: #344054;
+  --fleet-surface-sunken: #0c111d;
+
+  --fleet-border: #344054;
+  --fleet-border-strong: #475467;
+  --fleet-border-focus: var(--fleet-brand-light);
+
+  --status-success-bg: rgba(18, 183, 106, 0.15);
+  --status-success-text: #34d399;
+  --status-warning-bg: rgba(247, 144, 9, 0.15);
+  --status-warning-text: #fbbf24;
+  --status-error-bg: rgba(240, 68, 56, 0.15);
+  --status-error-text: #f87171;
+  --status-info-bg: rgba(59, 130, 246, 0.15);
+  --status-info-text: #60a5fa;
+
+  --fleet-shadow-xs: 0px 1px 2px rgba(0, 0, 0, 0.3);
+  --fleet-shadow-sm: 0px 1px 3px rgba(0, 0, 0, 0.4), 0px 1px 2px rgba(0, 0, 0, 0.3);
+  --fleet-shadow-md: 0px 4px 8px -2px rgba(0, 0, 0, 0.4), 0px 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --fleet-shadow-lg: 0px 12px 16px -4px rgba(0, 0, 0, 0.3), 0px 4px 6px -2px rgba(0, 0, 0, 0.2);
+
+  /* shadcn compat */
+  --background: 222 47% 7%;
+  --foreground: 210 40% 96%;
+  --card: 222 47% 11%;
+  --card-foreground: 210 40% 96%;
+  --popover: 222 47% 11%;
+  --popover-foreground: 210 40% 96%;
+  --primary: 174 62% 40%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 96%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 55%;
+  --accent: 217 33% 17%;
+  --accent-foreground: 210 40% 96%;
+  --destructive: 0 63% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 217 33% 17%;
+  --input: 217 33% 17%;
+  --ring: 174 62% 40%;
 }
 
 @layer base {
   html {
     scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+
   body {
     background-color: var(--fleet-surface-base);
     color: var(--fleet-text-primary);
-    font-family: var(--fleet-font-primary);
-    font-size: var(--fleet-font-size-sm);
-    line-height: 24px;
-    -webkit-font-smoothing: antialiased;
+    font-family: var(--fleet-font-sans);
+    font-size: 14px;
+    line-height: 20px;
     overflow-x: clip;
   }
+
   ::selection {
-    background: rgba(99, 102, 241, 0.22);
+    background: rgba(15, 118, 110, 0.2);
   }
-  /* Must: always-visible focus, never hidden */
+
   :focus-visible {
-    outline: 2px solid var(--fleet-text-primary);
-    outline-offset: 3px;
-    border-radius: var(--fleet-radius-xs);
+    outline: 2px solid var(--fleet-border-focus);
+    outline-offset: 2px;
+    border-radius: var(--fleet-radius-sm);
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--fleet-gray-300);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--fleet-gray-400);
+  }
+
+  /* Override hardcoded bg-white in dark mode */
+  .dark .bg-white {
+    background-color: var(--fleet-surface-raised) !important;
   }
 }
 
 @layer components {
-  /* App shell sits above the fixed ambient layer */
-  .fleet-shell {
-    position: relative;
-    isolation: isolate;
-  }
-}
-
-/* ============ Ambient background utilities ============ */
-@layer utilities {
-  .fleet-ambient {
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    overflow: hidden;
-    background: var(--fleet-surface-base);
-    pointer-events: none;
-  }
-  .fleet-ambient-grid {
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(to right, rgba(16, 24, 40, 0.06) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(16, 24, 40, 0.06) 1px, transparent 1px);
-    background-size: 56px 56px;
-    mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 35%, transparent 78%);
-    -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 35%, transparent 78%);
-  }
-  .fleet-ambient-topglare {
-    position: absolute;
-    inset-inline: 0;
-    top: -220px;
-    height: 480px;
-    background: radial-gradient(ellipse 55% 60% at 50% 40%, rgba(255, 255, 255, 0.9), transparent 70%);
-  }
-  .fleet-ambient-orb {
-    position: absolute;
-    border-radius: 9999px;
-    filter: blur(90px);
-    opacity: 0.5;
-    will-change: transform;
-    animation: fleet-drift var(--fleet-motion-drift) var(--fleet-motion-ease-in-out) infinite alternate;
-  }
-  .fleet-ambient-orb-a {
-    width: 560px;
-    height: 560px;
-    left: -160px;
-    top: -180px;
-    background: var(--fleet-glow-a);
-  }
-  .fleet-ambient-orb-b {
-    width: 480px;
-    height: 480px;
-    right: -140px;
-    top: 8%;
-    background: var(--fleet-glow-b);
-    animation-delay: -5s;
-  }
-  .fleet-ambient-orb-c {
-    width: 640px;
-    height: 640px;
-    left: 30%;
-    bottom: -320px;
-    background: var(--fleet-glow-c);
-    opacity: 0.35;
-    animation-delay: -9s;
-  }
-  .fleet-ambient-noise {
-    position: absolute;
-    inset: 0;
-    opacity: 0.05;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
-  .fleet-ambient-beam {
-    position: absolute;
-    inset-inline: 10%;
-    top: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(16, 24, 40, 0.3), transparent);
-  }
-
-  /* Glare card: mouse / touch / keyboard-driven specular highlight */
-  .fleet-glare {
-    --gx: 50%;
-    --gy: 0%;
-    position: relative;
+  /* ---- Enterprise card ---- */
+  .fleet-card {
     background: var(--fleet-surface-raised);
-    border: 1px solid var(--fleet-line);
-    border-radius: var(--fleet-radius-md);
-    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
-    transition:
-      border-color var(--fleet-motion-fast) var(--fleet-motion-ease-out),
-      transform var(--fleet-motion-fast) var(--fleet-motion-ease-out),
-      background-color var(--fleet-motion-instant) var(--fleet-motion-ease-out),
-      box-shadow var(--fleet-motion-fast) var(--fleet-motion-ease-out);
+    border: 1px solid var(--fleet-border);
+    border-radius: var(--fleet-radius-lg);
+    box-shadow: var(--fleet-shadow-xs);
+    transition: box-shadow var(--fleet-duration-normal) var(--fleet-ease),
+                border-color var(--fleet-duration-normal) var(--fleet-ease);
   }
-  .fleet-glare::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    opacity: 0;
-    transition: opacity var(--fleet-motion-fast) var(--fleet-motion-ease-out);
-    background: radial-gradient(
-      420px circle at var(--gx) var(--gy),
-      var(--fleet-glare),
-      transparent 65%
-    );
+  .fleet-card:hover {
+    box-shadow: var(--fleet-shadow-sm);
+    border-color: var(--fleet-border-strong);
+  }
+
+  /* ---- Enterprise button base ---- */
+  .fleet-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+    border-radius: var(--fleet-radius-md);
+    transition: all var(--fleet-duration-fast) var(--fleet-ease);
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .fleet-btn:disabled {
+    opacity: 0.5;
     pointer-events: none;
   }
-  .fleet-glare:hover::before,
-  .fleet-glare:focus-visible::before,
-  .fleet-glare[data-hot='true']::before {
-    opacity: 1;
+
+  /* ---- Enterprise input ---- */
+  .fleet-input {
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--fleet-border);
+    border-radius: var(--fleet-radius-md);
+    background: var(--fleet-surface-raised);
+    color: var(--fleet-text-primary);
+    font-size: 14px;
+    line-height: 20px;
+    transition: border-color var(--fleet-duration-fast) var(--fleet-ease),
+                box-shadow var(--fleet-duration-fast) var(--fleet-ease);
+    width: 100%;
   }
-  .fleet-glare:hover {
-    border-color: rgba(16, 24, 40, 0.22);
-    box-shadow: 0 4px 12px rgba(16, 24, 40, 0.08);
+  .fleet-input::placeholder {
+    color: var(--fleet-text-tertiary);
+  }
+  .fleet-input:focus {
+    outline: none;
+    border-color: var(--fleet-border-focus);
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
   }
 
-  /* Reveal on scroll (paired with <Reveal/>) */
-  .fleet-reveal {
-    opacity: 0;
-    transform: translateY(18px);
+  /* ---- Status badge ---- */
+  .fleet-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 18px;
+    border-radius: var(--fleet-radius-pill);
   }
-  .fleet-reveal[data-in='true'] {
-    opacity: 1;
-    transform: none;
-    transition:
-      opacity var(--fleet-motion-slow) var(--fleet-motion-ease-out),
-      transform var(--fleet-motion-slow) var(--fleet-motion-ease-out);
+  .fleet-badge-success {
+    background: var(--status-success-bg);
+    color: var(--status-success-text);
+  }
+  .fleet-badge-warning {
+    background: var(--status-warning-bg);
+    color: var(--status-warning-text);
+  }
+  .fleet-badge-error {
+    background: var(--status-error-bg);
+    color: var(--status-error-text);
+  }
+  .fleet-badge-info {
+    background: var(--status-info-bg);
+    color: var(--status-info-text);
+  }
+  .fleet-badge-neutral {
+    background: var(--fleet-gray-100);
+    color: var(--fleet-gray-700);
   }
 
-  /* Page enter */
+  /* ---- Data table ---- */
+  .fleet-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .fleet-table thead th {
+    text-align: left;
+    padding: 12px 16px;
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 18px;
+    color: var(--fleet-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--fleet-border);
+    background: var(--fleet-surface-sunken);
+  }
+  .fleet-table tbody td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--fleet-border);
+    color: var(--fleet-text-primary);
+  }
+  .fleet-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+  .fleet-table tbody tr:hover {
+    background: var(--fleet-gray-50);
+  }
+
+  /* ---- Page transitions ---- */
   .fleet-page-enter {
-    animation: fleet-page-in var(--fleet-motion-slow) var(--fleet-motion-ease-out) both;
+    animation: fleet-fade-in var(--fleet-duration-slow) var(--fleet-ease) both;
   }
 
-  /* Shimmer for loading states (must pair with aria-busy + text fallback) */
-  .fleet-shimmer {
-    position: relative;
-    overflow: hidden;
-    background: var(--fleet-surface-muted);
-  }
-  .fleet-shimmer::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    transform: translateX(-100%);
-    background: linear-gradient(100deg, transparent 20%, rgba(16, 24, 40, 0.08) 50%, transparent 80%);
-    animation: fleet-shimmer 1.6s linear infinite;
+  /* ---- Skeleton loading ---- */
+  .fleet-skeleton {
+    background: linear-gradient(90deg, var(--fleet-gray-100) 25%, var(--fleet-gray-200) 50%, var(--fleet-gray-100) 75%);
+    background-size: 200% 100%;
+    animation: fleet-shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--fleet-radius-sm);
   }
 }
 
-/* ============ Keyframes (tokens only) ============ */
-@keyframes fleet-drift {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    transform: translate3d(60px, 40px, 0) scale(1.12);
-  }
+@keyframes fleet-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
 }
-@keyframes fleet-page-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
+
 @keyframes fleet-shimmer {
-  to {
-    transform: translateX(100%);
-  }
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
-/* ============ Motion safety: WCAG 2.2 AA, testable ============ */
+/* ---- Reduced motion ---- */
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-  .fleet-ambient-orb,
-  .fleet-page-enter,
-  .fleet-shimmer::after {
-    animation: none !important;
-  }
-  .fleet-reveal {
-    opacity: 1;
-    transform: none;
-  }
-  *,
-  *::before,
-  *::after {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---- Dark mode utility overrides ---- */
+.dark .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.1) !important; }
+.dark .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.15) !important; }
+.dark .text-emerald-600 { color: #34d399 !important; }
+.dark .text-emerald-700 { color: #6ee7b7 !important; }
+.dark .border-emerald-200 { border-color: rgba(16, 185, 129, 0.3) !important; }
+
+.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.1) !important; }
+.dark .bg-blue-100 { background-color: rgba(59, 130, 246, 0.15) !important; }
+.dark .text-blue-600 { color: #60a5fa !important; }
+.dark .text-blue-700 { color: #93c5fd !important; }
+
+.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.1) !important; }
+.dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.15) !important; }
+.dark .text-amber-600 { color: #fbbf24 !important; }
+.dark .text-amber-700 { color: #fcd34d !important; }
+
+.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.1) !important; }
+.dark .bg-red-100 { background-color: rgba(239, 68, 68, 0.15) !important; }
+.dark .text-red-600 { color: #f87171 !important; }
+.dark .text-red-700 { color: #fca5a5 !important; }
+
+.dark .bg-green-50 { background-color: rgba(34, 197, 94, 0.1) !important; }
+.dark .bg-green-100 { background-color: rgba(34, 197, 94, 0.15) !important; }
+.dark .text-green-600 { color: #4ade80 !important; }
+.dark .text-green-700 { color: #86efac !important; }
+
+.dark .bg-violet-50 { background-color: rgba(139, 92, 246, 0.1) !important; }
+.dark .bg-violet-100 { background-color: rgba(139, 92, 246, 0.15) !important; }
+.dark .text-violet-600 { color: #a78bfa !important; }
+.dark .text-violet-700 { color: #c4b5fd !important; }
+
+.dark .bg-yellow-100 { background-color: rgba(234, 179, 8, 0.15) !important; }
+.dark .text-yellow-700 { color: #fde047 !important; }
+
+.dark .bg-slate-50 { background-color: #1e293b !important; }
+.dark .bg-slate-100 { background-color: #1e293b !important; }
+.dark .text-slate-600 { color: #94a3b8 !important; }
+.dark .text-slate-700 { color: #cbd5e1 !important; }
+
+.dark .bg-gray-50\/50 { background-color: rgba(29, 41, 57, 0.5) !important; }
+.dark .bg-gray-50 { background-color: #1d2939 !important; }
+
+/* Gradient backgrounds — keep colorful in dark */
+.dark .from-emerald-500 { --tw-gradient-from: #10b981 !important; }
+.dark .to-teal-500 { --tw-gradient-to: #14b8a6 !important; }
+.dark .from-blue-500 { --tw-gradient-from: #3b82f6 !important; }
+.dark .to-cyan-500 { --tw-gradient-to: #06b6d4 !important; }
+.dark .from-violet-500 { --tw-gradient-from: #8b5cf6 !important; }
+.dark .to-purple-500 { --tw-gradient-to: #a855f7 !important; }
+.dark .from-green-500 { --tw-gradient-from: #22c55e !important; }
+.dark .to-emerald-500 { --tw-gradient-to: #10b981 !important; }
+.dark .from-gray-400 { --tw-gradient-from: #6b7280 !important; }
+.dark .to-gray-500 { --tw-gradient-to: #6b7280 !important; }
+.dark .from-gray-900 { --tw-gradient-from: #f9fafb !important; }
+.dark .to-gray-800 { --tw-gradient-to: #f2f4f7 !important; }
+.dark .from-brand-600 { --tw-gradient-from: #14b8a6 !important; }
+.dark .to-brand-700 { --tw-gradient-to: #0f766e !important; }

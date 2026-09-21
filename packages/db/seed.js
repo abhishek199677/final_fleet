@@ -129,6 +129,9 @@ async function seed() {
       ON CONFLICT DO NOTHING
     `);
 
+    // Ensure app roles have proper DML permissions
+    await ensureGrants(client);
+
     console.log('✅ Seed completed successfully');
     console.log('');
     console.log('Test accounts (login via /api/auth/login):');
@@ -448,7 +451,9 @@ async function seedAlertTriggerData(client) {
      VALUES ($1, 'AfriBuild Ltd', 'USD', 15, gen_random_uuid()) RETURNING id`,
     [TENANT]
   ))[0];
-  if (client2 && machines.length > 2) {
+  // Use a machine outside the first three demo deployments so the seed remains
+  // compatible with the one-active-deployment constraint.
+  if (client2 && machines.length > 3) {
     const site2 = (await q(
       `INSERT INTO tenant.sites (tenant_id, client_id, name, location, client_uuid)
        VALUES ($1, $2, 'Lagos Site', 'Lagos, Nigeria', gen_random_uuid()) RETURNING id`,
@@ -458,7 +463,7 @@ async function seedAlertTriggerData(client) {
       const dep2 = (await q(
         `INSERT INTO tenant.deployments (tenant_id, machine_id, site_id, start_date, status, client_uuid)
          VALUES ($1, $2, $3, CURRENT_DATE - 45, 'active', gen_random_uuid()) RETURNING id`,
-        [TENANT, machines[2].id, site2.id]
+        [TENANT, machines[3].id, site2.id]
       ))[0];
       if (dep2) {
         // Billing entry from 45 days ago (well past 15-day terms)
@@ -472,6 +477,18 @@ async function seedAlertTriggerData(client) {
   }
 
   console.log('✅ Alert trigger data seeded (diesel, cash variance, duplicates, stopped-long, payment overdue)');
+}
+
+// Ensure app roles have proper DML permissions on tenant schema
+async function ensureGrants(client) {
+  await client.query(`
+    GRANT USAGE ON SCHEMA tenant TO app_owner, app_ops;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA tenant TO app_owner;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA tenant TO app_ops;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA tenant GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_owner;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA tenant GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_ops;
+  `);
+  console.log('✅ DML grants ensured for app_owner and app_ops');
 }
 
 seed();

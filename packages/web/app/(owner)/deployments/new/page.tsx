@@ -1,23 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchList } from '@/lib/api/fetch-list';
-import { sampleMachines, sampleClients, sampleSites } from '@/lib/sample-data';
 
-export default function NewDeployment() {
+function NewDeploymentInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedSiteId = searchParams.get('site_id') ?? '';
   const [machines, setMachines] = useState<Record<string, unknown>[]>([]);
   const [clients, setClients] = useState<Record<string, unknown>[]>([]);
   const [sites, setSites] = useState<Record<string, unknown>[]>([]);
   const [formData, setFormData] = useState({
     machine_id: '',
     client_id: '',
-    site_id: '',
+    site_id: preselectedSiteId,
     start_date: new Date().toISOString().split('T')[0],
     rate_strategy: 'daily' as 'hourly' | 'daily' | 'monthly',
     rate_minor: '',
@@ -32,20 +33,44 @@ export default function NewDeployment() {
       fetchList<Record<string, unknown>>('/api/v1/clients'),
       fetchList<Record<string, unknown>>('/api/v1/sites'),
     ]).then(([m, c, s]) => {
-      setMachines(m.length > 0 ? m : sampleMachines);
-      setClients(c.length > 0 ? c : sampleClients);
-      setSites(s.length > 0 ? s : sampleSites);
-    }).catch(() => {
-      setMachines(sampleMachines);
-      setClients(sampleClients);
-      setSites(sampleSites);
+      setMachines(m);
+      setClients(c);
+      setSites(s);
+      // If site is pre-selected (from Deploy Machine button), auto-select client
+      if (preselectedSiteId) {
+        const preselectedSite = s.find((site) => site.id === preselectedSiteId);
+        if (preselectedSite?.client_id) {
+          setFormData((f) => ({ ...f, client_id: String(preselectedSite.client_id), site_id: preselectedSiteId }));
+        }
+      }
     }).finally(() => setFetching(false));
   }, []);
 
-  // Filter sites by selected client
-  const filteredSites = formData.client_id
-    ? sites.filter(s => s.client_id === formData.client_id)
-    : sites;
+  // Deduplicate clients by name (keep first occurrence)
+  const uniqueClients = useMemo(() => {
+    const seen = new Set<string>();
+    return clients.filter((c) => {
+      const name = String(c.name ?? '');
+      if (seen.has(name)) return false;
+      seen.add(name);
+      return true;
+    });
+  }, [clients]);
+
+  // Build a lookup: client_id → client name
+  const clientNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    clients.forEach((c) => map.set(String(c.id), String(c.name ?? '')));
+    return map;
+  }, [clients]);
+
+  // Sort sites: selected client's sites first, then all others
+  const sortedSites = useMemo(() => {
+    if (!formData.client_id) return sites;
+    const selected = sites.filter((s) => String(s.client_id) === String(formData.client_id));
+    const others = sites.filter((s) => String(s.client_id) !== String(formData.client_id));
+    return [...selected, ...others];
+  }, [sites, formData.client_id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +89,7 @@ export default function NewDeployment() {
         const deployment = await res.json();
         // Create rate card
         if (formData.rate_minor) {
-          await authFetch('/api/v1/billing-engine/rate-cards', {
+          await authFetch('/api/v1/billing/rate-cards', {
             method: 'POST',
             body: JSON.stringify({
               deployment_id: deployment.id,
@@ -75,13 +100,17 @@ export default function NewDeployment() {
             }),
           });
         }
-        alert('Deployment created (demo mode)');
+        alert('Deployment created successfully');
         router.push('/deployments');
         return;
       }
-    } catch { /* demo mode */ }
-    alert('Deployment created (demo mode)');
-    router.push('/deployments');
+      const body = await res.json().catch(() => null);
+      alert(body?.detail || 'Failed to create deployment');
+    } catch {
+      alert('Network error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (fetching) return <p className="text-muted-foreground">Loading...</p>;
@@ -95,9 +124,9 @@ export default function NewDeployment() {
             <div>
               <label className="text-sm font-medium">Machine *</label>
               <select
-                className="w-full border rounded-md p-2"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
                 value={formData.machine_id}
-                onChange={e => setFormData({ ...formData, machine_id: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, machine_id: e.target.value })}
                 required
               >
                 <option value="">Select machine...</option>
@@ -111,13 +140,13 @@ export default function NewDeployment() {
             <div>
               <label className="text-sm font-medium">Client *</label>
               <select
-                className="w-full border rounded-md p-2"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
                 value={formData.client_id}
-                onChange={e => setFormData({ ...formData, client_id: e.target.value, site_id: '' })}
+                onChange={(e) => setFormData({ ...formData, client_id: e.target.value, site_id: '' })}
                 required
               >
                 <option value="">Select client...</option>
-                {clients.map((c: Record<string, unknown>) => (
+                {uniqueClients.map((c: Record<string, unknown>) => (
                   <option key={c.id as string} value={c.id as string}>
                     {c.name as string}
                   </option>
@@ -127,18 +156,21 @@ export default function NewDeployment() {
             <div>
               <label className="text-sm font-medium">Site *</label>
               <select
-                className="w-full border rounded-md p-2"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
                 value={formData.site_id}
-                onChange={e => setFormData({ ...formData, site_id: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, site_id: e.target.value })}
                 required
-                disabled={!formData.client_id}
               >
                 <option value="">Select site...</option>
-                {filteredSites.map((s: Record<string, unknown>) => (
-                  <option key={s.id as string} value={s.id as string}>
-                    {s.name as string}
-                  </option>
-                ))}
+                {sortedSites.map((s: Record<string, unknown>) => {
+                  const siteClient = clientNameById.get(String(s.client_id)) ?? '';
+                  const isSelectedClient = formData.client_id && String(s.client_id) === String(formData.client_id);
+                  return (
+                    <option key={s.id as string} value={s.id as string}>
+                      {s.name as string}{!isSelectedClient && siteClient ? ` (${siteClient})` : ''}
+                    </option>
+                  );
+                })}
               </select>
             </div>
             <div>
@@ -146,7 +178,7 @@ export default function NewDeployment() {
               <Input
                 type="date"
                 value={formData.start_date}
-                onChange={e => setFormData({ ...formData, start_date: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
                 required
               />
             </div>
@@ -156,9 +188,9 @@ export default function NewDeployment() {
                 <div>
                   <label className="text-sm text-muted-foreground">Strategy</label>
                   <select
-                    className="w-full border rounded-md p-2"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
                     value={formData.rate_strategy}
-                    onChange={e => setFormData({ ...formData, rate_strategy: e.target.value as 'hourly' | 'daily' | 'monthly' })}
+                    onChange={(e) => setFormData({ ...formData, rate_strategy: e.target.value as 'hourly' | 'daily' | 'monthly' })}
                   >
                     <option value="hourly">Hourly</option>
                     <option value="daily">Daily Fixed</option>
@@ -170,7 +202,7 @@ export default function NewDeployment() {
                   <Input
                     type="number"
                     value={formData.rate_minor}
-                    onChange={e => setFormData({ ...formData, rate_minor: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, rate_minor: e.target.value })}
                     placeholder="e.g., 50000 = ₹500"
                   />
                 </div>
@@ -188,5 +220,13 @@ export default function NewDeployment() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function NewDeployment() {
+  return (
+    <Suspense fallback={<p className="text-muted-foreground">Loading...</p>}>
+      <NewDeploymentInner />
+    </Suspense>
   );
 }

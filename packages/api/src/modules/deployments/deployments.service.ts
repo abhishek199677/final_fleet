@@ -37,6 +37,25 @@ export class DeploymentsService {
     return result.rows[0];
   }
 
+  async update(tenantId: string, id: string, data: Record<string, unknown>) {
+    const result = await this.db.queryWithTenant(tenantId, 'ops',
+      `UPDATE tenant.deployments SET
+        start_date = COALESCE($2, start_date), end_date = COALESCE($3, end_date),
+        status = COALESCE($4, status)
+       WHERE id = $1 RETURNING *`,
+      [id, data.start_date ?? null, data.end_date ?? null, data.status ?? null]);
+    if (result.rows.length === 0) throw new NotFoundException('Deployment not found');
+    return result.rows[0];
+  }
+
+  async remove(tenantId: string, id: string) {
+    const existing = await this.findById(tenantId, id);
+    if (!existing) throw new NotFoundException('Deployment not found');
+    await this.db.queryWithTenant(tenantId, 'ops',
+      `DELETE FROM tenant.deployments WHERE id = $1`, [id]);
+    return { deleted: true };
+  }
+
   async hold(tenantId: string, id: string) {
     const result = await this.db.queryWithTenant(tenantId, 'owner',
       `UPDATE tenant.deployments SET status = 'on_hold_payment' WHERE id = $1 RETURNING *`, [id]);

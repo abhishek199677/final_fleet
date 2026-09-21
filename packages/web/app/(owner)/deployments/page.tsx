@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Truck, MapPin, Calendar, ArrowRight } from 'lucide-react';
+import { Truck, MapPin, Calendar, ArrowRight, Pencil, Trash2 } from 'lucide-react';
 import { fetchList } from '@/lib/api/fetch-list';
-import { sampleDeployments } from '@/lib/sample-data';
+import { apiDelete, confirmDelete } from '@/lib/api/mutations';
 
 interface DeploymentEntry {
   id: string;
@@ -23,16 +24,27 @@ interface DeploymentEntry {
 }
 
 export default function DeploymentsList() {
+  const router = useRouter();
   const [deployments, setDeployments] = useState<DeploymentEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     void fetchList<DeploymentEntry>('/api/v1/deployments').then((data) => {
-      setDeployments(data.length > 0 ? data : sampleDeployments);
+      setDeployments(data);
     }).catch(() => {
-      setDeployments(sampleDeployments);
+      setDeployments([]);
     }).finally(() => setLoading(false));
   }, []);
+
+  const handleDelete = async (id: string, label: string) => {
+    if (!(await confirmDelete(label))) return;
+    try {
+      await apiDelete(`/api/v1/deployments/${id}`);
+      setDeployments((prev) => prev.filter((d) => d.id !== id));
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Delete failed');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -119,7 +131,22 @@ export default function DeploymentsList() {
                     <div className="text-xs text-gray-400">
                       {d.end_date ? `Until ${d.end_date}` : 'Ongoing'}
                     </div>
-                    <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-violet-500 group-hover:translate-x-1 transition-all" />
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={(e) => { e.preventDefault(); router.push(`/deployments/${d.id}`); }}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                        title="Edit"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.preventDefault(); void handleDelete(d.id, d.machine_code ?? 'deployment'); }}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,16 @@ export default function NewWorkSession() {
       setOperators(o);
     });
   }, []);
+
+  const uniqueOperators = useMemo(() => {
+    const seen = new Set<string>();
+    return operators.filter((o) => {
+      const name = String(o.name ?? '');
+      if (seen.has(name)) return false;
+      seen.add(name);
+      return true;
+    });
+  }, [operators]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,7 +132,7 @@ export default function NewWorkSession() {
                 required
               >
                 <option value="">Select operator...</option>
-                {operators.map((o: Record<string, unknown>) => (
+                {uniqueOperators.map((o: Record<string, unknown>) => (
                   <option key={o.id as string} value={o.id as string}>{o.name as string}</option>
                 ))}
               </select>

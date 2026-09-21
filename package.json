@@ -16,13 +16,9 @@
     "db:lint": "DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/fleetos\" node packages/db/linters/migration-linter.js",
     "verify:launch": "node --input-type=module -e \"import('pg').catch(()=>null)\" 2>/dev/null; NODE_PATH=\"./packages/db/node_modules:./node_modules\" node scripts/verify-launch-acceptance.js",
     "openapi:dump": "pnpm --filter @fleetos/api exec nest build && node packages/api/dist/dump-openapi",
-    "openapi:gen": "openapi-generator-cli generate -i packages/api/openapi.json -o packages/shared/src/generated -g typescript-axios",
     "dev": "concurrently \"pnpm dev:api\" \"pnpm dev:web\"",
     "dev:api": "cd packages/api && pnpm dev",
     "dev:web": "cd packages/web && pnpm dev",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:seed": "docker-compose exec api node packages/db/seed.js",
     "setup": "cp .env.example .env && pnpm db:migrate && pnpm db:seed"
   },
   "devDependencies": {

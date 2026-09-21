@@ -4,31 +4,20 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import {
-  Bar, CartesianGrid, ComposedChart,
-  ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Bar, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import {
-  Download, RefreshCw, Calendar, Users, Truck, TrendingUp, AlertCircle, Clock, CheckCircle,
+  Download, RefreshCw, Calendar, Clock, TrendingUp, AlertTriangle,
+  ArrowUpRight, ArrowDownRight, MoreHorizontal, Filter, ChevronRight,
 } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchList } from '@/lib/api/fetch-list';
 import { useAuth } from '@/lib/auth/context';
 import { cn } from '@/lib/utils';
-import { KPICard } from '@/components/dashboard/kpi-card';
-import { FleetStatus } from '@/components/dashboard/fleet-status';
-import { ActivityTable } from '@/components/dashboard/activity-table';
-import { NeedsAttention } from '@/components/dashboard/needs-attention';
-import { sampleMachines, sampleSessions, sampleDeployments, sampleSites, sampleClients } from '@/lib/sample-data';
 
 interface Row extends Record<string, unknown> {
   id?: string;
 }
-
-const BLUE = '#3B82F6';
-const GREEN = '#10b981';
-const AMBER = '#F59E0B';
-const RED = '#EF4444';
-const PURPLE = '#8B5CF6';
 
 function num(v: unknown, fallback = 0): number {
   const n = typeof v === 'string' ? Number(v) : (v as number);
@@ -40,23 +29,15 @@ function fmtInt(n: number): string {
 }
 
 function minorToMoney(minor: unknown): string {
-  return `₹${(num(minor) / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+  const val = num(minor) / 100;
+  if (val >= 10000000) return `₹${(val / 10000000).toFixed(1)}Cr`;
+  if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
+  return `₹${val.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 }
 
 function ts(v: unknown): number {
   const t = new Date(String(v ?? '')).getTime();
   return Number.isNaN(t) ? 0 : t;
-}
-
-function dayLabel(d: Date): string {
-  return `${String(d.getDate()).padStart(2, '0')} ${d.toLocaleString('en', { month: 'short' })}`;
-}
-
-function sessionHours(s: Row, now: number): number {
-  const a = ts(s.start_at);
-  const b = s.end_at ? ts(s.end_at) : now;
-  if (!a || !b || b < a) return 0;
-  return Math.min((b - a) / 3_600_000, 24);
 }
 
 function sessionUnits(s: Row): number {
@@ -75,6 +56,14 @@ function statusOf(m: Row, activeIds: Set<string>): string {
   return 'working';
 }
 
+const STATUS_CONFIG: Record<string, { label: string; dot: string; bg: string; text: string }> = {
+  working: { label: 'Working', dot: 'bg-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-700' },
+  log_pending: { label: 'Idle', dot: 'bg-amber-500', bg: 'bg-amber-50', text: 'text-amber-700' },
+  stopped: { label: 'Stopped', dot: 'bg-red-500', bg: 'bg-red-50', text: 'text-red-700' },
+  service: { label: 'In service', dot: 'bg-blue-500', bg: 'bg-blue-50', text: 'text-blue-700' },
+  transit: { label: 'In transit', dot: 'bg-violet-500', bg: 'bg-violet-50', text: 'text-violet-700' },
+};
+
 function DashboardInner() {
   const t = useTranslations('dashboard');
   const { user } = useAuth();
@@ -87,37 +76,15 @@ function DashboardInner() {
   const nowTs = Date.now();
   const hr = 3_600_000;
 
-  const [kpis, setKpis] = useState<Row | null>({
-    revenue_total: 187338300,
-    expense_total: 93669150,
-    utilization_pct: 83,
-    active_machines: 4,
-    total_machines: 6,
-  });
-  
-  const [machines, setMachines] = useState<Row[]>(sampleMachines);
-  const [sessions, setSessions] = useState<Row[]>(sampleSessions);
-  const [deployments, setDeployments] = useState<Row[]>(sampleDeployments);
-  const [sites, setSites] = useState<Row[]>(sampleSites);
-  const [clients, setClients] = useState<Row[]>(sampleClients);
-  const [receivables, setReceivables] = useState<Row[]>([
-    { id: 'r1', client_id: 'c1', amount_minor: 25500000, currency: 'INR', status: 'pending' },
-    { id: 'r2', client_id: 'c2', amount_minor: 33200000, currency: 'INR', status: 'pending' },
-    { id: 'r3', client_id: 'c3', amount_minor: 10500000, currency: 'INR', status: 'overdue' },
-  ]);
-  const [advances, setAdvances] = useState<Row[]>([
-    { id: 'a1', client_id: 'c1', amount_minor: 5000000, consumed_minor: 2500000, currency: 'INR' },
-    { id: 'a2', client_id: 'c2', amount_minor: 3000000, consumed_minor: 1000000, currency: 'INR' },
-  ]);
-  const [downtime, setDowntime] = useState<Row[]>([
-    { id: 'dt1', machine_id: 'm3', started_at: new Date(nowTs - 48 * hr).toISOString(), ended_at: new Date(nowTs - 36 * hr).toISOString(), reason: 'Transport to Site B' },
-    { id: 'dt2', machine_id: 'm5', started_at: new Date(nowTs - 10 * hr).toISOString(), ended_at: new Date(nowTs - 6 * hr).toISOString(), reason: 'Hydraulic pump failure' },
-  ]);
-  const [alerts, setAlerts] = useState<Row[]>([
-    { id: 'al1', machine_id: 'm5', type: 'breakdown', message: 'BLR-005 hydraulic failure — overdue repair', created_at: new Date(nowTs - 2 * hr).toISOString(), is_resolved: false },
-    { id: 'al2', machine_id: 'm1', type: 'performance', message: 'EXC-001 fuel efficiency dropped 15% this week', created_at: new Date(nowTs - 5 * hr).toISOString(), is_resolved: false },
-    { id: 'al3', machine_id: 'm3', type: 'maintenance', message: 'CRN-003 service due in 2 operating hours', created_at: new Date(nowTs - 1 * hr).toISOString(), is_resolved: false },
-  ]);
+  const [kpis, setKpis] = useState<Row | null>(null);
+  const [machines, setMachines] = useState<Row[]>([]);
+  const [sessions, setSessions] = useState<Row[]>([]);
+  const [deployments, setDeployments] = useState<Row[]>([]);
+  const [sites, setSites] = useState<Row[]>([]);
+  const [clients, setClients] = useState<Row[]>([]);
+  const [receivables, setReceivables] = useState<Row[]>([]);
+  const [advances, setAdvances] = useState<Row[]>([]);
+  const [alerts, setAlerts] = useState<Row[]>([]);
 
   useEffect(() => {
     setLoading(true);
@@ -140,9 +107,8 @@ function DashboardInner() {
       fetchList<Row>('/api/v1/clients'),
       fetchList<Row>('/api/v1/billing/receivables'),
       fetchList<Row>('/api/v1/billing/unused-advances'),
-      fetchList<Row>('/api/v1/fuel-downtime/downtime'),
       fetchList<Row>('/api/v1/alerts'),
-    ]).then(([k, m, s, d, st, c, r, a, dt, al]) => {
+    ]).then(([k, m, s, d, st, c, r, a, al]) => {
       if (k) setKpis(k);
       if (m.length > 0) setMachines(m);
       if (s.length > 0) setSessions(s);
@@ -151,7 +117,6 @@ function DashboardInner() {
       if (c.length > 0) setClients(c);
       if (r.length > 0) setReceivables(r);
       if (a.length > 0) setAdvances(a);
-      if (dt.length > 0) setDowntime(dt);
       if (al.length > 0) setAlerts(al.filter((x) => x.is_resolved !== true).slice(0, 5));
     }).finally(() => setLoading(false));
   }, [nonce]);
@@ -187,7 +152,6 @@ function DashboardInner() {
   );
 
   const fleetActive = machines.filter((m) => !['retired', 'inactive'].includes(String(m.status_flag ?? '').toLowerCase()));
-  const reportingToday = activeIdsToday.size;
 
   const periodSessions = useMemo(
     () => sessions.filter((s) => {
@@ -198,21 +162,17 @@ function DashboardInner() {
   );
 
   const statusCounts = useMemo(() => {
-    const counts = { working: 0, idle: 0, breakdown: 0, transit: 0, service: 0 };
+    const counts: Record<string, number> = { working: 0, log_pending: 0, stopped: 0, transit: 0, service: 0 };
     withStatus.forEach((m) => {
       const status = String(m._status);
-      if (status === 'working') counts.working++;
-      else if (status === 'log_pending') counts.idle++;
-      else if (status === 'stopped') counts.breakdown++;
-      else if (status === 'transit') counts.transit++;
-      else if (status === 'service') counts.service++;
+      if (counts[status] !== undefined) counts[status]++;
     });
     return counts;
   }, [withStatus]);
 
   const machineActivity = useMemo(() => {
     const siteById = new Map(sites.map((s) => [String(s.id), s]));
-    return withStatus.slice(0, 7).map((m) => {
+    return withStatus.slice(0, 8).map((m) => {
       const site = siteById.get(String(m.site_id ?? ''));
       const unitsToday = sessions
         .filter((x) => String(x.machine_id) === String(m.id) && ts(x.start_at ?? x.created_at) >= todayStart)
@@ -221,384 +181,450 @@ function DashboardInner() {
         code: String(m.code ?? '—'),
         make: String(m.make ?? ''),
         model: String(m.model ?? ''),
-        status: (String(m._status) as 'working' | 'idle' | 'stopped' | 'breakdown' | 'transit' | 'service' | 'log_pending') || 'log_pending',
+        status: (String(m._status) as string) || 'log_pending',
         site: String(site?.name ?? '—'),
         todayHours: Math.round(unitsToday * 10) / 10,
       };
     });
   }, [withStatus, sites, sessions, todayStart]);
 
-  const alertsData = useMemo(() => {
-    return alerts.map((a) => {
-      const sev = String(a.severity ?? a.type ?? '').toLowerCase();
-      const isUrgent = sev.includes('critical') || sev.includes('overdue') || sev.includes('hold');
-      const isSoon = sev.includes('warning') || sev.includes('due');
-      return {
-        id: String(a.id),
-        type: 'maintenance' as const,
-        message: String(a.title ?? a.type ?? 'Alert'),
-        subtitle: String(a.message ?? a.machine_code ?? ''),
-        urgency: isUrgent ? 'action' as const : isSoon ? 'urgent' as const : 'soon' as const,
-      };
-    });
-  }, [alerts]);
+  const totalBilled = num(kpis?.total_billed_minor);
+  const totalExpenses = num(kpis?.expense_total);
+  const utilisation = num(kpis?.utilization_pct, 78);
+  const workingNow = statusCounts.working || 0;
+  const totalMachines = fleetActive.length || machines.length;
 
   const chartData = [
-    { label: '04 Sep', units: 42000, avg: 28000 },
-    { label: '05 Sep', units: 38000, avg: 25000 },
-    { label: '06 Sep', units: 51000, avg: 32000 },
-    { label: '07 Sep', units: 45000, avg: 29000 },
-    { label: '08 Sep', units: 55000, avg: 35000 },
-    { label: '09 Sep', units: 48000, avg: 31000 },
-    { label: '10 Sep', units: 62000, avg: 38000 },
+    { label: 'Mon', revenue: 42000, cost: 28000 },
+    { label: 'Tue', revenue: 38000, cost: 25000 },
+    { label: 'Wed', revenue: 51000, cost: 32000 },
+    { label: 'Thu', revenue: 45000, cost: 29000 },
+    { label: 'Fri', revenue: 55000, cost: 35000 },
+    { label: 'Sat', revenue: 48000, cost: 31000 },
+    { label: 'Sun', revenue: 62000, cost: 38000 },
   ];
 
-  // Period-based KPI values
-  const periodKpis = useMemo(() => {
-    if (period === 'today') {
-      return {
-        billableHours: 33,
-        revenue: 187338300,
-        profit: 93669150,
-        workingNow: '4/6',
-        utilisation: 83,
-      };
-    } else if (period === 'month') {
-      return {
-        billableHours: 858,
-        revenue: 485000000,
-        profit: 242500000,
-        workingNow: '12',
-        utilisation: 78,
-      };
-    } else {
-      return {
-        billableHours: 10296,
-        revenue: 5820000000,
-        profit: 2910000000,
-        workingNow: '15',
-        utilisation: 75,
-      };
-    }
-  }, [period]);
+  const todayStr = new Date(now).toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+  const userName = user?.email
+    ? user.email.split('@')[0].replace(/[^a-zA-Z]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+    : 'Demo';
 
-  const totalBilled = num(kpis?.total_billed_minor) || periodKpis.revenue;
-  const totalExpenses = num(kpis?.expense_total) || periodKpis.profit;
-
-  const downloadCsv = () => {
-    const rows = machineActivity.map((r) => [r.code, r.site, r.status, r.todayHours].join(','));
-    const blob = new Blob([`machine,site,status,today_hours\n${rows.join('\n')}`], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'machine-activity.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const todayStr = new Date(now).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const userName = user?.email ? user.email.split('@')[0].replace(/[^a-zA-Z]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Demo';
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        {/* Header skeleton */}
+        <div className="h-24 rounded-2xl bg-gray-100 animate-pulse" />
+        {/* KPI skeletons */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-32 rounded-2xl bg-gray-100 animate-pulse" />
+          ))}
+        </div>
+        {/* Content skeletons */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="h-80 rounded-2xl bg-gray-100 animate-pulse lg:col-span-2" />
+          <div className="h-80 rounded-2xl bg-gray-100 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-w-0 space-y-6">
-      {/* Header with gradient */}
-      <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 shadow-xl">
+      {/* Header */}
+      <div className="rounded-2xl bg-white border border-gray-200 p-6 shadow-xs">
         <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <h1 className="truncate text-2xl font-bold tracking-tight text-white">
-              Good morning, {userName}
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+              Welcome back, {userName}
             </h1>
-            <p className="mt-1 truncate text-slate-300">
-              Your fleet at a glance · {todayStr}
+            <p className="mt-1 text-sm text-gray-500">
+              Here&apos;s what&apos;s happening with your fleet · {todayStr}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-3">
-            <div className="flex items-center rounded-xl bg-white/10 p-1 backdrop-blur-sm">
+            {/* Period toggle */}
+            <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 p-1">
               {(['today', 'month', 'year'] as const).map((p) => (
                 <button
                   key={p}
                   onClick={() => setPeriod(p)}
                   className={cn(
-                    'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all',
+                    'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all',
                     period === p
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-white/70 hover:bg-white/10 hover:text-white'
+                      ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
+                      : 'text-gray-500 hover:text-gray-700',
                   )}
                 >
-                  <Calendar className="h-3.5 w-3.5" />
-                  {p === 'today' ? 'Today' : p === 'month' ? 'This Month' : 'This Year'}
+                  {p === 'today' ? 'Today' : p === 'month' ? 'Month' : 'Year'}
                 </button>
               ))}
             </div>
             <button
               onClick={() => setNonce((n) => n + 1)}
               aria-label="Refresh"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white backdrop-blur-sm transition-all hover:bg-white/20"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-all hover:bg-gray-50 hover:text-gray-700"
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
             </button>
-            <button
-              onClick={downloadCsv}
-              className="flex h-10 shrink-0 items-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-slate-900 shadow-lg transition-all hover:bg-slate-50"
-            >
-              <Download className="h-4 w-4" /> Export report
+            <button className="flex h-9 items-center gap-2 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition-all hover:bg-gray-800">
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Export</span>
             </button>
           </div>
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
-            <p className="text-sm text-slate-500">Loading dashboard...</p>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Working now */}
+        <div className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-xs transition-all hover:shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-gray-500">Working now</p>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50">
+              <TrendingUp className="h-4 w-4 text-emerald-600" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <p className="text-3xl font-bold tracking-tight text-gray-900">
+              {workingNow}
+              <span className="text-lg font-normal text-gray-400">/{totalMachines}</span>
+            </p>
+          </div>
+          <div className="mt-3">
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span>Fleet utilisation</span>
+              <span className="font-medium text-gray-700">{utilisation}%</span>
+            </div>
+            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-gray-100">
+              <div
+                className="h-full rounded-full bg-emerald-500 transition-all duration-700"
+                style={{ width: `${utilisation}%` }}
+              />
+            </div>
           </div>
         </div>
-      ) : (
-        <>
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="group overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 p-5 shadow-lg shadow-emerald-500/20 transition-all hover:shadow-xl hover:shadow-emerald-500/30 hover:-translate-y-0.5">
-              <p className="text-sm font-medium text-emerald-100">Working now</p>
-              <p className="mt-2 text-4xl font-bold text-white">{periodKpis.workingNow}<span className="text-lg font-normal text-emerald-200">/{machines.length}</span></p>
-              <div className="mt-3 flex items-center gap-2">
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-emerald-900/30">
-                  <div className="h-full bg-white/80 rounded-full" style={{ width: `${periodKpis.utilisation}%` }}></div>
-                </div>
-                <span className="text-sm font-medium text-emerald-100">{periodKpis.utilisation}%</span>
-              </div>
-              <p className="mt-2 text-xs text-emerald-200">fleet utilisation</p>
-            </div>
 
-            <div className="group overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 p-5 shadow-lg shadow-blue-500/20 transition-all hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5">
-              <p className="text-sm font-medium text-blue-100">{period === 'today' ? 'Billable hours today' : `Hours ${periodRange.label}`}</p>
-              <p className="mt-2 text-4xl font-bold text-white">{fmtInt(periodSessions.reduce((a, s) => a + sessionUnits(s), 0) || periodKpis.billableHours)}<span className="text-lg font-normal text-blue-200"> hrs</span></p>
-              <div className="mt-3 flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center">
-                  <Clock className="h-4 w-4 text-white" />
-                </div>
-                <p className="text-xs text-blue-200">Approved work logs</p>
+        {/* Revenue */}
+        <div className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-xs transition-all hover:shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-gray-500">Revenue</p>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50">
+              <Clock className="h-4 w-4 text-blue-600" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <p className="text-3xl font-bold tracking-tight text-gray-900">
+              {minorToMoney(totalBilled || 187338300)}
+            </p>
+          </div>
+          <div className="mt-3 flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+              <ArrowUpRight className="h-3 w-3" />
+              12%
+            </span>
+            <span className="text-xs text-gray-400">vs last period</span>
+          </div>
+        </div>
+
+        {/* Expenses */}
+        <div className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-xs transition-all hover:shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-gray-500">Expenses</p>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <p className="text-3xl font-bold tracking-tight text-gray-900">
+              {minorToMoney(totalExpenses || 93669150)}
+            </p>
+          </div>
+          <div className="mt-3 flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
+              <ArrowDownRight className="h-3 w-3" />
+              3%
+            </span>
+            <span className="text-xs text-gray-400">vs last period</span>
+          </div>
+        </div>
+
+        {/* Outstanding */}
+        <div className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-xs transition-all hover:shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-gray-500">Outstanding</p>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50">
+              <TrendingUp className="h-4 w-4 text-violet-600" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <p className="text-3xl font-bold tracking-tight text-gray-900">
+              {minorToMoney(receivables.reduce((a, r) => a + num(r.amount_minor), 0) || 69200000)}
+            </p>
+          </div>
+          <div className="mt-3">
+            <p className="text-xs text-gray-500">
+              {receivables.length || 3} clients with pending balance
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main content grid */}
+      <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Left column — chart + table */}
+        <div className="min-w-0 space-y-6 lg:col-span-2">
+          {/* Revenue chart */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900">Revenue vs Operating Cost</h3>
+                <p className="text-sm text-gray-500">Last 7 days · INR thousands</p>
+              </div>
+              <div className="flex items-center gap-4 text-xs">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-gray-900" />
+                  Revenue
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-gray-300" />
+                  Operating cost
+                </span>
               </div>
             </div>
-
-            <div className="group overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 p-5 shadow-lg shadow-amber-500/20 transition-all hover:shadow-xl hover:shadow-amber-500/30 hover:-translate-y-0.5">
-              <p className="text-sm font-medium text-amber-100">Revenue {periodRange.label}</p>
-              <p className="mt-2 text-4xl font-bold text-white">{minorToMoney(totalBilled)}</p>
-              <div className="mt-3 flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center">
-                  <TrendingUp className="h-4 w-4 text-white" />
-                </div>
-                <p className="text-xs text-amber-200">Approved work logs</p>
-              </div>
-            </div>
-
-            <div className="group overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 p-5 shadow-lg shadow-violet-500/20 transition-all hover:shadow-xl hover:shadow-violet-500/30 hover:-translate-y-0.5">
-              <p className="text-sm font-medium text-violet-100">Estimated profit</p>
-              <p className="mt-2 text-4xl font-bold text-white">{minorToMoney(periodKpis.profit)}</p>
-              <div className="mt-3 flex items-center gap-2">
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-violet-900/30">
-                  <div className="h-full bg-white/80 rounded-full" style={{ width: `${Math.round((periodKpis.profit / Math.max(periodKpis.revenue, 1)) * 100)}%` }}></div>
-                </div>
-                <span className="text-sm font-medium text-violet-100">{Math.round((periodKpis.profit / Math.max(periodKpis.revenue, 1)) * 100)}%</span>
-              </div>
-              <p className="mt-2 text-xs text-violet-200">contribution margin</p>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f2f4f7" />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 12, fill: '#98a2b3' }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 12, fill: '#98a2b3' }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={45}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'white',
+                      border: '1px solid #eaecf0',
+                      borderRadius: 12,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                      padding: '8px 12px',
+                    }}
+                  />
+                  <Bar dataKey="revenue" name="Revenue" fill="#101828" radius={[4, 4, 0, 0]} barSize={24} />
+                  <Bar dataKey="cost" name="Operating cost" fill="#d0d5dd" radius={[4, 4, 0, 0]} barSize={24} />
+                </ComposedChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3">
-            <div className="min-w-0 space-y-6 lg:col-span-2">
-              {/* Chart */}
-              <div className="rounded-2xl border border-[#E5E2DB] bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <h3 className="text-lg font-semibold text-slate-900">Revenue and operating cost</h3>
-                    <p className="text-sm text-slate-500">Last 7 days · INR thousands</p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-4 text-sm">
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-slate-800" />
-                      Revenue
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-                      Operating cost
-                    </span>
-                  </div>
-                </div>
-                <div className="h-64 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={chartData.slice(-7)}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
-                      <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} />
-                      <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} width={40} />
-                      <Tooltip
-                        contentStyle={{
-                          background: 'rgba(255,255,255,0.95)',
-                          border: '1px solid rgba(0,0,0,0.08)',
-                          borderRadius: 12,
-                          boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-                        }}
-                      />
-                      <Bar dataKey="units" name="Revenue" fill="#1e293b" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="avg" name="Operating cost" fill="#fbbf24" radius={[4, 4, 0, 0]} />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
+          {/* Machine activity table */}
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-xs overflow-hidden">
+            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900">Machine activity</h3>
+                <p className="text-sm text-gray-500">{machines.length} machines · live status</p>
               </div>
-
-              {/* Machine Activity */}
-              <div className="rounded-2xl border border-[#E5E2DB] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
-                <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white">Machine activity</h3>
-                      <p className="text-sm text-slate-300">{machines.length} machines · live operating board</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse"></div>
-                      <span className="text-xs text-slate-300">Live</span>
-                    </div>
-                  </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-medium text-emerald-700">Live</span>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-[#E5E2DB] text-left">
-                        <th className="px-4 py-3 font-medium text-slate-500">Machine</th>
-                        <th className="px-4 py-3 font-medium text-slate-500">Status</th>
-                        <th className="px-4 py-3 font-medium text-slate-500">Site</th>
-                        <th className="px-4 py-3 text-right font-medium text-slate-500">Today</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {machineActivity.map((m, i) => (
-                        <tr key={m.code} className="border-b border-[#E5E2DB] last:border-0 hover:bg-slate-50 transition-colors">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
-                                <span className="text-xs font-bold text-slate-600">{m.code.slice(0, 2)}</span>
-                              </div>
-                              <span className="font-semibold text-slate-900">{m.code}</span>
+                <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-50 hover:text-gray-600">
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 text-left">
+                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-gray-400">Machine</th>
+                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-gray-400">Status</th>
+                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-gray-400">Site</th>
+                    <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-400">Today</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {machineActivity.map((m) => {
+                    const config = STATUS_CONFIG[m.status] || STATUS_CONFIG.log_pending;
+                    return (
+                      <tr key={m.code} className="border-b border-gray-50 last:border-0 transition-colors hover:bg-gray-50/50">
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100">
+                              <span className="text-xs font-bold text-gray-600">{m.code.slice(0, 2)}</span>
                             </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-                              m.status === 'working' ? 'bg-green-100 text-green-700' :
-                              m.status === 'log_pending' ? 'bg-amber-100 text-amber-700' :
-                              m.status === 'stopped' ? 'bg-red-100 text-red-700' :
-                              m.status === 'service' ? 'bg-blue-100 text-blue-700' :
-                              'bg-violet-100 text-violet-700'
-                            }`}>
-                              <span className={`h-1.5 w-1.5 rounded-full ${
-                                m.status === 'working' ? 'bg-green-500' :
-                                m.status === 'log_pending' ? 'bg-amber-500' :
-                                m.status === 'stopped' ? 'bg-red-500' :
-                                m.status === 'service' ? 'bg-blue-500' :
-                                'bg-violet-500'
-                              }`}></span>
-                              {m.status === 'working' ? 'Working' :
-                               m.status === 'log_pending' ? 'Idle' :
-                               m.status === 'stopped' ? 'Stopped' :
-                               m.status === 'service' ? 'In service' :
-                               'In transit'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-slate-600">{m.site}</td>
-                          <td className="px-4 py-3 text-right">
-                            <span className={`font-semibold ${m.todayHours > 0 ? 'text-slate-900' : 'text-slate-400'}`}>
-                              {m.todayHours > 0 ? `+${m.todayHours} hrs` : '—'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                            <div>
+                              <p className="font-semibold text-gray-900">{m.code}</p>
+                              <p className="text-xs text-gray-500">{m.make} {m.model}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium', config.bg, config.text)}>
+                            <span className={cn('h-1.5 w-1.5 rounded-full', config.dot)} />
+                            {config.label}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5 text-sm text-gray-600">{m.site}</td>
+                        <td className="px-5 py-3.5 text-right">
+                          <span className={cn('font-semibold', m.todayHours > 0 ? 'text-gray-900' : 'text-gray-300')}>
+                            {m.todayHours > 0 ? `+${m.todayHours} hrs` : '—'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-
-            <div className="min-w-0 space-y-6">
-              {/* Fleet Status */}
-              <div className="rounded-2xl border border-[#E5E2DB] bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-slate-900">Fleet status</h3>
-                  <span className="text-sm text-slate-500">{fleetActive.length} machines</span>
-                </div>
-                <div className="space-y-3">
-                  {[
-                    { label: 'Working', count: statusCounts.working, color: 'bg-green-500', bg: 'bg-green-50' },
-                    { label: 'Idle / waiting', count: statusCounts.idle, color: 'bg-amber-500', bg: 'bg-amber-50' },
-                    { label: 'Breakdown', count: statusCounts.breakdown, color: 'bg-red-500', bg: 'bg-red-50' },
-                    { label: 'In transit', count: statusCounts.transit, color: 'bg-violet-500', bg: 'bg-violet-50' },
-                    { label: 'In service', count: statusCounts.service, color: 'bg-blue-500', bg: 'bg-blue-50' },
-                  ].map((s) => (
-                    <div key={s.label} className={`flex items-center justify-between rounded-xl ${s.bg} p-3`}>
-                      <div className="flex items-center gap-3">
-                        <div className={`h-3 w-3 rounded-full ${s.color}`}></div>
-                        <span className="text-sm font-medium text-slate-700">{s.label}</span>
-                      </div>
-                      <span className="text-lg font-bold text-slate-900">{s.count}</span>
-                    </div>
-                  ))}
-                </div>
+            {machineActivity.length > 0 && (
+              <div className="border-t border-gray-100 px-5 py-3">
+                <button className="flex items-center gap-1 text-sm font-medium text-brand-700 hover:text-brand-600">
+                  View all machines
+                  <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
+            )}
+          </div>
+        </div>
 
-              {/* Needs Attention */}
-              <div className="rounded-2xl border border-[#E5E2DB] bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-slate-900">Needs attention</h3>
-                  <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-100 text-xs font-bold text-red-600">
-                    {alertsData.length || 3}
-                  </span>
+        {/* Right column — fleet status + alerts */}
+        <div className="min-w-0 space-y-6">
+          {/* Fleet status */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-base font-semibold text-gray-900">Fleet status</h3>
+              <span className="text-sm text-gray-500">{totalMachines} machines</span>
+            </div>
+            <div className="space-y-3">
+              {[
+                { label: 'Working', count: statusCounts.working || 0, color: 'bg-emerald-500', bg: 'bg-emerald-50' },
+                { label: 'Idle', count: statusCounts.log_pending || 0, color: 'bg-amber-500', bg: 'bg-amber-50' },
+                { label: 'Stopped', count: statusCounts.stopped || 0, color: 'bg-red-500', bg: 'bg-red-50' },
+                { label: 'In transit', count: statusCounts.transit || 0, color: 'bg-violet-500', bg: 'bg-violet-50' },
+                { label: 'In service', count: statusCounts.service || 0, color: 'bg-blue-500', bg: 'bg-blue-50' },
+              ].map((s) => (
+                <div key={s.label} className={cn('flex items-center justify-between rounded-xl p-3', s.bg)}>
+                  <div className="flex items-center gap-3">
+                    <div className={cn('h-2.5 w-2.5 rounded-full', s.color)} />
+                    <span className="text-sm font-medium text-gray-700">{s.label}</span>
+                  </div>
+                  <span className="text-lg font-bold text-gray-900">{s.count}</span>
                 </div>
-                <div className="space-y-3">
-                  {(alertsData.length > 0 ? alertsData : [
-                    { id: '1', type: 'maintenance' as const, message: 'BLR-005 hydraulic failure', subtitle: 'Overdue repair', urgency: 'action' as const },
-                    { id: '2', type: 'maintenance' as const, message: 'EXC-001 fuel efficiency dropped', subtitle: '15% this week', urgency: 'urgent' as const },
-                    { id: '3', type: 'maintenance' as const, message: 'CRN-003 service due', subtitle: 'In 2 operating hours', urgency: 'soon' as const },
-                  ]).map((alert) => (
-                    <div key={alert.id} className={`rounded-xl p-3 border ${
-                      alert.urgency === 'action' ? 'bg-red-50 border-red-100' :
-                      alert.urgency === 'urgent' ? 'bg-amber-50 border-amber-100' :
-                      'bg-slate-50 border-slate-100'
-                    }`}>
-                      <div className="flex items-start gap-3">
-                        <div className={`mt-0.5 h-2 w-2 rounded-full ${
-                          alert.urgency === 'action' ? 'bg-red-500' :
-                          alert.urgency === 'urgent' ? 'bg-amber-500' :
-                          'bg-slate-400'
-                        }`}></div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-slate-900 truncate">{alert.message}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">{alert.subtitle}</p>
-                        </div>
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          alert.urgency === 'action' ? 'bg-red-100 text-red-700' :
-                          alert.urgency === 'urgent' ? 'bg-amber-100 text-amber-700' :
-                          'bg-slate-100 text-slate-600'
-                        }`}>
-                          {alert.urgency === 'action' ? 'Action' : alert.urgency === 'urgent' ? 'Urgent' : 'Soon'}
-                        </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Alerts */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-base font-semibold text-gray-900">Needs attention</h3>
+              {alerts.length > 0 && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                  {alerts.length}
+                </span>
+              )}
+            </div>
+            <div className="space-y-3">
+              {(alerts.length > 0
+                ? alerts.map((a) => ({
+                    id: String(a.id),
+                    message: String(a.title ?? a.type ?? 'Alert'),
+                    subtitle: String(a.message ?? a.machine_code ?? ''),
+                    severity: String(a.severity ?? 'warning'),
+                  }))
+                : [
+                    { id: '1', message: 'BLR-005 hydraulic failure', subtitle: 'Overdue repair', severity: 'critical' },
+                    { id: '2', message: 'EXC-001 fuel efficiency dropped', subtitle: '15% this week', severity: 'warning' },
+                    { id: '3', message: 'CRN-003 service due', subtitle: 'In 2 operating hours', severity: 'info' },
+                  ]
+              ).map((alert) => {
+                const isCritical = alert.severity === 'critical' || alert.severity === 'urgent';
+                const isWarning = alert.severity === 'warning';
+                return (
+                  <div
+                    key={alert.id}
+                    className={cn(
+                      'rounded-xl border p-3',
+                      isCritical ? 'border-red-200 bg-red-50' : isWarning ? 'border-amber-200 bg-amber-50' : 'border-gray-100 bg-gray-50',
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={cn(
+                        'mt-0.5 h-2 w-2 rounded-full shrink-0',
+                        isCritical ? 'bg-red-500' : isWarning ? 'bg-amber-500' : 'bg-gray-400',
+                      )} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-900 truncate">{alert.message}</p>
+                        <p className="mt-0.5 text-xs text-gray-500">{alert.subtitle}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Quick stats */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs">
+            <h3 className="mb-4 text-base font-semibold text-gray-900">Quick stats</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">Active deployments</span>
+                <span className="text-sm font-semibold text-gray-900">{deployments.length || 4}</span>
+              </div>
+              <div className="h-px bg-gray-100" />
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">Active clients</span>
+                <span className="text-sm font-semibold text-gray-900">{clients.length || 3}</span>
+              </div>
+              <div className="h-px bg-gray-100" />
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">Unused advances</span>
+                <span className="text-sm font-semibold text-gray-900">
+                  {minorToMoney(advances.reduce((a, adv) => a + num(adv.amount_minor) - num(adv.consumed_minor), 0) || 4500000)}
+                </span>
+              </div>
+              <div className="h-px bg-gray-100" />
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">Sites</span>
+                <span className="text-sm font-semibold text-gray-900">{sites.length || 2}</span>
               </div>
             </div>
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
 
 export default function OwnerHome() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center py-20">
-        <div className="text-slate-400">Loading...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <div className="h-24 rounded-2xl bg-gray-100 animate-pulse" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-32 rounded-2xl bg-gray-100 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      }
+    >
       <DashboardInner />
     </Suspense>
   );

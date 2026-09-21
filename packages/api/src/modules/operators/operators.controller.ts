@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Param, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Param, Body, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { OperatorsService } from './operators.service';
 import { Roles, RolesGuard } from '../../common/guards/roles.guard';
@@ -32,5 +32,21 @@ export class OperatorsController {
   @Roles('owner')
   update(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: Record<string, unknown>) {
     return this.service.update(req.tenant!.tenantId, id, dto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Patch an operator' })
+  @UseGuards(RolesGuard)
+  @Roles('owner')
+  patch(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: Record<string, unknown>) {
+    return this.service.update(req.tenant!.tenantId, id, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete an operator' })
+  @UseGuards(RolesGuard)
+  @Roles('owner')
+  remove(@Req() req: TenantRequest, @Param('id') id: string) {
+    return this.service.remove(req.tenant!.tenantId, id);
   }
 }

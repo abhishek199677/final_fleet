@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ClientsService } from './clients.service';
 import { Roles, RolesGuard } from '../../common/guards/roles.guard';
@@ -24,5 +24,21 @@ export class ClientsController {
   @ApiOperation({ summary: 'Create a client' })
   create(@Req() req: TenantRequest, @Body() dto: Record<string, unknown>) {
     return this.service.create(req.tenant!.tenantId, dto, dto.client_uuid as string);
+  }
+
+  @Patch(':id')
+  @UseGuards(RolesGuard)
+  @Roles('owner')
+  @ApiOperation({ summary: 'Update a client' })
+  update(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: Record<string, unknown>) {
+    return this.service.update(req.tenant!.tenantId, id, dto);
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles('owner')
+  @ApiOperation({ summary: 'Delete a client' })
+  remove(@Req() req: TenantRequest, @Param('id') id: string) {
+    return this.service.remove(req.tenant!.tenantId, id);
   }
 }

@@ -39,4 +39,32 @@ export class MachinesService {
   async updateMeter(tenantId: string, id: string, meter: number) {
     return this.repo.updateMeter(tenantId, id, meter);
   }
+
+  async update(tenantId: string, id: string, data: Record<string, unknown>) {
+    const existing = await this.repo.findById(tenantId, id);
+    if (!existing) throw new NotFoundException('Machine not found');
+    const result = await this.db.queryWithTenant(tenantId, 'owner',
+      `UPDATE tenant.machines SET
+        code = COALESCE($2, code), type = COALESCE($3, type),
+        make = COALESCE($4, make), model = COALESCE($5, model),
+        year = COALESCE($6, year), chassis_no = COALESCE($7, chassis_no),
+        primary_meter_type = COALESCE($8, primary_meter_type),
+        meter_unit_label = COALESCE($9, meter_unit_label),
+        status_flag = COALESCE($10, status_flag)
+       WHERE id = $1 RETURNING *`,
+      [id, data.code ?? null, data.type ?? null, data.make ?? null, data.model ?? null,
+       data.year ?? null, data.chassis_no ?? null, data.primary_meter_type ?? null,
+       data.meter_unit_label ?? null, data.status_flag ?? null]);
+    return result.rows[0];
+  }
+
+  async remove(tenantId: string, id: string) {
+    const existing = await this.repo.findById(tenantId, id);
+    if (!existing) throw new NotFoundException('Machine not found');
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.maintenance_tasks WHERE machine_id = $1`, [id]);
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM tenant.machines WHERE id = $1`, [id]);
+    return { deleted: true };
+  }
 }

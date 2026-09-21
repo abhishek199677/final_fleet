@@ -1,57 +1,41 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { fetchList } from '@/lib/api/fetch-list';
-import { sampleSites, sampleMachines } from '@/lib/sample-data';
 
 export default function SiteDetail() {
   const params = useParams();
   const router = useRouter();
   const [site, setSite] = useState<Record<string, unknown> | null>(null);
   const [deployments, setDeployments] = useState<Record<string, unknown>[]>([]);
+  const [machines, setMachines] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     void Promise.all([
       fetchList<Record<string, unknown>>('/api/v1/sites'),
       fetchList<Record<string, unknown>>('/api/v1/deployments'),
-    ]).then(([sites, deploys]) => {
+      fetchList<Record<string, unknown>>('/api/v1/machines'),
+    ]).then(([sites, deploys, machs]) => {
       const found = sites.find((s) => s.id === params.id);
       if (found) {
         setSite(found);
         setDeployments(deploys.filter((d) => d.site_id === params.id));
-      } else {
-        const sampleSite = sampleSites.find((s) => s.id === params.id);
-        if (sampleSite) {
-          setSite(sampleSite as Record<string, unknown>);
-          const siteMachines = sampleMachines.filter((m) => m.site === sampleSite.name?.split(' ')[0]);
-          setDeployments(siteMachines.map((m) => ({
-            id: `dep-${m.id}`,
-            machine_id: m.id,
-            site_id: m.site,
-            status: 'active',
-            machines: { code: m.code }
-          })));
-        }
-      }
-    }).catch(() => {
-      const sampleSite = sampleSites.find((s) => s.id === params.id);
-      if (sampleSite) {
-        setSite(sampleSite as Record<string, unknown>);
-        const siteMachines = sampleMachines.filter((m) => m.site === sampleSite.name?.split(' ')[0]);
-        setDeployments(siteMachines.map((m) => ({
-          id: `dep-${m.id}`,
-          machine_id: m.id,
-          site_id: m.site,
-          status: 'active',
-          machines: { code: m.code }
-        })));
+        setMachines(machs);
       }
     }).finally(() => setLoading(false));
   }, [params.id]);
+
+  // Build machine lookup for displaying codes
+  const machineById = useMemo(() => {
+    const map = new Map<string, Record<string, unknown>>();
+    machines.forEach((m) => map.set(String(m.id), m));
+    return map;
+  }, [machines]);
 
   if (loading) return <p className="text-muted-foreground">Loading site...</p>;
   if (!site) return <p className="text-muted-foreground">Site not found.</p>;
@@ -73,21 +57,13 @@ export default function SiteDetail() {
           <CardContent className="space-y-4 pt-6">
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <span className="text-gray-600">Client</span>
-              <span className="font-semibold text-gray-800">{site.client_name as string ?? (site.clients as Record<string, unknown>)?.name as string ?? site.client_id as string}</span>
+              <span className="font-semibold text-gray-800">
+                {site.client_name as string ?? 'N/A'}
+              </span>
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <span className="text-gray-600">Location</span>
-              <span className="font-medium text-gray-800">{site.address as string ?? site.location as string ?? 'N/A'}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <span className="text-gray-600">Status</span>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                site.status === 'active' ? 'bg-green-100 text-green-700' :
-                site.status === 'planning' ? 'bg-blue-100 text-blue-700' :
-                'bg-gray-100 text-gray-700'
-              }`}>
-                {site.status as string}
-              </span>
+              <span className="font-medium text-gray-800">{site.location as string ?? 'N/A'}</span>
             </div>
           </CardContent>
         </Card>
@@ -104,8 +80,8 @@ export default function SiteDetail() {
               <span className="font-medium text-gray-800">{site.start_date as string ?? 'N/A'}</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <span className="text-gray-600">Est. End Date</span>
-              <span className="font-medium text-gray-800">{site.estimated_end_date as string ?? site.end_date as string ?? 'N/A'}</span>
+              <span className="text-gray-600">End Date</span>
+              <span className="font-medium text-gray-800">{site.end_date as string ?? 'N/A'}</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <span className="text-gray-600">Machines Deployed</span>
@@ -124,38 +100,49 @@ export default function SiteDetail() {
           </div>
           <CardContent className="pt-6">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {deployments.map((d) => (
-                <div key={d.id as string} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                      <span className="text-blue-600 font-bold">🔧</span>
+              {deployments.map((d) => {
+                const mach = machineById.get(String(d.machine_id));
+                const machineCode = (d.machine_code as string) ?? (mach?.code as string) ?? 'Unknown';
+                const machineType = (mach?.type as string) ?? '';
+                return (
+                  <div key={d.id as string} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <span className="text-blue-600 font-bold">🔧</span>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-800">{machineCode}</p>
+                        <p className="text-xs text-gray-500">{machineType}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-gray-800">{(d.machines as Record<string, unknown>)?.code as string ?? d.machine_id as string}</p>
-                      <p className="text-xs text-gray-500">ID: {d.machine_id as string}</p>
-                    </div>
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+                      d.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {(d.status as string).replace(/_/g, ' ')}
+                    </span>
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${
-                    d.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                  }`}>
-                    {(d.status as string).replace(/_/g, ' ')}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {deployments.length === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <div className="text-6xl mb-4">🏗️</div>
-            <p className="text-gray-500 text-lg">No machines deployed at this site yet.</p>
-            <Button className="mt-4">Deploy Machine</Button>
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardContent className="py-8 text-center">
+          {deployments.length === 0 && (
+            <div className="mb-4">
+              <div className="text-6xl mb-4">🏗️</div>
+              <p className="text-gray-500 text-lg">No machines deployed at this site yet.</p>
+            </div>
+          )}
+          <Link href={`/deployments/new?site_id=${params.id}`}>
+            <Button className="bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600">
+              <span className="mr-2">+</span> Deploy Machine
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
     </div>
   );
 }
