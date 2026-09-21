@@ -57,7 +57,7 @@ function statusOf(m: Row, activeIds: Set<string>): string {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; dot: string; bg: string; text: string }> = {
-  working: { label: 'Working', dot: 'text-gray-800', bg: 'bg-emerald-50', text: 'text-emerald-700' },
+  working: { label: 'Working', dot: 'bg-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-700' },
   log_pending: { label: 'Idle', dot: 'bg-amber-500', bg: 'bg-amber-50', text: 'text-amber-700' },
   stopped: { label: 'Stopped', dot: 'bg-red-500', bg: 'bg-red-50', text: 'text-red-700' },
   service: { label: 'In service', dot: 'bg-gray-500', bg: 'bg-gray-50', text: 'text-gray-700' },
@@ -303,7 +303,7 @@ function DashboardInner() {
             </div>
             <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-gray-100">
               <div
-                className="h-full rounded-full text-gray-800 transition-all duration-700"
+                className="h-full rounded-full bg-gray-900 transition-all duration-700"
                 style={{ width: `${utilisation}%` }}
               />
             </div>
@@ -415,11 +415,12 @@ function DashboardInner() {
                   />
                   <Tooltip
                     contentStyle={{
-                      background: 'white',
-                      border: '1px solid #eaecf0',
+                      background: 'hsl(222 47% 11%)',
+                      border: '1px solid hsl(220 18% 20%)',
                       borderRadius: 12,
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                       padding: '8px 12px',
+                      color: 'hsl(210 40% 96%)',
                     }}
                   />
                   <Bar dataKey="revenue" name="Revenue" fill="#101828" radius={[4, 4, 0, 0]} barSize={24} />
@@ -438,7 +439,7 @@ function DashboardInner() {
               </div>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1">
-                  <span className="h-1.5 w-1.5 rounded-full text-gray-800 animate-pulse" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="text-xs font-medium text-emerald-700">Live</span>
                 </div>
                 <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-50 hover:text-gray-600">
@@ -511,7 +512,7 @@ function DashboardInner() {
             </div>
             <div className="space-y-3">
               {[
-                { label: 'Working', count: statusCounts.working || 0, color: 'text-gray-800', bg: 'bg-emerald-50' },
+                { label: 'Working', count: statusCounts.working || 0, color: 'bg-emerald-500', bg: 'bg-emerald-50' },
                 { label: 'Idle', count: statusCounts.log_pending || 0, color: 'bg-amber-500', bg: 'bg-amber-50' },
                 { label: 'Stopped', count: statusCounts.stopped || 0, color: 'bg-red-500', bg: 'bg-red-50' },
                 { label: 'In transit', count: statusCounts.transit || 0, color: 'bg-violet-500', bg: 'bg-violet-50' },
