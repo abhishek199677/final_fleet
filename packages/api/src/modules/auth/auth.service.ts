@@ -165,10 +165,28 @@ export class AuthService {
       [tenantId]
     );
 
-    await this.db.query('platform',
+    // Tenant-schema writes must use the owner role (app_platform has no
+    // grants on the tenant schema and RLS would block it).
+    await this.db.queryWithTenant(tenantId, 'owner',
       `INSERT INTO tenant.users (tenant_id, cognito_sub, email, name, role, is_active, client_uuid)
        VALUES ($1, $2, $3, $4, 'owner', true, gen_random_uuid())`,
       [tenantId, userId, email, tenantName]
+    );
+
+    // Seed reference data so a brand-new tenant can use every feature
+    // immediately: expense categories (expense form needs these) and a
+    // default cash account (cash/expense flows need one).
+    const defaultCategories = ['Fuel', 'Maintenance', 'Parts', 'Labour', 'Transport', 'Permits', 'Insurance', 'Other'];
+    for (const cat of defaultCategories) {
+      await this.db.queryWithTenant(tenantId, 'owner',
+        `INSERT INTO tenant.expense_categories (tenant_id, name) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        [tenantId, cat]
+      );
+    }
+    await this.db.queryWithTenant(tenantId, 'owner',
+      `INSERT INTO tenant.cash_accounts (tenant_id, name, type, currency, is_default)
+       VALUES ($1, 'Main Cash', 'site_cash', 'INR', true) ON CONFLICT DO NOTHING`,
+      [tenantId]
     );
 
     const token = sign(

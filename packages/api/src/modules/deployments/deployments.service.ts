@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 
 const WITH_NAMES = `d.*, m.code AS machine_code, s.name AS site_name, cl.name AS client_name
@@ -24,11 +24,36 @@ export class DeploymentsService {
   }
 
   async create(tenantId: string, data: Record<string, unknown>, clientUuid: string) {
-    const result = await this.db.queryWithTenant(tenantId, 'ops',
-      `INSERT INTO tenant.deployments (tenant_id, machine_id, site_id, start_date, end_date, client_uuid)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-      [tenantId, data.machine_id, data.site_id, data.start_date, data.end_date ?? null, clientUuid]);
-    return result.rows[0];
+    // A machine can only have one active deployment. Check first so the user
+    // gets a clear 409 message instead of a raw unique-violation 500.
+    const existing = await this.db.queryWithTenant(tenantId, 'ops',
+      `SELECT d.id, m.code AS machine_code, s.name AS site_name
+       FROM tenant.deployments d
+       JOIN tenant.machines m ON m.id = d.machine_id
+       JOIN tenant.sites s ON s.id = d.site_id
+       WHERE d.machine_id = $1 AND d.status = 'active' LIMIT 1`,
+      [data.machine_id]);
+    if (existing.rows.length > 0) {
+      const row = existing.rows[0] as { machine_code: string; site_name: string };
+      throw new ConflictException(
+        `Machine ${row.machine_code} is already deployed at ${row.site_name}. End or release that deployment first.`,
+      );
+    }
+    try {
+      const result = await this.db.queryWithTenant(tenantId, 'ops',
+        `INSERT INTO tenant.deployments (tenant_id, machine_id, site_id, start_date, end_date, client_uuid)
+         VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+        [tenantId, data.machine_id, data.site_id, data.start_date, data.end_date ?? null, clientUuid]);
+      return result.rows[0];
+    } catch (err: unknown) {
+      // Race-condition safety net: two concurrent creates for the same machine.
+      if ((err as { code?: string })?.code === '23505') {
+        throw new ConflictException(
+          'This machine was just deployed by someone else. Refresh and try a different machine.',
+        );
+      }
+      throw err;
+    }
   }
 
   async findActiveForMachine(tenantId: string, machineId: string) {

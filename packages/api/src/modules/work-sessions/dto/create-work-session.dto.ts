@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsUUID, IsDateString } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsUUID, IsDateString, IsNumber } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateWorkSessionDto {
@@ -33,12 +33,18 @@ export class CreateWorkSessionDto {
   end_at?: string;
 
   @ApiProperty()
+  @IsNumber()
+  @IsNotEmpty()
   start_meter: number;
 
   @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
   end_meter?: number;
 
   @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
   units_run?: number;
 
   @ApiPropertyOptional()

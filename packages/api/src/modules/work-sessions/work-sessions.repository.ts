@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { DatabaseService } from '../../common/database/database.service';
 
 @Injectable()
@@ -61,6 +62,11 @@ export class WorkSessionsRepository {
     const original = await this.findById(tenantId, id);
     if (!original) return null;
 
+    // Mark the old version as superseded FIRST — otherwise the new version's
+    // time range overlaps the old current row and trips exclude_overlapping_sessions.
+    await this.db.queryWithTenant(tenantId, 'ops',
+      `UPDATE tenant.work_sessions SET is_current = false WHERE id = $1`, [id]);
+
     // Insert correction as new version
     const result = await this.db.queryWithTenant(tenantId, 'ops',
       `INSERT INTO tenant.work_sessions (
@@ -81,7 +87,7 @@ export class WorkSessionsRepository {
         data.start_evidence || original.start_evidence, data.end_evidence || original.end_evidence,
         data.activity || original.activity, data.billable !== undefined ? data.billable : original.billable,
         data.override_reason || original.override_reason, data.notes || original.notes,
-        userId, data.client_uuid || original.client_uuid,
+        userId, (data.client_uuid as string) || randomUUID(),
         id, (original.version || 1) + 1,
       ],
     );
