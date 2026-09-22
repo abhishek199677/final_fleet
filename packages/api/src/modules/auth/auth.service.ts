@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException, ConflictException, Logger } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
-import { createHash, randomBytes, timingSafeEqual } from 'crypto';
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'crypto';
 import { sign, verify, type JwtPayload } from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
@@ -102,7 +102,7 @@ export class AuthService {
     });
   }
 
-  async refresh(refreshToken: string): Promise<{ token: string; expires_in: number }> {
+  refresh(refreshToken: string): { token: string; expires_in: number } {
     try {
       const payload = verify(refreshToken, JWT_SECRET, { issuer: 'fleetos' }) as JwtPayload & { type?: string };
       if (payload.type !== 'refresh') throw new UnauthorizedException('Invalid refresh token');
@@ -142,7 +142,7 @@ export class AuthService {
 
     const salt = randomBytes(16).toString('hex');
     const passwordHash = hashPassword(password, salt);
-    const userId = randomBytes(16).toString('hex');
+    const userId = randomUUID();
 
     localUsers.set(email, {
       id: userId,

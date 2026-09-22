@@ -19,13 +19,22 @@ describe('Billing Engine Integration', () => {
   });
 
   it('should have rate cards for active deployments', async () => {
+    const active = await client.query(
+      `SELECT COUNT(*)::int AS n FROM tenant.deployments
+       WHERE tenant_id = $1 AND status = 'active'`,
+      [tenantId]
+    );
     const result = await client.query(
       `SELECT rc.* FROM tenant.rate_cards rc
        JOIN tenant.deployments d ON d.id = rc.deployment_id
        WHERE d.tenant_id = $1 AND d.status = 'active'`,
       [tenantId]
     );
-    expect(result.rows.length).toBeGreaterThan(0);
+    // Vacuous on tenants with nothing deployed (fresh/wiped DBs). Once
+    // anything is active, billing must be configured or every run bills ₹0.
+    if (active.rows[0].n > 0) {
+      expect(result.rows.length).toBeGreaterThan(0);
+    }
     for (const row of result.rows) {
       expect(row.strategy).toMatch(/^(hourly|daily|monthly)$/);
       expect(Number(row.rate_minor)).toBeGreaterThan(0);

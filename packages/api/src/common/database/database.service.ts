@@ -90,11 +90,15 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         // guard runs after the request context is created).
         const store = requestStore.getStore();
         const userId = (store?.user as Record<string, unknown> | undefined)?.id;
-        if (
-          typeof userId === 'string' &&
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)
-        ) {
-          await client.query(`SET LOCAL app.user_id = '${userId}'`);
+        // Register mints ids as raw 32-hex (no dashes) while seeded users are
+        // canonical UUIDs; fn_audit casts to uuid, so normalize both shapes —
+        // the hex-only check keeps SET LOCAL injection-safe.
+        if (typeof userId === 'string') {
+          const hex = userId.replace(/-/g, '');
+          if (/^[0-9a-f]{32}$/i.test(hex)) {
+            const uuid = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+            await client.query(`SET LOCAL app.user_id = '${uuid}'`);
+          }
         }
         const result = await client.query(text, params);
         await client.query('COMMIT');

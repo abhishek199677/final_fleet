@@ -42,11 +42,18 @@ export class CashService {
   }
 
   async createTransfer(tenantId: string, data: Record<string, unknown>, clientUuid: string, userId: string) {
+    // The UI transfers within one currency and never sends fx fields; without
+    // defaults they landed as NULL and poisoned v_cash_expected/contribution
+    // (caught by the integration test as fx_rate=0). Default: rate 1,
+    // base = amount. Callers moving value across currencies pass fx explicitly.
+    const amountMinor = Number(data.amount_minor ?? 0);
+    const fxRate = Number(data.fx_rate) > 0 ? Number(data.fx_rate) : 1;
+    const baseMinor = Number(data.base_minor) > 0 ? Number(data.base_minor) : Math.round(amountMinor * fxRate);
     const result = await this.db.queryWithTenant(tenantId, 'ops',
       `INSERT INTO tenant.cash_transfers (tenant_id, from_account_id, to_account_id, currency, amount_minor, fx_rate, base_minor, reference, photo_key, transfer_date, created_by, client_uuid)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
       [tenantId, data.from_account_id, data.to_account_id, data.currency, data.amount_minor,
-       data.fx_rate, data.base_minor, data.reference, data.photo_key, data.transfer_date, userId, clientUuid]);
+       fxRate, baseMinor, data.reference, data.photo_key, data.transfer_date, userId, clientUuid]);
     return result.rows[0];
   }
 
