@@ -68,7 +68,7 @@ const LiquidMetalButton = React.forwardRef<HTMLButtonElement, LiquidMetalButtonP
 
     const mergedRef = React.useCallback(
       (node: HTMLButtonElement | null) => {
-        (buttonRef as React.MutableRefObject<HTMLButtonElement | null>).current = node;
+        (buttonRef).current = node;
         if (typeof ref === 'function') ref(node);
         else if (ref) ref.current = node;
       },

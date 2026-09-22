@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
+import { fetchListStrict } from '@/lib/api/fetch-list';
 import { useAuth } from '@/lib/auth/context';
 import { ApiErrorBanner } from '@/components/api-error-banner';
 import { Play, Clock, ArrowRight, CheckCircle, Gauge } from 'lucide-react';

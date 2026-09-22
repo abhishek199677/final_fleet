@@ -69,7 +69,6 @@ export function ElegantBarChart({
   barRadius = [6, 6, 0, 0],
   barSize = 40,
   defaultColor = '#6366f1',
-  defaultGradient = ['#6366f1', '#8b5cf6'],
   title,
   subtitle,
   icon,
@@ -86,7 +85,11 @@ export function ElegantBarChart({
     gradientId: `${gradientId}-${index}`,
   }));
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: {
+    active?: boolean;
+    payload?: Array<{ payload: { label?: string; value?: number | string } }>;
+    label?: string;
+  }) => {
     if (!active || !payload?.length) return null;
 
     const item = payload[0].payload;
@@ -133,7 +136,7 @@ export function ElegantBarChart({
             barCategoryGap="20%"
           >
             <defs>
-              {processedData.map((item, index) => (
+              {processedData.map((item) => (
                 <linearGradient
                   key={item.gradientId}
                   id={item.gradientId}

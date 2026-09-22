@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Truck, MapPin, Clock, CheckCircle, AlertCircle, ArrowRight, Pencil, Trash2 } from 'lucide-react';
+import { Truck, MapPin, Clock, CheckCircle, AlertCircle, Pencil, Trash2 } from 'lucide-react';
 import { fetchList } from '@/lib/api/fetch-list';
 import { apiDelete, confirmDelete } from '@/lib/api/mutations';
 import { AlertTriangle } from 'lucide-react';
@@ -34,7 +34,7 @@ export default function OwnerMachines() {
   useEffect(() => { loadMachines(); }, []);
 
   const handleDelete = async (id: string, name: string) => {
-    if (!(await confirmDelete(name))) return;
+    if (!(confirmDelete(name))) return;
     try {
       await apiDelete(`/api/v1/machines/${id}`);
       setMachines((prev) => prev.filter((m) => m.id !== id));
@@ -169,7 +169,7 @@ export default function OwnerMachines() {
                     <div className="space-y-2 mt-4">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <MapPin className="h-4 w-4 text-gray-400" />
-                        <span>{(m as Record<string, unknown>).site as string || 'No site assigned'}</span>
+                        <span>{(m).site as string || 'No site assigned'}</span>
                       </div>
                     </div>
 

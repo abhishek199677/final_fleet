@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth/context';
 import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard, PlayCircle, PauseCircle, Droplets, Receipt,
-  Banknote, Calculator, Wrench, History, Truck, Menu, X, Bell, User,
+  Banknote, Calculator, Wrench, History, Truck, Menu, X, Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

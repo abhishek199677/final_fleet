@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Calculator, TrendingUp, DollarSign, BarChart3, Target, ArrowRight } from 'lucide-react';
+import { Calculator, TrendingUp, DollarSign, BarChart3, Target } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { ApiErrorBanner } from '@/components/api-error-banner';
 
@@ -67,7 +67,6 @@ export default function ProjectionsPage() {
 
   useEffect(() => {
     loadDefaults();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const run = async (ev: React.FormEvent) => {

@@ -36,7 +36,6 @@ export function BarChart({
   rounded = true,
   animated = true,
   layout = 'vertical',
-  gap = 8,
   valuePrefix = '',
   valueSuffix = '',
 }: BarChartProps) {

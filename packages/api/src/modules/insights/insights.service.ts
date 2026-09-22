@@ -70,9 +70,6 @@ export class InsightsService {
        JOIN tenant.deployments d ON d.id = rc.deployment_id
        WHERE rc.tenant_id = $1`, [tenantId],
     );
-    const allExpenses = await q(
-      `SELECT * FROM tenant.expenses WHERE tenant_id = $1`, [tenantId],
-    );
     const maintenanceTasks = await q(
       `SELECT * FROM tenant.maintenance_tasks WHERE tenant_id = $1`, [tenantId],
     );
@@ -85,7 +82,6 @@ export class InsightsService {
       const mDowntime = allDowntime.filter((d: Record<string, unknown>) => d.machine_id === m.id);
       const mFuel = allFuel.filter((f: Record<string, unknown>) => f.machine_id === m.id);
       const rc = rateCards.find((r: Record<string, unknown>) => r.machine_id === m.id);
-      const mExpenses = allExpenses.filter((e: Record<string, unknown>) => e.machine_id === m.id);
       const mMaintenance = maintenanceTasks.filter((t: Record<string, unknown>) => t.machine_id === m.id);
 
       // ── Hours & Sessions ──
@@ -99,7 +95,6 @@ export class InsightsService {
 
       const totalHours = sessionData.reduce((s, d) => s + d._hours, 0);
       const billableHours = sessionData.filter((d) => (d as Record<string, unknown>).billable).reduce((s, d) => s + d._hours, 0);
-      const totalUnits = sessionData.reduce((s, d) => s + d._units, 0);
       const billableRatio = totalHours > 0 ? Math.round((billableHours / totalHours) * 100) : 0;
       const avgSessionHours = mSessions.length > 0 ? totalHours / mSessions.length : 0;
 
@@ -114,9 +109,6 @@ export class InsightsService {
       // ── Fuel ──
       const totalFuelLitres = mFuel.reduce((s, f: Record<string, unknown>) => s + Number(f.litres ?? 0), 0);
       const totalFuelCost = mFuel.reduce((s, f: Record<string, unknown>) => s + Number(f.cost_minor ?? 0), 0);
-
-      // ── Expenses ──
-      const totalExpenses = mExpenses.reduce((s, e: Record<string, unknown>) => s + Number(e.amount_minor ?? 0), 0);
 
       // ── Rate & Earnings ──
       const ratePerHour = rc ? Number(rc.rate_minor ?? 0) / 100 : 0;

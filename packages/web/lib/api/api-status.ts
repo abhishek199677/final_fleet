@@ -18,7 +18,7 @@ export function useApiStatus() {
     }
   }, []);
 
-  useEffect(() => { check(); }, [check]);
+  useEffect(() => { void check(); }, [check]);
 
   return { available, check };
 }

@@ -10,7 +10,6 @@ import {
   AlertTriangle, ArrowDown, ArrowUp, Bell, ClipboardCheck, Fuel,
   Gauge, Pause, Play, Receipt, RefreshCw, Wrench,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
 import { useAuth } from '@/lib/auth/context';

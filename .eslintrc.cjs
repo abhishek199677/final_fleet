@@ -2,13 +2,14 @@ module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
   parserOptions: {
+    // Only tsconfigs that exist: packages/shared and packages/infra were
+    // removed, and a missing entry here makes the parser fail EVERY file
+    // with TS5012 (the old repo-wide pnpm lint failure).
     project: [
       './tsconfig.eslint.json',
       './packages/api/tsconfig.eslint.json',
-      './packages/shared/tsconfig.eslint.json',
       './packages/web/tsconfig.json',
       './packages/db/tsconfig.json',
-      './packages/infra/tsconfig.json',
     ],
     ecmaVersion: 2022,
     sourceType: 'module',

@@ -94,7 +94,6 @@ function OrbitItem({ icon }: { icon: OrbitIcon }) {
   const duration = icon.duration ?? 20;
   const delay = icon.delay ?? 0;
   const reverse = icon.reverse ?? false;
-  const path = icon.path ?? false;
   const [angle, setAngle] = useState(delay * 1.5);
   const [mounted, setMounted] = useState(false);
   const animRef = useRef<number>(0);

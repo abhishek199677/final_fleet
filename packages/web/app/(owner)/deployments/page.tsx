@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Truck, MapPin, Calendar, ArrowRight, Pencil, Trash2 } from 'lucide-react';
+import { Truck, MapPin, Calendar, Pencil, Trash2 } from 'lucide-react';
 import { fetchList } from '@/lib/api/fetch-list';
 import { apiDelete, confirmDelete } from '@/lib/api/mutations';
 
@@ -37,7 +37,7 @@ export default function DeploymentsList() {
   }, []);
 
   const handleDelete = async (id: string, label: string) => {
-    if (!(await confirmDelete(label))) return;
+    if (!(confirmDelete(label))) return;
     try {
       await apiDelete(`/api/v1/deployments/${id}`);
       setDeployments((prev) => prev.filter((d) => d.id !== id));

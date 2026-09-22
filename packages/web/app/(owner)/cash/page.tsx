@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Wallet, ArrowRightLeft, Banknote, TrendingUp, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Wallet, ArrowRightLeft, Banknote, CheckCircle, Clock } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
+import { fetchListStrict } from '@/lib/api/fetch-list';
 import { ApiErrorBanner } from '@/components/api-error-banner';
 
 interface Row extends Record<string, unknown> {
@@ -119,11 +119,10 @@ export default function CashPage() {
   };
 
   const totalBalance = accounts.reduce((sum, a) => sum + num(a.balance_minor), 0);
-  const totalTransfers = transfers.reduce((sum, t) => sum + num(t.amount_minor), 0);
 
   return (
     <div className="space-y-6">
-      {apiError && <ApiErrorBanner onRetry={load} />}
+      {apiError && <ApiErrorBanner onRetry={() => { void load(); }} />}
       <div>
         <h1 className="text-3xl font-bold">Cash</h1>
         <p className="text-muted-foreground mt-1">Accounts, remittances and physical counts</p>

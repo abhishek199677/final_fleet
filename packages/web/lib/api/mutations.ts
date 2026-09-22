@@ -35,7 +35,7 @@ export async function apiPatch<T = Record<string, unknown>>(path: string, data: 
  * Confirm with the user, then delete.
  * Returns true if deleted, false if cancelled.
  */
-export async function confirmDelete(label: string): Promise<boolean> {
+export function confirmDelete(label: string): boolean {
   if (!window.confirm(`Are you sure you want to delete "${label}"? This cannot be undone.`)) {
     return false;
   }

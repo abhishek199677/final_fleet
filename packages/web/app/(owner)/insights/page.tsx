@@ -1,43 +1,24 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
+import { fetchListStrict } from '@/lib/api/fetch-list';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
 } from 'recharts';
 import {
-  AlertTriangle, Brain, Clock, Coins, Gauge, Power, TrendingUp, Wrench, Fuel,
-  CheckCircle2, ArrowRight,
+  AlertTriangle, Brain, Clock, Coins, Gauge, Power, Wrench,
+  CheckCircle2,
 } from 'lucide-react';
 import { ApiErrorBanner } from '@/components/api-error-banner';
-
-function num(v: unknown, fallback = 0): number {
-  const n = typeof v === 'string' ? Number(v) : (v as number);
-  return Number.isFinite(n) ? n : fallback;
-}
-
-function sessionUnits(s: Record<string, unknown>): number {
-  const u = num(s.units_run, NaN);
-  if (Number.isFinite(u)) return u;
-  return Math.max(num(s.end_meter) - num(s.start_meter), 0);
-}
 
 function sessionHours(s: Record<string, unknown>): number {
   const a = new Date(String(s.start_at ?? '')).getTime();
   const b = s.end_at ? new Date(String(s.end_at)).getTime() : Date.now();
   if (!a || !b || b < a) return 0;
   return Math.min((b - a) / 3_600_000, 24);
-}
-
-function downtimeHours(d: Record<string, unknown>): number {
-  if (d.started_at && d.ended_at) {
-    const ms = new Date(String(d.ended_at)).getTime() - new Date(String(d.started_at)).getTime();
-    return Math.round((ms / (1000 * 60 * 60)) * 10) / 10;
-  }
-  return 0;
 }
 
 function fmtHours(h: number): string {
@@ -54,13 +35,6 @@ function healthColor(score: number): string {
   if (score >= 70) return 'text-white bg-gradient-to-r from-gray-950 to-gray-900';
   if (score >= 50) return 'text-white bg-gradient-to-r from-gray-800 to-gray-700';
   return 'text-white bg-gradient-to-r from-gray-800 to-gray-700';
-}
-
-function healthLabel(score: number): string {
-  if (score >= 90) return 'Excellent';
-  if (score >= 70) return 'Good';
-  if (score >= 50) return 'Needs Attention';
-  return 'Critical';
 }
 
 interface MachineInsight {
@@ -128,20 +102,16 @@ export default function Insights() {
   }, [loading, machines]);
 
   // Fleet totals from raw data
-  const totalUnits = useMemo(() =>
-    sessions.reduce((sum, s) => sum + sessionUnits(s), 0), [sessions]);
   const totalHours = useMemo(() =>
     sessions.reduce((sum, s) => sum + sessionHours(s), 0), [sessions]);
   const activeMachines = machines.filter((m) => m.status_flag !== 'retired');
 
   // Fleet totals from insights
-  const fleetDailyEarnings = insights.reduce((s, i) => s + i.earnings_total.daily_average, 0);
   const fleetMonthlyEarnings = insights.reduce((s, i) => s + i.earnings_total.monthly_estimate, 0);
   const avgHealth = insights.length > 0
     ? Math.round(insights.reduce((s, i) => s + i.health_score, 0) / insights.length)
     : 0;
   const totalDowntime = insights.reduce((s, i) => s + i.stats.downtime_hours, 0);
-  const totalFuel = insights.reduce((s, i) => s + i.stats.fuel_litres, 0);
 
   // Charts
   const hoursChartData = insights
@@ -336,7 +306,7 @@ export default function Insights() {
                     outerRadius={90}
                     paddingAngle={4}
                     dataKey="value"
-                    label={({ name, value }) => `${value}`}
+                    label={({ name: _name, value }) => `${value}`}
                   >
                     {utilPieData.map((entry, i) => (
                       <Cell key={i} fill={entry.color} />

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { apiPatch } from '@/lib/api/mutations';
 import { fetchList } from '@/lib/api/fetch-list';
@@ -154,7 +153,7 @@ export default function ClientDetail() {
           {editing ? (
             <>
               <Button variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
-              <Button onClick={handleSave} disabled={saving}>
+              <Button onClick={() => { void handleSave(); }} disabled={saving}>
                 {saving ? 'Saving...' : 'Save Changes'}
               </Button>
             </>

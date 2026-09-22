@@ -38,7 +38,7 @@ export default function OwnerOperators() {
   }, []);
 
   const handleDelete = async (id: string, name: string) => {
-    if (!(await confirmDelete(name))) return;
+    if (!(confirmDelete(name))) return;
     try {
       await apiDelete(`/api/v1/operators/${id}`);
       setOperators((prev) => prev.filter((o) => o.id !== id));

@@ -232,7 +232,7 @@ export default function RegisterPage() {
         )}
         <AuthTabs
           formFields={formFields}
-          handleSubmit={handleSubmit}
+          handleSubmit={(e) => { void handleSubmit(e); }}
           defaultTab="signup"
         />
         <p className="mt-8 text-center text-sm text-white/30 max-w-[380px]">

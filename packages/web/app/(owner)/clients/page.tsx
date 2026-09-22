@@ -40,7 +40,7 @@ export default function OwnerClients() {
   }, []);
 
   const handleDelete = async (id: string, name: string) => {
-    if (!(await confirmDelete(name))) return;
+    if (!(confirmDelete(name))) return;
     try {
       await apiDelete(`/api/v1/clients/${id}`);
       setClients((prev) => prev.filter((c) => c.id !== id));

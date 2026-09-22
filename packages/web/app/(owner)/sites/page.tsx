@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Calendar, Users, Briefcase, Pencil, Trash2 } from 'lucide-react';
+import { MapPin, Calendar, Briefcase, Pencil, Trash2 } from 'lucide-react';
 import { fetchList } from '@/lib/api/fetch-list';
 import { apiDelete, confirmDelete } from '@/lib/api/mutations';
 
@@ -37,7 +37,7 @@ export default function SitesList() {
   }, []);
 
   const handleDelete = async (id: string, name: string) => {
-    if (!(await confirmDelete(name))) return;
+    if (!(confirmDelete(name))) return;
     try {
       await apiDelete(`/api/v1/sites/${id}`);
       setSites((prev) => prev.filter((s) => s.id !== id));

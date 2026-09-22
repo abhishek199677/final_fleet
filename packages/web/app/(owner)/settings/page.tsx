@@ -1,12 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Settings as SettingsIcon, Users, Truck, Tag, DollarSign, Camera, Bell, Clock, Globe, Shield, Wrench, CheckCircle } from 'lucide-react';
-import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
+import { fetchListStrict } from '@/lib/api/fetch-list';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { useLocale, type Locale } from '@/components/i18n-provider';
 import { ApiErrorBanner } from '@/components/api-error-banner';
@@ -32,10 +31,6 @@ const TAB_CONFIG = [
 ] as const;
 
 export default function Settings() {
-  const t = useTranslations('settings');
-  const tCommon = useTranslations('common');
-  const tNotifications = useTranslations('notifications');
-  const tPeriodClose = useTranslations('periodClose');
   const { locale, setLocale } = useLocale();
   const [tab, setTab] = useState<'users' | 'machines' | 'categories' | 'fx' | 'evidence' | 'thresholds' | 'notifications' | 'periodClose' | 'language'>('users');
   const [periodClosePeriod, setPeriodClosePeriod] = useState('');
@@ -153,7 +148,7 @@ export default function Settings() {
                   ? `bg-gradient-to-r ${tabConfig.color} text-white shadow-md` 
                   : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
               }`}
-              onClick={() => setTab(tabConfig.id as typeof tab)}
+              onClick={() => setTab(tabConfig.id)}
             >
               <Icon className="h-4 w-4" />
               {tabConfig.label}

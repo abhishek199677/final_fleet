@@ -87,7 +87,7 @@ export class WorkSessionsRepository {
         data.start_evidence || original.start_evidence, data.end_evidence || original.end_evidence,
         data.activity || original.activity, data.billable !== undefined ? data.billable : original.billable,
         data.override_reason || original.override_reason, data.notes || original.notes,
-        userId, (data.client_uuid as string) || randomUUID(),
+        userId, (data.client_uuid) || randomUUID(),
         id, (original.version || 1) + 1,
       ],
     );

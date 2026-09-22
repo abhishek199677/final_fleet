@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment -- vendored single-file component; typed sources live in the app */
 // @ts-nocheck — generated single-file distribution; typed sources live in the app.
 "use client";
 // Orbit Delivery — self-contained 3D hero. Configurable hosted GLB models; all application code and styles in one file.
@@ -5,13 +6,13 @@
 // Drag to rotate. Pause to greet. Supports .dark and data-theme="dark".
 
 "use client";
-var __defProp = Object.defineProperty;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __esm = (fn, res) => function __init() {
+const __defProp = Object.defineProperty;
+const __getOwnPropNames = Object.getOwnPropertyNames;
+const __esm = (fn, res) => function __init() {
   return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0), res);
 };
-var __export = (target, all) => {
-  for (var name in all) {
+const __export = (target, all) => {
+  for (const name in all) {
     __defProp(target, name, { get: all[name], enumerable: true });
   }
 };
@@ -48,8 +49,8 @@ function stepRunner(m, dt, screenTopLocal, reduced) {
   if (speed > 0.025) m.direction = Math.sign(m.characterVelocity);
   m.phase += speed * 2.25 / GAIT_DISTANCE * Math.PI * 2 * dt;
 }
-var clamp, damp, smoothstep, GAIT_DISTANCE, createMotion;
-var init_motion = __esm({
+let clamp, damp, smoothstep, GAIT_DISTANCE, createMotion;
+const init_motion = __esm({
   "src/motion.ts"() {
     "use strict";
     clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -103,7 +104,7 @@ function stepGlobeMotion(globe, m, dt, auto, reduced) {
     globe.orientation.premultiply(globe.delta).normalize();
   }
 }
-var init_globeMotion = __esm({
+const init_globeMotion = __esm({
   "src/globeMotion.ts"() {
     "use strict";
     init_motion();
@@ -158,7 +159,7 @@ function stepSurface(s, m, rotation, screenUp, dt, reduced, paused = false) {
   m.activity = MathUtils2.damp(m.activity, MathUtils2.smoothstep(speed, 4e-3, 0.022), 9, dt);
   m.phase += speed * 2.25 / GAIT_DISTANCE * Math.PI * 2 * dt;
 }
-var init_surfaceMotion = __esm({
+const init_surfaceMotion = __esm({
   "src/surfaceMotion.ts"() {
     "use strict";
     init_motion();
@@ -167,8 +168,8 @@ var init_surfaceMotion = __esm({
 
 // embedded:assets
 import { createContext } from "react";
-var AssetBaseContext, surface;
-var init_assets = __esm({
+let AssetBaseContext, surface;
+const init_assets = __esm({
   "embedded:assets"() {
     "use strict";
     AssetBaseContext = createContext("");
@@ -258,7 +259,7 @@ function usePlanetAsset(onReady) {
       if (scene) disposeScene(scene);
     };
   }, [onReady, base]);
-  if (error) throw error;
+  if (error) throw error instanceof Error ? error : new Error(String(error));
   return asset;
 }
 function surfaceRadius(surface2, x, y, z) {
@@ -271,7 +272,7 @@ function surfaceRadius(surface2, x, y, z) {
   const b = surface2.radii[y1 * surface2.width + x0] * (1 - tx) + surface2.radii[y1 * surface2.width + x1] * tx;
   return a * (1 - ty) + b * ty;
 }
-var init_planetAsset = __esm({
+const init_planetAsset = __esm({
   "src/planetAsset.ts"() {
     "use strict";
     init_assets();
@@ -316,6 +317,7 @@ function makeSeamlessRun(source) {
         const p0 = samples[previous * size + c], p1 = samples[index * size + c], p2 = samples[next * size + c], p3 = samples[after * size + c];
         const a = count < 3 ? 0 : (p2 - p0) / Math.max(t2 - t0, 1e-6) * length;
         const b = count < 3 ? 0 : (p3 - p1) / Math.max(afterTime - t1, 1e-6) * length;
+        // eslint-disable-next-line @typescript-eslint/restrict-plus-operands -- @ts-nocheck vendored file: spline keys are untyped
         values.push(count === 1 ? p1 : isMorph ? p1 + (p2 - p1) * u : (2 * u ** 3 - 3 * u ** 2 + 1) * p1 + (u ** 3 - 2 * u ** 2 + u) * a + (-2 * u ** 3 + 3 * u ** 2) * p2 + (u ** 3 - u ** 2) * b);
       }
       if (isRotation) {
@@ -330,7 +332,7 @@ function makeSeamlessRun(source) {
   });
   return new AnimationClip("Courier_Run_Seamless", period, tracks);
 }
-var init_runCycle = __esm({
+const init_runCycle = __esm({
   "src/runCycle.ts"() {
     "use strict";
   }
@@ -338,8 +340,8 @@ var init_runCycle = __esm({
 
 // src/bagSuspension.ts
 import { Bone, Euler as Euler2, MathUtils as MathUtils3, Matrix4, Quaternion as Quaternion4, Vector3 as Vector33 } from "three";
-var BagSuspension;
-var init_bagSuspension = __esm({
+let BagSuspension;
+const init_bagSuspension = __esm({
   "src/bagSuspension.ts"() {
     "use strict";
     BagSuspension = class {
@@ -440,8 +442,8 @@ var init_bagSuspension = __esm({
 
 // src/courierGreeting.ts
 import { Bone as Bone2, MathUtils as MathUtils4, Quaternion as Quaternion5, Vector3 as Vector34 } from "three";
-var up, CourierGreeting;
-var init_courierGreeting = __esm({
+let up, CourierGreeting;
+const init_courierGreeting = __esm({
   "src/courierGreeting.ts"() {
     "use strict";
     up = new Vector34(0, 1, 0);
@@ -572,7 +574,7 @@ function optimizeRigidBag(scene) {
     if (!shared) mesh.geometry.dispose();
   }
 }
-var init_sceneOptimization = __esm({
+const init_sceneOptimization = __esm({
   "src/sceneOptimization.ts"() {
     "use strict";
   }
@@ -712,11 +714,11 @@ function Courier({ motion, paused, reduced, onReady }) {
     asset.greeting.apply(reduced);
     asset.bag.update(dt, activity, m.phase, turnVelocity.current, reduced, lean.current.rotation.x);
   });
-  if (error) throw error;
+  if (error) throw error instanceof Error ? error : new Error(String(error));
   return <group ref={facing} rotation={[0, Math.PI / 2, 0]}><group ref={lean}><group scale={MODEL_SCALE}>{asset && <primitive object={asset.scene} dispose={null} />}</group></group></group>;
 }
-var MODEL_SCALE;
-var init_Courier = __esm({
+let MODEL_SCALE;
+const init_Courier = __esm({
   "src/Courier.tsx"() {
     "use strict";
     init_assets();
@@ -783,8 +785,8 @@ function PlanetScene(props) {
     <World {...props} />
   </Canvas>;
 }
-var up2;
-var init_PrototypeScene = __esm({
+let up2;
+const init_PrototypeScene = __esm({
   "src/PrototypeScene.tsx"() {
     "use strict";
     init_motion();
@@ -804,8 +806,8 @@ function chooseRenderQuality() {
   const slowConnection = device.connection?.saveData || /(^|-)2g$/.test(device.connection?.effectiveType || "");
   return mobile || limited || slowConnection ? "low" : "high";
 }
-var renderQuality;
-var init_renderQuality = __esm({
+let renderQuality;
+const init_renderQuality = __esm({
   "src/renderQuality.ts"() {
     "use strict";
     renderQuality = chooseRenderQuality();
@@ -863,7 +865,7 @@ function AdaptiveResolution({ active }) {
   });
   return null;
 }
-var init_AdaptiveResolution = __esm({
+const init_AdaptiveResolution = __esm({
   "src/AdaptiveResolution.tsx"() {
     "use strict";
     init_renderQuality();
@@ -871,7 +873,7 @@ var init_AdaptiveResolution = __esm({
 });
 
 // src/PlanetScene.tsx
-var PlanetScene_exports = {};
+const PlanetScene_exports = {};
 __export(PlanetScene_exports, {
   default: () => PlanetScene2
 });
@@ -946,8 +948,8 @@ function PlanetScene2(props) {
     <World2 {...props} />
   </Canvas2>;
 }
-var up3;
-var init_PlanetScene = __esm({
+let up3;
+const init_PlanetScene = __esm({
   "src/PlanetScene.tsx"() {
     "use strict";
     init_globeMotion();
@@ -964,11 +966,11 @@ var init_PlanetScene = __esm({
 // src/App.tsx
 init_motion();
 import { Component, Suspense, lazy, useEffect as useEffect6, useRef as useRef5, useState as useState4 } from "react";
-var PlanetScene3 = lazy(() => Promise.resolve().then(() => (init_PlanetScene(), PlanetScene_exports)));
+const PlanetScene3 = lazy(() => Promise.resolve().then(() => (init_PlanetScene(), PlanetScene_exports)));
 function Arrow() {
   return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
-var SceneBoundary = class extends Component {
+const SceneBoundary = class extends Component {
   state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
@@ -980,7 +982,7 @@ var SceneBoundary = class extends Component {
     return this.state.failed ? <div className="scene-fallback"><p>We couldn't load the 3D view.</p><button onClick={() => location.reload()}>Try again</button></div> : this.props.children;
   }
 };
-var stories = {
+const stories = {
   "How it works": { title: "From site to screen.", paragraphs: ["Every work session starts with a machine and an operator. Log the hours, track the meters, and let the platform handle the rest.", "Fleet OS brings that visibility to life. Turn the globe and see your operation from anywhere."] },
   "For business": { title: "Your business. In full view.", paragraphs: ["Machines deployed. Hours billed. Expenses tracked. A single platform connects every side of your fleet operation.", "Fleet OS puts the people behind every machine at the heart of the journey."] },
   "Our story": { title: "Every machine tells a story.", paragraphs: ["An excavator on a remote site. A crane lifting through the morning mist. An essential piece of the puzzle, right where it needs to be.", "Fleet OS is built around a simple idea: your equipment matters, and so does how you manage it."] }
@@ -1154,7 +1156,7 @@ function StoryDialog({ story, onClose }) {
 
 // <stdin>
 init_assets();
-var css = `
+const css = `
 .orbit-delivery{font-family:var(--fleet-font-sans,'Inter',ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif);color:var(--fleet-gray-900,#080e2b);background:var(--fleet-surface-base,#f6f9ff);font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;font-weight:400;color-scheme:light}
 .orbit-delivery *{box-sizing:border-box}.orbit-delivery{margin:0}.orbit-delivery button,.orbit-delivery a{-webkit-tap-highlight-color:transparent}.orbit-delivery button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}.orbit-delivery button:disabled{cursor:default;opacity:.55}.orbit-delivery button:focus-visible,.orbit-delivery a:focus-visible{outline:2px solid var(--fleet-brand-500,#14b8a6);outline-offset:6px}.orbit-delivery a{color:inherit;text-decoration:none}.orbit-delivery svg{display:block}.orbit-delivery button svg{width:22px;height:22px}.orbit-delivery .page{height:100svh;min-height:760px;position:relative;overflow:hidden;background:var(--orbit-bg);display:flex;flex-direction:column}.orbit-delivery .site-header{height:104px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 6.5%;position:relative;z-index:5}.orbit-delivery .wordmark{display:flex;align-items:center;gap:13px;font-size:32px;font-weight:600;letter-spacing:-1.5px}.orbit-delivery .wordmark>svg{width:35px;height:35px}.orbit-delivery .site-header nav{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:49px;align-items:center}.orbit-delivery .site-header nav button{font-size:15px;color:var(--orbit-nav);padding:12px 0;transition:color .2s}.orbit-delivery .site-header nav button:hover{color:var(--orbit-accent)}.orbit-delivery .header-cta{background:white;border:1px solid var(--fleet-gray-300,#d0d5dd);color:var(--orbit-ink,#101828);border-radius:23px;padding:15px 27px;font-size:15px;position:relative;overflow:hidden;transition:border-color .3s}.orbit-delivery .header-cta::before{content:'';position:absolute;inset:0;z-index:0;background:var(--fleet-gray-900,#101828);transform:translateX(-101%);transition:transform .3s ease-in-out;border-radius:inherit}.orbit-delivery .header-cta:hover::before{transform:translateX(0)}.orbit-delivery .header-cta:hover{border-color:var(--fleet-gray-900,#101828);color:white}.orbit-delivery .header-cta:not(:disabled):hover,.orbit-delivery .explore-button:not(:disabled):hover{}.orbit-delivery main{flex:1;min-height:0;display:flex}.orbit-delivery .hero{width:100%;position:relative}.orbit-delivery .hero-copy{position:relative;z-index:3;margin-left:5%;padding-top:clamp(50px,8vh,100px);width:42%;max-width:500px;pointer-events:none}.orbit-delivery .hero-copy button{pointer-events:auto}.orbit-delivery .eyebrow{text-transform:uppercase;letter-spacing:.36em;font-size:12px;font-weight:500;color:var(--fleet-gray-400,#98a2b3);margin:0 0 21px}.orbit-delivery h1{font-size:clamp(32px,3.5vw,58px);font-weight:600;letter-spacing:-.03em;line-height:1.1;margin:0 0 16px}.orbit-delivery h1 em{font-family:inherit;font-size:1.12em;font-weight:400;letter-spacing:-.035em;color:var(--fleet-brand-500,#14b8a6);line-height:.7}.orbit-delivery .hero-description{color:var(--fleet-gray-500,#667085);font-size:clamp(13px,1vw,16px);line-height:1.5;letter-spacing:0;margin:0 0 22px;max-width:480px}.orbit-delivery .explore-button{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-width:170px;padding:15px 26px;border-radius:32px;background:white;border:1px solid var(--fleet-gray-300,#d0d5dd);color:var(--orbit-ink,#101828);font-size:15px;min-height:50px;position:relative;overflow:hidden;transition:border-color .3s,transform .2s}.orbit-delivery .explore-button::before{content:'';position:absolute;inset:0;z-index:0;background:var(--fleet-gray-900,#101828);transform:translateX(-101%);transition:transform .3s ease-in-out;border-radius:inherit}.orbit-delivery .explore-button:hover::before{transform:translateX(0)}.orbit-delivery .explore-button:hover{border-color:var(--fleet-gray-900,#101828)}.orbit-delivery .explore-button:hover>*{color:white}.orbit-delivery .explore-button:not(:disabled):hover{transform:translateY(-2px)}.orbit-delivery .explore-button:not(:disabled):active{transform:translateY(0)}.orbit-delivery .visual-column{position:absolute;right:0;top:0;width:60%;height:calc(100% + 12px);z-index:1}.orbit-delivery .planet-stage{height:100%;width:100%;position:relative;cursor:grab;touch-action:none;user-select:none;outline:none}.orbit-delivery .planet-stage:focus-visible{outline:1px dashed var(--fleet-brand-100,#ccfbf1);outline-offset:-15px;border-radius:36px}.orbit-delivery .planet-stage.dragging{cursor:grabbing}.orbit-delivery .planet-caption{position:absolute;right:6.2%;top:17%;z-index:3;width:160px;pointer-events:none;color:var(--fleet-gray-300,#d0d5dd);transition:opacity .2s}.orbit-delivery .planet-caption p{font-size:15px;line-height:1.35;font-style:italic;text-align:right;margin:0}.orbit-delivery .planet-caption svg{width:160px;height:149px;margin-top:-17px;margin-left:-32px}.orbit-delivery .planet-caption.is-dragging{opacity:.6}.orbit-delivery .cloud-bank{position:absolute;z-index:2;inset:auto -12% -90px 24%;height:250px;pointer-events:none;filter:blur(17px);opacity:.95}.orbit-delivery .cloud-bank i{position:absolute;bottom:0;background:radial-gradient(ellipse at 42% 34%,rgba(240,253,250,.95) 27%,rgba(204,251,241,.6) 59%,rgba(16,185,129,.15) 75%,transparent 80%);border-radius:50%}.orbit-delivery .cloud-bank i:nth-child(1){width:390px;height:200px;left:0;bottom:-28px;transform:rotate(-25deg)}.orbit-delivery .cloud-bank i:nth-child(2){width:265px;height:195px;left:14%;bottom:32px}.orbit-delivery .cloud-bank i:nth-child(3){width:270px;height:170px;left:29%;bottom:-2px}.orbit-delivery .cloud-bank i:nth-child(4){width:350px;height:200px;right:7%;bottom:-20px}.orbit-delivery .cloud-bank i:nth-child(5){width:280px;height:215px;right:-2%;bottom:70px}.orbit-delivery .site-footer{position:absolute;bottom:43px;left:6.5%;right:5.1%;z-index:4;display:flex;align-items:flex-end;justify-content:space-between;pointer-events:none}.orbit-delivery .site-footer p{margin:0;text-transform:uppercase;font-size:10px;letter-spacing:.25em;line-height:1.8;color:var(--fleet-gray-400,#98a2b3)}.orbit-delivery .footer-left::before{content:'';display:block;width:25px;height:1px;background:var(--fleet-border,#eaecf0);margin-bottom:14px}.orbit-delivery .footer-right{text-align:right}.orbit-delivery .motion-button{display:flex;gap:7px;align-items:center;color:var(--fleet-gray-400,#98a2b3);pointer-events:auto;font-size:10px;letter-spacing:.02em;opacity:.8;padding:8px}.orbit-delivery .motion-button:hover{opacity:1}.orbit-delivery .motion-button svg{width:15px;height:15px}.orbit-delivery .loading{position:absolute;top:42%;left:25%;right:20%;display:flex;align-items:center;justify-content:center;gap:12px;color:var(--fleet-gray-400,#98a2b3);font-size:12px;pointer-events:none}.orbit-delivery .loading>span{width:17px;height:17px;border:1px solid var(--fleet-border,#eaecf0);border-top-color:var(--fleet-brand-500,#14b8a6);border-radius:50%;animation:loading 1.2s linear infinite}@keyframes loading{to{transform:rotate(360deg)}}.orbit-delivery .scene-fallback{position:absolute;inset:35% 20%;font-size:15px;text-align:center;color:var(--fleet-gray-500,#667085);z-index:5}.orbit-delivery .scene-fallback button{background:var(--fleet-brand-600,#0d9488);border-radius:20px;color:white;padding:10px 20px}.orbit-delivery .about-dialog{border:1px solid var(--fleet-border,#eaecf0);border-radius:22px;padding:48px;max-width:510px;width:calc(100% - 32px);background:var(--fleet-surface-raised,#ffffff);color:var(--fleet-gray-900,#101828);box-shadow:0 25px 120px rgba(16,24,40,.08)}.orbit-delivery .about-dialog::backdrop{background:rgba(16,24,40,.3);backdrop-filter:blur(8px)}.orbit-delivery .about-dialog h2{font-size:36px;font-weight:500;letter-spacing:-1.6px;line-height:1.15;margin:26px 0 22px}.orbit-delivery .about-dialog p{font-size:15px;line-height:1.75;color:var(--fleet-gray-500,#667085)}.orbit-delivery .about-dialog .explore-button{margin-top:16px;font-size:14px}.orbit-delivery .close-dialog{position:absolute;right:20px;top:10px;font-size:30px;color:var(--fleet-gray-400,#98a2b3)}.orbit-delivery .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.orbit-delivery .prototype-label{position:fixed;bottom:12px;left:12px;z-index:8;background:#fff;border:1px solid var(--fleet-border,#eaecf0);border-radius:6px;padding:12px;font:11px monospace}.orbit-delivery .prototype-label a{margin-left:18px;text-decoration:underline}
 @media(min-width:1800px){.orbit-delivery .hero-copy{padding-top:15vh}.orbit-delivery .page{min-height:950px}}

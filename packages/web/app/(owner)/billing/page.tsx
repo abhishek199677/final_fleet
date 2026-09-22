@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Download, CreditCard, TrendingUp, AlertCircle, Receipt, IndianRupee, Plus } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
+import { fetchListStrict } from '@/lib/api/fetch-list';
 import { ApiErrorBanner } from '@/components/api-error-banner';
 
 interface Row extends Record<string, unknown> {
@@ -155,7 +155,7 @@ export default function BillingPage() {
 
   return (
     <div className="space-y-6">
-      {apiError && <ApiErrorBanner onRetry={load} />}
+      {apiError && <ApiErrorBanner onRetry={() => { void load(); }} />}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Billing</h1>

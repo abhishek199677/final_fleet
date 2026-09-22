@@ -1,7 +1,6 @@
 'use client';
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import {
@@ -132,7 +131,6 @@ function ProgressRing({ value, size = 44, stroke = 4 }: { value: number; size?: 
 }
 
 function DashboardInner() {
-  const t = useTranslations('dashboard');
   const { user } = useAuth();
   const searchParams = useSearchParams();
   void searchParams;
@@ -140,9 +138,6 @@ function DashboardInner() {
   const [nonce, setNonce] = useState(0);
   const [period, setPeriod] = useState<'today' | 'month' | 'year'>('today');
   const [apiError, setApiError] = useState(false);
-
-  const nowTs = Date.now();
-  const hr = 3_600_000;
 
   const [kpis, setKpis] = useState<Row | null>(null);
   const [machines, setMachines] = useState<Row[]>([]);
@@ -217,19 +212,6 @@ function DashboardInner() {
     return d.getTime();
   }, [now]);
 
-  const periodRange = useMemo(() => {
-    const d = new Date(now);
-    if (period === 'today') {
-      return { from: todayStart, to: todayStart + 86_400_000, label: 'Today' };
-    }
-    if (period === 'month') {
-      const start = new Date(d.getFullYear(), d.getMonth(), 1).getTime();
-      return { from: start, to: todayStart + 86_400_000, label: 'This Month' };
-    }
-    const start = new Date(d.getFullYear(), 0, 1).getTime();
-    return { from: start, to: todayStart + 86_400_000, label: 'This Year' };
-  }, [now, todayStart, period]);
-
   const activeIdsToday = useMemo(
     () => new Set(sessions.filter((s) => ts(s.start_at ?? s.created_at) >= todayStart).map((s) => String(s.machine_id))),
     [sessions, todayStart],
@@ -241,14 +223,6 @@ function DashboardInner() {
   );
 
   const fleetActive = machines.filter((m) => !['retired', 'inactive'].includes(String(m.status_flag ?? '').toLowerCase()));
-
-  const periodSessions = useMemo(
-    () => sessions.filter((s) => {
-      const t = ts(s.start_at ?? s.created_at);
-      return t >= periodRange.from && t < periodRange.to;
-    }),
-    [sessions, periodRange],
-  );
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { working: 0, log_pending: 0, stopped: 0, transit: 0, service: 0 };
@@ -270,7 +244,7 @@ function DashboardInner() {
         code: String(m.code ?? '—'),
         make: String(m.make ?? ''),
         model: String(m.model ?? ''),
-        status: (String(m._status) as string) || 'log_pending',
+        status: (String(m._status)) || 'log_pending',
         site: String(site?.name ?? '—'),
         todayHours: Math.round(unitsToday * 10) / 10,
       };

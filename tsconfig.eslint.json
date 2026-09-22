@@ -6,6 +6,11 @@
     "noEmit": true,
     "rootDir": "."
   },
-  "include": ["vitest.config.ts", ".eslintrc.cjs"],
+  "include": [
+    "vitest.config.ts",
+    ".eslintrc.cjs",
+    "packages/web/vitest.config.ts",
+    "packages/web/playwright.config.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

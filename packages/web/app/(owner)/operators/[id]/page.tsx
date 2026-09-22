@@ -87,7 +87,7 @@ export default function OperatorDetail() {
           {editing ? (
             <>
               <Button variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
-              <Button onClick={handleSave} disabled={saving}>
+              <Button onClick={() => { void handleSave(); }} disabled={saving}>
                 {saving ? 'Saving...' : 'Save Changes'}
               </Button>
             </>

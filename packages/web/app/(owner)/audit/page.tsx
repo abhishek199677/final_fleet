@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { History, Filter, User, FileText, AlertTriangle, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
+import { fetchListStrict } from '@/lib/api/fetch-list';
 import { ApiErrorBanner } from '@/components/api-error-banner';
 
 interface Row extends Record<string, unknown> {
@@ -140,7 +140,7 @@ export default function AuditPage() {
 
   return (
     <div className="space-y-6">
-      {apiError && <ApiErrorBanner onRetry={load} />}
+      {apiError && <ApiErrorBanner onRetry={() => { void load(); }} />}
       <div>
         <h1 className="text-3xl font-bold">Audit</h1>
         <p className="text-muted-foreground mt-1">Every write, filterable. Voids create new versions with a reason.</p>

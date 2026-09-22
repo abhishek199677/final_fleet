@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth/context';
 import {
-  ArrowRight, BarChart3, Shield, Zap, Globe, Users, CheckCircle2,
-  Truck, Clock, FileText, Building2, TrendingUp,
+  ArrowRight, BarChart3, Shield, Zap, Globe, CheckCircle2,
+  Truck, Clock, FileText, Building2,
 } from 'lucide-react';
 import { InteractiveHoverButton } from '@/components/ui/interactive-hover-button';
 import dynamic from 'next/dynamic';
