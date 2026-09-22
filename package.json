@@ -11,6 +11,8 @@
     "test:finance-denial": "DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/fleetos\" node packages/db/generators/test-finance-denial.js",
     "test:append-only": "DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/fleetos\" node packages/db/generators/test-append-only.js",
     "test:e2e": "playwright test",
+    "pipeline": "node scripts/pipeline.js",
+    "test:e2e-api": "node scripts/e2e-pipeline.js",
     "db:migrate": "DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/fleetos\" pnpm --filter @fleetos/db exec node-pg-migrate up --migrations-dir migrations --database-url-env-var DATABASE_URL",
     "db:seed": "cd packages/db && node seed.js",
     "db:lint": "DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/fleetos\" node packages/db/linters/migration-linter.js",
