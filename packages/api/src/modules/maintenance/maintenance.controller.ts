@@ -10,6 +10,12 @@ import { TenantRequest } from '../../common/middleware/tenant-context.middleware
 export class MaintenanceController {
   constructor(private service: MaintenanceService) {}
 
+  @Get('tasks')
+  @ApiOperation({ summary: 'List maintenance tasks for the tenant (settings page)' })
+  getAllTasks(@Req() req: TenantRequest) {
+    return this.service.getAllTasks(req.tenant!.tenantId);
+  }
+
   @Get('machines/:machineId/tasks')
   @ApiOperation({ summary: 'Get maintenance tasks for a machine' })
   getTasks(@Req() req: TenantRequest, @Param('machineId') machineId: string) {

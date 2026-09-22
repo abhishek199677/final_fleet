@@ -11,6 +11,12 @@ export class MaintenanceService {
     return result.rows;
   }
 
+  async getAllTasks(tenantId: string) {
+    const result = await this.db.queryWithTenant(tenantId, 'ops',
+      `SELECT * FROM tenant.maintenance_tasks WHERE tenant_id = $1 ORDER BY name`, [tenantId]);
+    return result.rows;
+  }
+
   async getVisits(tenantId: string, machineId: string) {
     const result = await this.db.queryWithTenant(tenantId, 'ops',
       `SELECT mv.*, ARRAY_AGG(mvt.task_id) AS task_ids

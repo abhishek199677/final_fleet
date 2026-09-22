@@ -206,6 +206,8 @@ const PASSWORD = 'Pipeline!1234';
     api('POST', '/v1/maintenance/visits', { machine_id: ids.m1, visit_date: day(-5), visit_type: 'scheduled', mechanic: 'In-house', meter_at_visit: 1050, client_uuid: uuid() }, T));
   await step('GET /v1/maintenance/machines/:id/status', nonEmpty, () =>
     api('GET', `/v1/maintenance/machines/${ids.m1}/status`, undefined, T));
+  await step('GET /v1/maintenance/tasks (tenant-wide settings list)', nonEmpty, () =>
+    api('GET', '/v1/maintenance/tasks', undefined, T));
 
   // ── billing (FIX1) ──────────────────────────────────────────────────
   section = 'billing';
