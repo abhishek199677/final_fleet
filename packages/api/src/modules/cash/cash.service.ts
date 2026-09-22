@@ -11,6 +11,19 @@ export class CashService {
     return result.rows;
   }
 
+  /**
+   * Create a cash account. There was no way to create one after register
+   * (no endpoint, no UI), which dead-ended counts/transfers/expenses for
+   * any tenant whose seed row was missing.
+   */
+  async createAccount(tenantId: string, data: Record<string, unknown>) {
+    const result = await this.db.queryWithTenant(tenantId, 'owner',
+      `INSERT INTO tenant.cash_accounts (tenant_id, name, type, currency, is_default)
+       VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+      [tenantId, data.name, data.type ?? 'site_cash', data.currency || 'INR', data.is_default ?? false]);
+    return result.rows[0];
+  }
+
   /** Expected balance, last count and variance per account (CSH-04, owner only). */
   async getExpected(tenantId: string) {
     const result = await this.db.queryWithTenant(tenantId, 'owner',

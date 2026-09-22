@@ -216,10 +216,12 @@ export class BillingEngine {
       const available = Number(advance.amount_minor) - Number(advance.consumed);
       const toConsume = Math.min(available, remaining);
       if (toConsume <= 0) continue;
+      // tenant_id must be explicit: advance_consumptions has RLS
+      // (tenant_id = current_setting('app.tenant_id')) and NOT NULL on it.
       await this.db.queryWithTenant(tenantId, 'owner',
-        `INSERT INTO tenant.advance_consumptions (advance_id, billing_ledger_id, base_minor, date)
-         VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING`,
-        [advance.id, ledgerId, Math.round(toConsume), today]);
+        `INSERT INTO tenant.advance_consumptions (tenant_id, advance_id, billing_ledger_id, base_minor, date)
+         VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
+        [tenantId, advance.id, ledgerId, Math.round(toConsume), today]);
       remaining -= toConsume;
     }
   }

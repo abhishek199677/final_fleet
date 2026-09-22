@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Pool, PoolConfig } from 'pg';
+import { requestStore } from '../context/request-context';
 
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
@@ -85,6 +86,16 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       try {
         await client.query(`SET LOCAL ROLE ${role === 'owner' ? 'app_owner' : 'app_ops'}`);
         await client.query(`SET LOCAL app.tenant_id = '${tenantId}'`);
+        // Stamp the acting user for fn_audit triggers (read lazily: the JWT
+        // guard runs after the request context is created).
+        const store = requestStore.getStore();
+        const userId = (store?.user as Record<string, unknown> | undefined)?.id;
+        if (
+          typeof userId === 'string' &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)
+        ) {
+          await client.query(`SET LOCAL app.user_id = '${userId}'`);
+        }
         const result = await client.query(text, params);
         await client.query('COMMIT');
         return result;

@@ -1,8 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import type { Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { ProblemErrorFilter } from './common/filters/problem-error.filter';
+import { requestStore } from './common/context/request-context';
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 
@@ -25,6 +27,11 @@ async function bootstrap() {
 
   app.setGlobalPrefix('v1');
   app.enableCors();
+  // Expose the in-flight request to database transactions so audit rows
+  // record who made the change (req.user is only populated by the guard).
+  app.use((req: Request, _res: Response, next: () => void) => {
+    requestStore.run(req, next);
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

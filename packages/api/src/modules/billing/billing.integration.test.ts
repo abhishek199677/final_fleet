@@ -67,7 +67,11 @@ describe('Billing Engine Integration', () => {
     );
     expect(Array.isArray(result.rows)).toBe(true);
     for (const row of result.rows) {
-      expect(typeof row.outstanding_minor).toBe('string'); // numeric comes as string in pg
+      // v_client_receivable exposes billed/extras/credits/receipts and the
+      // consumed advances — numeric columns come back as strings from pg.
+      expect(typeof row.billed_minor).toBe('string');
+      expect(typeof row.receipts_minor).toBe('string');
+      expect(typeof row.advances_consumed_minor).toBe('string');
     }
   });
 

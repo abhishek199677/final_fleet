@@ -1,9 +1,11 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, Logger } from '@nestjs/common';
 import { Response } from 'express';
 import { API_ERROR_CODES } from './error-codes';
 
 @Catch()
 export class ProblemErrorFilter implements ExceptionFilter {
+  private readonly logger = new Logger(ProblemErrorFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -34,6 +36,15 @@ export class ProblemErrorFilter implements ExceptionFilter {
       });
       return;
     }
+
+    // Never swallow unexpected failures silently: the client still gets a
+    // generic 500, but the operator gets the message, Postgres code and stack.
+    const err = exception instanceof Error ? exception : null;
+    const pgDetail = typeof pgCode === 'string' ? ` (postgres ${pgCode})` : '';
+    this.logger.error(
+      `Unhandled exception${pgDetail}: ${err ? err.message : String(exception)}`,
+      err?.stack,
+    );
 
     response.status(500).json({
       type: 'about:blank',

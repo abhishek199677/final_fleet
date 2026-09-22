@@ -14,6 +14,14 @@ export class CashController {
   @ApiOperation({ summary: 'List cash accounts' })
   getAccounts(@Req() req: TenantRequest) { return this.service.getAccounts(req.tenant!.tenantId); }
 
+  @Post('accounts')
+  @ApiOperation({ summary: 'Create a cash account (owner only)' })
+  @UseGuards(RolesGuard)
+  @Roles('owner')
+  createAccount(@Req() req: TenantRequest, @Body() dto: Record<string, unknown>) {
+    return this.service.createAccount(req.tenant!.tenantId, dto);
+  }
+
   @Get('expected')
   @ApiOperation({ summary: 'Expected balance, last count and variance per account (owner only)' })
   @UseGuards(RolesGuard)
