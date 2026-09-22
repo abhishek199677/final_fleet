@@ -34,3 +34,16 @@ export async function fetchList<T>(path: string, options: RequestInit = {}): Pro
     return [];
   }
 }
+
+/**
+ * Strict variant: THROWS on HTTP error or network failure so callers can
+ * distinguish "API is down" (catch → show error banner) from
+ * "API is up but database is empty" (empty array → show empty state).
+ */
+export async function fetchListStrict<T>(path: string, options: RequestInit = {}): Promise<T[]> {
+  const res = await authFetch(path, options);
+  if (!res.ok) {
+    throw new Error(`API ${res.status} on ${path}`);
+  }
+  return toArray<T>(await res.json());
+}

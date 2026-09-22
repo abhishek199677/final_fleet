@@ -70,7 +70,7 @@ export default function OwnerClients() {
           <p className="text-muted-foreground mt-1">Manage your client relationships and projects</p>
         </div>
         <Link href="/clients/new">
-          <Button className="bg-gradient-to-r from-gray-900 to-gray-800 hover:from-emerald-600 hover:to-teal-600">
+          <Button >
             <span className="mr-2">+</span> Add Client
           </Button>
         </Link>
@@ -123,7 +123,7 @@ export default function OwnerClients() {
             <div className="text-6xl mb-4">🏢</div>
             <p className="text-gray-500 text-lg mb-2">No clients yet</p>
             <p className="text-gray-400 text-sm">Add your first client to start managing projects</p>
-            <Button className="mt-6 bg-gradient-to-r from-gray-900 to-gray-800">
+            <Button className="mt-6">
               <span className="mr-2">+</span> Add First Client
             </Button>
           </CardContent>

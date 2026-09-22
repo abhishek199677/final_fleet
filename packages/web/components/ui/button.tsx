@@ -6,26 +6,26 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 outline-none overflow-hidden group",
+  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 outline-none overflow-hidden group rounded-xl",
   {
     variants: {
       variant: {
         default:
-          'bg-gradient-to-br from-zinc-700 via-zinc-600 to-zinc-800 text-white border border-zinc-500/30 hover:from-zinc-600 hover:via-zinc-500 hover:to-zinc-700',
+          'border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 hover:border-neutral-900 dark:hover:border-neutral-100',
         destructive:
-          'bg-gradient-to-br from-red-900 via-red-800 to-red-950 text-white border border-red-500/30 hover:from-red-800 hover:via-red-700 hover:to-red-900',
+          'border border-red-300 dark:border-red-600 bg-white dark:bg-neutral-900 text-red-700 dark:text-red-400 hover:border-red-600 dark:hover:border-red-400',
         outline:
-          'bg-transparent border border-zinc-500/30 text-zinc-100 hover:bg-zinc-800/50',
+          'border border-neutral-300 dark:border-neutral-600 bg-transparent text-neutral-700 dark:text-neutral-300 hover:border-neutral-900 dark:hover:border-neutral-100',
         secondary:
-          'bg-gradient-to-br from-zinc-800 via-zinc-700 to-zinc-900 text-zinc-100 border border-zinc-600/30 hover:from-zinc-700 hover:via-zinc-600 hover:to-zinc-800',
+          'border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:border-neutral-900 dark:hover:border-neutral-100',
         ghost:
-          'bg-transparent text-zinc-100 border border-transparent hover:bg-zinc-800/50',
-        link: 'text-zinc-100 underline-offset-4 hover:underline bg-transparent border-none p-0 h-auto',
+          'border border-transparent text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800',
+        link: 'text-neutral-900 dark:text-neutral-100 underline-offset-4 hover:underline bg-transparent border-none p-0 h-auto',
       },
       size: {
-        default: 'h-10 px-5 py-2.5 rounded-xl',
+        default: 'h-10 px-5 py-2.5',
         sm: 'h-8 rounded-lg px-3.5 text-xs',
-        lg: 'h-12 rounded-xl px-7 text-base',
+        lg: 'h-12 px-7 text-base',
         icon: 'h-10 w-10 rounded-xl p-0',
       },
     },
@@ -46,48 +46,10 @@ function Button({
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
   }) {
-  const Comp = asChild ? Slot : 'button';
-  const [mousePosition, setMousePosition] = React.useState({ x: 50, y: 50 });
-  const [isPressed, setIsPressed] = React.useState(false);
-  const [isHovered, setIsHovered] = React.useState(false);
-  const buttonRef = React.useRef<HTMLButtonElement>(null);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!buttonRef.current) return;
-    const rect = buttonRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setMousePosition({ x, y });
-  };
-
-  const handleMouseDown = () => setIsPressed(true);
-  const handleMouseUp = () => setIsPressed(false);
-  const handleMouseEnter = () => setIsHovered(true);
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    setIsPressed(false);
-    setMousePosition({ x: 50, y: 50 });
-  };
-
-  const mergedRef = React.useCallback(
-    (node: HTMLButtonElement | null) => {
-      (buttonRef as React.MutableRefObject<HTMLButtonElement | null>).current = node;
-    },
-    []
-  );
-
   if (asChild) {
     return (
       <Slot
         className={cn(buttonVariants({ variant, size, className }))}
-        onMouseMove={handleMouseMove}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        style={{
-          transform: isPressed ? 'scale(0.97)' : isHovered ? 'scale(1.02)' : 'scale(1)',
-        }}
       >
         {props.children}
       </Slot>
@@ -96,77 +58,24 @@ function Button({
 
   return (
     <button
-      ref={mergedRef}
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
-      onMouseMove={handleMouseMove}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        transform: isPressed ? 'scale(0.97)' : isHovered ? 'scale(1.02)' : 'scale(1)',
-      }}
       {...props}
     >
-      {/* Metallic shimmer layer */}
-      <div
-        className="absolute inset-0 z-0 transition-opacity duration-500 pointer-events-none"
-        style={{
-          background: `radial-gradient(circle at ${mousePosition.x}% ${mousePosition.y}%, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 20%, rgba(255,255,255,0.05) 40%, transparent 60%)`,
-          opacity: isHovered ? 1 : 0,
-        }}
-      />
-
-      {/* Liquid metal edge glow */}
-      <div
-        className="absolute inset-0 z-0 rounded-[inherit] opacity-0 transition-opacity duration-500 pointer-events-none"
-        style={{
-          background: `radial-gradient(circle at ${mousePosition.x}% ${mousePosition.y}%, rgba(180,180,220,0.5) 0%, rgba(120,120,180,0.3) 30%, transparent 60%)`,
-          opacity: isHovered ? 1 : 0,
-        }}
-      />
-
-      {/* Top highlight bar */}
-      <div
-        className="absolute top-0 left-0 right-0 z-0 h-[1px] opacity-60 pointer-events-none"
-        style={{
-          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 20%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0.4) 80%, transparent 100%)',
-        }}
-      />
-
-      {/* Bottom highlight bar */}
-      <div
-        className="absolute bottom-0 left-0 right-0 z-0 h-[1px] opacity-40 pointer-events-none"
-        style={{
-          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 20%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.2) 80%, transparent 100%)',
-        }}
-      />
-
-      {/* Liquid ripple effect */}
-      <div
-        className="absolute inset-0 z-0 rounded-[inherit] transition-all duration-300 pointer-events-none"
-        style={{
-          background: `radial-gradient(circle at ${mousePosition.x}% ${mousePosition.y}%, rgba(255,255,255,0.15) 0%, transparent 50%)`,
-          transform: isPressed ? 'scale(0.95)' : 'scale(1)',
-        }}
-      />
-
-      {/* Metallic border glow */}
-      <div
-        className="absolute inset-0 z-0 rounded-[inherit] opacity-0 transition-opacity duration-500 pointer-events-none"
-        style={{
-          boxShadow: `
-            inset 0 0 20px rgba(180,180,220,0.3),
-            0 0 20px rgba(180,180,220,0.2),
-            0 0 40px rgba(120,120,180,0.1)
-          `,
-          opacity: isHovered ? 1 : 0,
-        }}
-      />
-
+      {/* Slide-in fill overlay */}
+      <span className="absolute inset-0 z-0 -translate-x-full rounded-[inherit] bg-neutral-900 dark:bg-neutral-100 transition-transform duration-300 ease-in-out group-hover:translate-x-0" />
+      {/* Arrow icon */}
+      <svg
+        className="relative z-10 h-3.5 w-3.5 -translate-x-1 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2.5}
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+      </svg>
       {/* Content */}
-      <span className="relative z-10 flex items-center gap-2">
+      <span className="relative z-10 flex items-center gap-2 transition-colors duration-300 group-hover:text-white dark:group-hover:text-black">
         {props.children}
       </span>
     </button>

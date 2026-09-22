@@ -1,12 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth/context';
 import {
   ArrowRight, BarChart3, Shield, Zap, Globe, Users, CheckCircle2,
   Truck, Clock, FileText, Building2, TrendingUp,
 } from 'lucide-react';
-import { LiquidButton } from '@/components/ui/liquid-glass-button';
+import { InteractiveHoverButton } from '@/components/ui/interactive-hover-button';
+import dynamic from 'next/dynamic';
+
+// The Orbit hero boots a WebGL canvas and reads browser-only APIs, so skip SSR.
+const OrbitDeliveryHero = dynamic(
+  () => import('@/components/ui/orbit-delivery-hero'),
+  { ssr: false },
+);
 
 const FEATURES = [
   {
@@ -58,8 +66,23 @@ const LOGOS = [
   'Caterpillar', 'Komatsu', 'Volvo CE', 'Hitachi', 'Liebherr', 'JCB',
 ];
 
+// Story dialogs owned by the Orbit hero; opened from the sticky nav below.
+const ORBIT_STORIES = ['How it works', 'For business', 'Our story'] as const;
+
 export default function LandingPage() {
   const { user, loading } = useAuth();
+  const [orbitStory, setOrbitStory] = useState<string | null>(null);
+  const [heroOpacity, setHeroOpacity] = useState(1);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const scrollY = window.scrollY;
+      const opacity = 1 - Math.min(Math.max((scrollY - 80) / 350, 0), 1);
+      setHeroOpacity(opacity);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   if (loading) {
     return (
@@ -108,6 +131,16 @@ export default function LandingPage() {
             <a href="#features" className="text-sm font-medium text-gray-500 transition-colors hover:text-gray-900">Features</a>
             <a href="#security" className="text-sm font-medium text-gray-500 transition-colors hover:text-gray-900">Security</a>
             <a href="#metrics" className="text-sm font-medium text-gray-500 transition-colors hover:text-gray-900">Performance</a>
+            {ORBIT_STORIES.map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setOrbitStory(item)}
+                className="cursor-pointer text-sm font-medium text-gray-500 transition-colors hover:text-gray-900"
+              >
+                {item}
+              </button>
+            ))}
           </div>
           <div className="flex items-center gap-3">
             <Link
@@ -127,63 +160,17 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero — dramatic gradient background */}
-      <section className="relative overflow-hidden">
-        {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-teal-900" />
-        {/* Subtle grid overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
-            backgroundSize: '60px 60px',
-          }}
+      {/* Hero — Orbit Delivery interactive 3D hero — fades on scroll */}
+      <div
+        className="landing-hero transition-opacity duration-300 ease-out"
+        style={{ opacity: heroOpacity }}
+      >
+        <OrbitDeliveryHero
+          theme="auto"
+          story={orbitStory}
+          onStoryChange={setOrbitStory}
         />
-        {/* Glow orbs */}
-        <div className="absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-teal-500/20 blur-[120px]" />
-        <div className="absolute -bottom-40 -left-40 h-[400px] w-[400px] rounded-full bg-emerald-500/15 blur-[100px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[300px] w-[300px] rounded-full bg-cyan-500/10 blur-[80px]" />
-
-        <div className="relative mx-auto max-w-7xl px-4 py-28 sm:px-6 sm:py-36 lg:px-8">
-          <div className="mx-auto max-w-4xl text-center">
-            {/* Badge */}
-            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-medium text-teal-300 backdrop-blur-sm">
-              <Zap className="h-3.5 w-3.5" />
-              Built for heavy-equipment operators
-            </div>
-
-            {/* Headline */}
-            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl xl:text-7xl">
-              Know your fleet.
-              <br />
-              <span className="bg-gradient-to-r from-teal-300 via-emerald-300 to-cyan-300 bg-clip-text text-transparent">
-                Bill with confidence.
-              </span>
-            </h1>
-
-            {/* Subheading */}
-            <p className="mt-6 text-lg leading-relaxed text-gray-300 sm:text-xl max-w-2xl mx-auto">
-              Fleet OS gives equipment operators real-time visibility into daily work, billing,
-              cash flow, and maintenance — without spreadsheets or manual data entry.
-            </p>
-
-            {/* CTA buttons */}
-            <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <LiquidButton href="/register" size="lg">
-                Start free trial
-                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
-              </LiquidButton>
-              <LiquidButton href="/login" size="lg" className="!bg-white/[0.04] !border-white/12">
-                Sign in to existing account
-              </LiquidButton>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
-      </section>
+      </div>
 
       {/* Social proof */}
       <section className="py-12">
@@ -341,13 +328,12 @@ export default function LandingPage() {
             Start your free trial today. No credit card required.
           </p>
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <LiquidButton href="/register" size="lg">
-              Start free trial
-              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
-            </LiquidButton>
-            <LiquidButton href="/login" size="lg" className="!bg-white/[0.04] !border-white/12">
-              Sign in to existing account
-            </LiquidButton>
+            <InteractiveHoverButton className="!bg-white dark:!bg-neutral-900 !border-white/20 !text-gray-900 dark:!text-white !px-8 !py-3.5 !text-base !rounded-xl hover:!bg-neutral-900 hover:!text-white dark:hover:!bg-white dark:hover:!text-black">
+              <Link href="/register">Start free trial</Link>
+            </InteractiveHoverButton>
+            <InteractiveHoverButton className="!bg-white/[0.04] !border-white/12 !text-white !px-8 !py-3.5 !text-base !rounded-xl">
+              <Link href="/login">Sign in to existing account</Link>
+            </InteractiveHoverButton>
           </div>
         </div>
       </section>

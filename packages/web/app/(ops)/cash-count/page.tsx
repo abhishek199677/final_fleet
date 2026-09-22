@@ -72,7 +72,7 @@ export default function CashCount() {
             <h2 className="text-lg font-semibold text-slate-900">View Only</h2>
           </div>
           <p className="text-slate-500">Cash counts can only be performed by operations staff.</p>
-          <Button variant="outline" className="mt-4 border-[#E5E2DB] text-slate-700 hover:bg-slate-50" onClick={() => router.back()}>Go Back</Button>
+          <Button variant="outline" className="mt-4" onClick={() => router.back()}>Go Back</Button>
         </div>
       ) : (
         <div className="rounded-xl border border-[#E5E2DB] bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
@@ -108,8 +108,8 @@ export default function CashCount() {
               Total: ₹{(total / 100).toFixed(2)}
             </div>
             <div className="flex gap-4">
-              <Button onClick={() => void handleSubmit()} disabled={!selectedAccount || loading} className="bg-violet-600 text-white hover:bg-violet-700">{loading ? 'Saving...' : 'Submit Count'}</Button>
-              <Button variant="outline" onClick={() => router.back()} className="border-[#E5E2DB] text-slate-700 hover:bg-slate-50">Cancel</Button>
+              <Button onClick={() => void handleSubmit()} disabled={!selectedAccount || loading}>{loading ? 'Saving...' : 'Submit Count'}</Button>
+              <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
             </div>
           </div>
         </div>

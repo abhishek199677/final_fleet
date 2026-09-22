@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Headphones, MessageCircle, Send, CheckCircle, Clock, AlertCircle, HelpCircle } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { fetchList } from '@/lib/api/fetch-list';
+import { fetchListStrict } from '@/lib/api/fetch-list';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 
 interface Row extends Record<string, unknown> {
   id?: string;
@@ -25,8 +26,17 @@ export default function SupportPage() {
   const [description, setDescription] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [apiError, setApiError] = useState(false);
+  const [sendError, setSendError] = useState(false);
 
-  const load = () => void fetchList<Row>('/api/v1/support/tickets').then(setTickets).catch(() => undefined);
+  const load = async () => {
+    setApiError(false);
+    try {
+      setTickets(await fetchListStrict<Row>('/api/v1/support/tickets'));
+    } catch {
+      setApiError(true);
+    }
+  };
 
   useEffect(() => {
     void load();
@@ -35,38 +45,32 @@ export default function SupportPage() {
   const submit = async (ev: React.FormEvent) => {
     ev.preventDefault();
     setSending(true);
+    setSendError(false);
     try {
       const res = await authFetch('/api/v1/support/tickets', {
         method: 'POST',
         body: JSON.stringify({ subject, description: description || undefined }),
       });
-      if (res.ok) {
-        setSubject('');
-        setDescription('');
-        setSent(true);
-        void load();
-        setTimeout(() => setSent(false), 4000);
+      if (!res.ok) {
+        setSendError(true);
         return;
       }
-    } catch { /* fallback to demo */ }
-    
-    // Demo mode: add ticket locally
-    const newTicket = {
-      id: `t${Date.now()}`,
-      subject,
-      description,
-      status: 'open',
-      created_at: new Date().toISOString(),
-    };
-    setTickets(prev => [newTicket, ...prev]);
-    setSubject('');
-    setDescription('');
-    setSent(true);
-    setTimeout(() => setSent(false), 4000);
+      setSubject('');
+      setDescription('');
+      setSent(true);
+      void load();
+      setTimeout(() => setSent(false), 4000);
+    } catch {
+      // Never fabricate a ticket locally — surface the failure instead.
+      setSendError(true);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
     <div className="space-y-6">
+      {apiError && <ApiErrorBanner onRetry={() => void load()} />}
       <div>
         <h1 className="text-3xl font-bold">Support</h1>
         <p className="text-muted-foreground mt-1">Report a problem to Perceptiqx — issues route to WhatsApp</p>
@@ -141,6 +145,12 @@ export default function SupportPage() {
                   <><Send className="h-4 w-4" /> Send Ticket</>
                 )}
               </Button>
+              {sendError && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg border border-red-200">
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                  <p className="text-sm text-red-700">Could not send ticket — check that the API server is running and try again.</p>
+                </div>
+              )}
               {sent && (
                 <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg border border-green-200">
                   <CheckCircle className="h-5 w-5 text-green-600" />

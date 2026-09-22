@@ -15,6 +15,8 @@ function NewDeploymentInner() {
   const [machines, setMachines] = useState<Record<string, unknown>[]>([]);
   const [clients, setClients] = useState<Record<string, unknown>[]>([]);
   const [sites, setSites] = useState<Record<string, unknown>[]>([]);
+  const [deployedMachineIds, setDeployedMachineIds] = useState<Set<string>>(new Set());
+  const [deployedSiteByMachine, setDeployedSiteByMachine] = useState<Map<string, string>>(new Map());
   const [formData, setFormData] = useState({
     machine_id: '',
     client_id: '',
@@ -32,10 +34,24 @@ function NewDeploymentInner() {
       fetchList<Record<string, unknown>>('/api/v1/machines'),
       fetchList<Record<string, unknown>>('/api/v1/clients'),
       fetchList<Record<string, unknown>>('/api/v1/sites'),
-    ]).then(([m, c, s]) => {
+      fetchList<Record<string, unknown>>('/api/v1/deployments'),
+    ]).then(([m, c, s, d]) => {
       setMachines(m);
       setClients(c);
       setSites(s);
+      // Mark machines that already have an active deployment so the user
+      // can't pick them (prevents the unique-constraint 500).
+      const siteNameById = new Map(s.map((site) => [String(site.id), String(site.name ?? 'Unknown site')]));
+      const activeIds = new Set<string>();
+      const siteByMachine = new Map<string, string>();
+      for (const dep of d) {
+        if (String(dep.status ?? 'active') === 'active') {
+          activeIds.add(String(dep.machine_id));
+          siteByMachine.set(String(dep.machine_id), siteNameById.get(String(dep.site_id)) ?? 'another site');
+        }
+      }
+      setDeployedMachineIds(activeIds);
+      setDeployedSiteByMachine(siteByMachine);
       // If site is pre-selected (from Deploy Machine button), auto-select client
       if (preselectedSiteId) {
         const preselectedSite = s.find((site) => site.id === preselectedSiteId);
@@ -74,6 +90,10 @@ function NewDeploymentInner() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (deployedMachineIds.has(formData.machine_id)) {
+      alert(`This machine is already deployed at ${deployedSiteByMachine.get(formData.machine_id)}. End that deployment first.`);
+      return;
+    }
     setLoading(true);
     try {
       const res = await authFetch('/api/v1/deployments', {
@@ -130,12 +150,21 @@ function NewDeploymentInner() {
                 required
               >
                 <option value="">Select machine...</option>
-                {machines.map((m: Record<string, unknown>) => (
-                  <option key={m.id as string} value={m.id as string}>
-                    {m.code as string} — {m.type as string}
-                  </option>
-                ))}
+                {machines.map((m: Record<string, unknown>) => {
+                  const mid = String(m.id);
+                  const deployed = deployedMachineIds.has(mid);
+                  return (
+                    <option key={mid} value={mid} disabled={deployed}>
+                      {m.code as string} — {m.type as string}{deployed ? ` (deployed at ${deployedSiteByMachine.get(mid)})` : ''}
+                    </option>
+                  );
+                })}
               </select>
+              {formData.machine_id && deployedMachineIds.has(formData.machine_id) && (
+                <p className="mt-1 text-xs text-amber-700">
+                  This machine is already deployed at {deployedSiteByMachine.get(formData.machine_id)}. End that deployment first.
+                </p>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium">Client *</label>

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calculator, TrendingUp, DollarSign, BarChart3, Target, ArrowRight } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { sampleProjections } from '@/lib/sample-data';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 
 interface Projection {
   inputs: { workingDays: number; unitsPerDay: number; rateMinor: number; currency: string };
@@ -42,9 +42,12 @@ export default function ProjectionsPage() {
   const [form, setForm] = useState({ working_days: '26', units_per_day: '8', rate: '', currency: 'INR' });
   const [result, setResult] = useState<Projection | null>(null);
   const [loading, setLoading] = useState(false);
-  const [savedProjections, setSavedProjections] = useState<SavedProjection[]>(sampleProjections);
+  // No saved-projections endpoint exists yet — start empty and show an
+  // empty state instead of hardcoding demo rows.
+  const [savedProjections] = useState<SavedProjection[]>([]);
+  const [apiError, setApiError] = useState(false);
 
-  useEffect(() => {
+  const loadDefaults = () => {
     authFetch('/api/v1/reports/projection-inputs')
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
@@ -55,46 +58,41 @@ export default function ProjectionsPage() {
             working_days: String(j.working_days_per_month ?? f.working_days),
             units_per_day: String(j.working_units_per_day ?? f.units_per_day),
           }));
+        } else {
+          setApiError(true);
         }
       })
-      .catch(() => undefined);
+      .catch(() => setApiError(true));
+  };
+
+  useEffect(() => {
+    loadDefaults();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const run = async (ev: React.FormEvent) => {
     ev.preventDefault();
     setLoading(true);
+    setApiError(false);
     try {
-      const workingDays = parseInt(form.working_days || '26', 10);
-      const unitsPerDay = parseInt(form.units_per_day || '8', 10);
       const rateMinor = Math.round(parseFloat(form.rate || '0') * 100);
-      
-      // Try API first, fallback to local calculation
-      try {
-        const q = new URLSearchParams({
-          working_days: form.working_days,
-          units_per_day: form.units_per_day,
-          rate_minor: String(rateMinor),
-          currency: form.currency,
-        });
-        const res = await authFetch(`/api/v1/reports/projections?${q.toString()}`);
-        if (res.ok) {
-          setResult(await res.json());
-          return;
-        }
-      } catch { /* fallback */ }
-      
-      // Local calculation fallback
-      const projectedBilling = workingDays * unitsPerDay * rateMinor;
-      const projectedCosts = Math.round(projectedBilling * 0.5);
-      setResult({
-        inputs: { workingDays, unitsPerDay, rateMinor, currency: form.currency },
-        expense_ratio: 50,
-        projected_billing_minor: projectedBilling,
-        projected_costs_minor: projectedCosts,
-        projected_contribution_minor: projectedBilling - projectedCosts,
+      const q = new URLSearchParams({
+        working_days: form.working_days,
+        units_per_day: form.units_per_day,
+        rate_minor: String(rateMinor),
         currency: form.currency,
-        note: 'Calculated locally (demo mode)',
       });
+      const res = await authFetch(`/api/v1/reports/projections?${q.toString()}`);
+      if (!res.ok) {
+        // API down → banner, never fabricate a result locally
+        setApiError(true);
+        setResult(null);
+        return;
+      }
+      setResult(await res.json());
+    } catch {
+      setApiError(true);
+      setResult(null);
     } finally {
       setLoading(false);
     }
@@ -105,6 +103,7 @@ export default function ProjectionsPage() {
 
   return (
     <div className="space-y-6">
+      {apiError && <ApiErrorBanner onRetry={() => { setApiError(false); void loadDefaults(); }} />}
       <div>
         <h1 className="text-3xl font-bold">Projections</h1>
         <p className="text-muted-foreground mt-1">
@@ -172,7 +171,7 @@ export default function ProjectionsPage() {
                   <Input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} className="mt-1" />
                 </div>
               </div>
-              <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-gray-900 to-gray-800 hover:from-emerald-600 hover:to-teal-600">
+              <Button type="submit" disabled={loading} className="w-full">
                 {loading ? 'Projecting…' : 'Calculate Projection'}
               </Button>
             </form>
@@ -226,6 +225,13 @@ export default function ProjectionsPage() {
           </CardTitle>
         </div>
         <CardContent className="pt-6">
+          {savedProjections.length === 0 ? (
+            <div className="text-center py-10">
+              <div className="text-6xl mb-4">📈</div>
+              <p className="text-gray-500 text-lg">No saved projections yet</p>
+              <p className="text-gray-400 text-sm mt-2">Run the calculator above to project billing and contribution</p>
+            </div>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -262,6 +268,7 @@ export default function ProjectionsPage() {
               </tbody>
             </table>
           </div>
+          )}
         </CardContent>
       </Card>
     </div>

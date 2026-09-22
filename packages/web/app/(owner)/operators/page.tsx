@@ -65,7 +65,7 @@ export default function OwnerOperators() {
           <p className="text-muted-foreground mt-1">Manage your machine operators and assignments</p>
         </div>
         <Link href="/operators/new">
-          <Button className="bg-gradient-to-r from-gray-950 to-gray-900 hover:from-blue-600 hover:to-cyan-600">
+          <Button >
             <span className="mr-2">+</span> Add Operator
           </Button>
         </Link>
@@ -88,7 +88,7 @@ export default function OwnerOperators() {
             <div className="text-6xl mb-4">👷</div>
             <p className="text-gray-500 text-lg mb-2">No operators yet</p>
             <p className="text-gray-400 text-sm">Add your first operator to get started</p>
-            <Button className="mt-6 bg-gradient-to-r from-gray-950 to-gray-900">
+            <Button className="mt-6">
               <span className="mr-2">+</span> Add First Operator
             </Button>
           </CardContent>

@@ -54,7 +54,7 @@ export default function DeploymentsList() {
           <p className="text-muted-foreground mt-1">Track machine assignments across all sites</p>
         </div>
         <Link href="/deployments/new">
-          <Button className="bg-gradient-to-r from-gray-900 to-gray-800 hover:from-violet-600 hover:to-purple-600">
+          <Button >
             <span className="mr-2">+</span> New Deployment
           </Button>
         </Link>
@@ -77,7 +77,7 @@ export default function DeploymentsList() {
             <div className="text-6xl mb-4">🚜</div>
             <p className="text-gray-500 text-lg mb-2">No deployments yet</p>
             <p className="text-gray-400 text-sm">Create one to assign a machine to a site</p>
-            <Button className="mt-6 bg-gradient-to-r from-gray-900 to-gray-800">
+            <Button className="mt-6">
               <span className="mr-2">+</span> Create First Deployment
             </Button>
           </CardContent>

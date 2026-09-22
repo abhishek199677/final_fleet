@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { Truck, MapPin, Clock, CheckCircle, AlertCircle, ArrowRight, Pencil, Trash2 } from 'lucide-react';
 import { fetchList } from '@/lib/api/fetch-list';
 import { apiDelete, confirmDelete } from '@/lib/api/mutations';
-import { sampleMachines } from '@/lib/sample-data';
+import { AlertTriangle } from 'lucide-react';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: typeof CheckCircle }> = {
   working: { label: 'Working', color: 'text-green-700', bg: 'bg-green-100', icon: CheckCircle },
@@ -21,11 +21,13 @@ export default function OwnerMachines() {
   const router = useRouter();
   const [machines, setMachines] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(false);
 
   const loadMachines = () => {
+    setApiError(false);
     fetchList<Record<string, unknown>>('/api/v1/machines')
-      .then(data => setMachines(data))
-      .catch(() => setMachines(sampleMachines))
+      .then(data => { setMachines(data); if (data.length === 0) setApiError(false); })
+      .catch(() => setApiError(true))
       .finally(() => setLoading(false));
   };
 
@@ -47,13 +49,23 @@ export default function OwnerMachines() {
 
   return (
     <div className="space-y-6">
+      {apiError && (
+        <div className="flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-800 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200">
+          <AlertTriangle className="h-5 w-5 shrink-0" />
+          <div>
+            <p className="font-medium">API server unavailable</p>
+            <p className="text-sm opacity-80">Could not connect to the Fleet OS backend. Make sure the API server is running on port 3001. Data shown may be stale.</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={loadMachines} className="ml-auto shrink-0">Retry</Button>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Machines</h1>
           <p className="text-muted-foreground mt-1">Manage your heavy equipment fleet</p>
         </div>
         <Link href="/machines/new">
-          <Button className="bg-gradient-to-r from-gray-950 to-gray-900 hover:from-blue-600 hover:to-cyan-600">
+          <Button >
             <span className="mr-2">+</span> Add Machine
           </Button>
         </Link>
@@ -115,7 +127,7 @@ export default function OwnerMachines() {
             <div className="text-6xl mb-4">🚜</div>
             <p className="text-gray-500 text-lg mb-2">No machines yet</p>
             <p className="text-gray-400 text-sm">Add your first machine to get started</p>
-            <Button className="mt-6 bg-gradient-to-r from-gray-950 to-gray-900">
+            <Button className="mt-6">
               <span className="mr-2">+</span> Add First Machine
             </Button>
           </CardContent>

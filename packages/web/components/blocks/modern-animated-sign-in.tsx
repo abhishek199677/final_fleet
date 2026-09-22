@@ -256,21 +256,23 @@ export function AuthTabs({ formFields, goTo, handleSubmit, defaultTab = 'login' 
             type="submit"
             className={cn(
               'group relative h-12 w-full overflow-hidden rounded-xl',
-              'bg-white text-sm font-semibold text-gray-900 shadow-lg shadow-white/10',
-              'transition-all duration-300 hover:shadow-xl hover:shadow-white/20 hover:-translate-y-0.5',
-              'active:translate-y-0',
+              'border border-white/20 bg-white text-sm font-semibold text-gray-900',
+              'transition-all duration-300',
+              'hover:border-transparent',
             )}
           >
-            <span className="relative z-10 flex items-center justify-center gap-2">
+            {/* Slide-in fill overlay */}
+            <span className="absolute inset-0 z-0 -translate-x-full rounded-[inherit] bg-neutral-900 transition-transform duration-300 ease-in-out group-hover:translate-x-0" />
+            <span className="relative z-10 flex items-center justify-center gap-2 transition-colors duration-300 group-hover:text-white">
               {current.submitButton}
               <svg
-                className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5"
+                className="h-4 w-4 -translate-x-1 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
-                strokeWidth={2}
+                strokeWidth={2.5}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
             </span>
           </button>

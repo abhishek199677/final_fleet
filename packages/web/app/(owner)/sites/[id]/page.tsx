@@ -241,7 +241,7 @@ export default function SiteDetail() {
                 </div>
               )}
               <Link href={`/deployments/new?site_id=${params.id}`}>
-                <Button className="bg-gradient-to-r from-gray-900 to-gray-800 hover:from-violet-600 hover:to-purple-600">
+                <Button >
                   <span className="mr-2">+</span> Deploy Machine
                 </Button>
               </Link>

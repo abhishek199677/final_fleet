@@ -832,3 +832,118 @@
 /* Dark mode table rows */
 .dark tbody tr:hover { background-color: hsl(220 20% 16%) !important; }
 .dark thead th { background-color: hsl(222 47% 9%) !important; color: hsl(215 18% 52%) !important; }
+
+/* ============================================
+   Orbit Delivery hero embedded in the landing page
+   Matches Fleet OS brand: teal/emerald, Inter font, glass dark mode
+   ============================================ */
+
+/* Hide the component's own header — the Fleet OS sticky nav replaces it */
+.landing-hero .orbit-delivery .site-header { display: none; }
+
+/* On desktop, hero fills viewport minus the Fleet OS nav height (4rem) */
+@media (min-width: 760px) {
+  .landing-hero .orbit-delivery .page {
+    height: calc(100svh - 4rem);
+    min-height: auto;
+  }
+}
+
+/* On mobile, let the hero flow naturally */
+@media (max-width: 759px) {
+  .landing-hero .orbit-delivery .page {
+    min-height: 100svh;
+  }
+}
+
+/* Blend the hero's background with the Fleet OS ambient background */
+.landing-hero .orbit-delivery {
+  border-radius: 0;
+}
+
+/* Dark mode: ensure the hero picks up Fleet OS dark tokens */
+.dark .landing-hero .orbit-delivery:not([data-theme="light"]) {
+  --orbit-bg: radial-gradient(ellipse at 6% 15%, #101828 0%, #0c111d 50%, #1d2939 100%);
+  --orbit-ink: var(--fleet-gray-900, #f9fafb);
+  --orbit-muted: var(--fleet-gray-400, #98a2b3);
+  --orbit-nav: var(--fleet-gray-500, #d0d5dd);
+  --orbit-accent: var(--fleet-brand-500, #14b8a6);
+}
+
+/* Match the hero's CTA buttons to Fleet OS gradient style */
+.landing-hero .orbit-delivery .header-cta,
+.landing-hero .orbit-delivery .explore-button {
+  background: linear-gradient(135deg, var(--fleet-brand-600, #0d9488), var(--fleet-brand-500, #14b8a6)) !important;
+  box-shadow: 0 4px 12px -2px rgba(13, 148, 136, 0.3) !important;
+}
+
+.landing-hero .orbit-delivery .header-cta:hover,
+.landing-hero .orbit-delivery .explore-button:hover {
+  background: linear-gradient(135deg, var(--fleet-brand-700, #0f766e), var(--fleet-brand-600, #0d9488)) !important;
+}
+
+/* Cloud bank uses Fleet OS teal tones */
+.landing-hero .orbit-delivery .cloud-bank i {
+  background: radial-gradient(ellipse, rgba(20, 184, 166, 0.12) 0%, rgba(16, 185, 129, 0.08) 40%, transparent 70%) !important;
+}
+
+/* Match the heading accent to Fleet OS teal */
+.landing-hero .orbit-delivery h1 em {
+  color: var(--fleet-brand-500, #14b8a6) !important;
+}
+
+/* ============================================
+   Dashboard hero — Orbit Delivery on /home
+   Constrained height, glass border, blends with dashboard
+   ============================================ */
+
+.dashboard-hero {
+  height: clamp(340px, 45vh, 500px);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Hide the component's own header/footer inside the dashboard */
+.dashboard-hero .orbit-delivery .site-header { display: none; }
+.dashboard-hero .orbit-delivery .site-footer { display: none; }
+
+/* Fill the container, not the viewport */
+.dashboard-hero .orbit-delivery .page {
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+/* Dark mode: Fleet OS glass tokens */
+.dark .dashboard-hero .orbit-delivery:not([data-theme="light"]) {
+  --orbit-bg: radial-gradient(ellipse at 6% 15%, #101828 0%, #0c111d 50%, #1d2939 100%);
+  --orbit-ink: var(--fleet-gray-900, #f9fafb);
+  --orbit-muted: var(--fleet-gray-400, #98a2b3);
+  --orbit-nav: var(--fleet-gray-500, #d0d5dd);
+  --orbit-accent: var(--fleet-brand-500, #14b8a6);
+}
+
+/* CTA buttons match Fleet OS gradient */
+.dashboard-hero .orbit-delivery .header-cta,
+.dashboard-hero .orbit-delivery .explore-button {
+  background: linear-gradient(135deg, var(--fleet-brand-600, #0d9488), var(--fleet-brand-500, #14b8a6)) !important;
+  box-shadow: 0 4px 12px -2px rgba(13, 148, 136, 0.3) !important;
+}
+
+/* Cloud bank uses teal tones */
+.dashboard-hero .orbit-delivery .cloud-bank i {
+  background: radial-gradient(ellipse, rgba(20, 184, 166, 0.12) 0%, rgba(16, 185, 129, 0.08) 40%, transparent 70%) !important;
+}
+
+/* Heading accent matches Fleet OS brand */
+.dashboard-hero .orbit-delivery h1 em {
+  color: var(--fleet-brand-500, #14b8a6) !important;
+}
+
+/* On mobile, reduce height and simplify */
+@media (max-width: 759px) {
+  .dashboard-hero {
+    height: clamp(280px, 50vh, 380px);
+  }
+  .dashboard-hero .orbit-delivery .planet-caption { display: none; }
+  .dashboard-hero .orbit-delivery .cloud-bank { display: none; }
+}
