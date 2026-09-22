@@ -29,13 +29,14 @@ export default function NewOperator() {
         }),
       });
       if (res.ok) {
-        alert('Operator added (demo mode)');
         router.push('/operators');
         return;
       }
-    } catch { /* demo mode */ }
-    alert('Operator added (demo mode)');
-    router.push('/operators');
+      setError('Operator was not created — nothing was saved.');
+    } catch {
+      setError('Operator was not created — the API is unreachable.');
+    }
+    setLoading(false);
   };
 
   return (

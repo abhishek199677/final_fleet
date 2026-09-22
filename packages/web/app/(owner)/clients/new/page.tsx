@@ -38,13 +38,14 @@ export default function NewClient() {
         }),
       });
       if (res.ok) {
-        alert('Client added (demo mode)');
         router.push('/clients');
         return;
       }
-    } catch { /* demo mode */ }
-    alert('Client added (demo mode)');
-    router.push('/clients');
+      setError('Client was not created — nothing was saved.');
+    } catch {
+      setError('Client was not created — the API is unreachable.');
+    }
+    setLoading(false);
   };
 
   return (

@@ -48,6 +48,7 @@ export default function Settings() {
   const [settings, setSettings] = useState<TenantSettings | null>(null);
   const [fxCurrencies, setFxCurrencies] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState(false);
 
@@ -88,13 +89,17 @@ export default function Settings() {
 
   const saveSettings = async (updates: Partial<TenantSettings>) => {
     setSaving(true);
+    setSaveError('');
     try {
-      await authFetch('/api/v1/tenants/settings', {
+      const res = await authFetch('/api/v1/tenants/settings', {
         method: 'PUT',
         body: JSON.stringify(updates),
       });
-    } catch { /* demo mode - continue */ }
-    setSettings(prev => prev ? { ...prev, ...updates } : prev);
+      if (!res.ok) throw new Error(String(res.status));
+      setSettings(prev => prev ? { ...prev, ...updates } : prev);
+    } catch {
+      setSaveError('Settings could not be saved — changes were not applied.');
+    }
     setSaving(false);
   };
 
@@ -105,6 +110,7 @@ export default function Settings() {
         <h1 className="text-3xl font-bold">Settings</h1>
         <p className="text-muted-foreground mt-1">Manage your tenant configuration and preferences</p>
       </div>
+      {saveError && <p className="text-sm text-red-600">{saveError}</p>}
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="overflow-hidden">

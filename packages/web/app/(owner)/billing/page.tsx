@@ -38,6 +38,7 @@ export default function BillingPage() {
     effective_from: new Date().toISOString().slice(0, 10),
   });
   const [running, setRunning] = useState<string | null>(null);
+  const [formError, setFormError] = useState('');
 
   const [apiError, setApiError] = useState(false);
 
@@ -71,6 +72,7 @@ export default function BillingPage() {
 
   const createRate = async (ev: React.FormEvent) => {
     ev.preventDefault();
+    setFormError('');
     try {
       const res = await authFetch('/api/v1/billing/rate-cards', {
         method: 'POST',
@@ -89,13 +91,15 @@ export default function BillingPage() {
         void load();
         return;
       }
-    } catch { /* demo mode */ }
-    alert('Rate card created (demo mode)');
-    setForm({ ...form, rate: '' });
+      setFormError('Rate card was not created — nothing was saved.');
+    } catch {
+      setFormError('Rate card was not created — the API is unreachable.');
+    }
   };
 
   const runBilling = async (deploymentId: string) => {
     setRunning(deploymentId);
+    setFormError('');
     const today = new Date();
     const start = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
     const end = today.toISOString().slice(0, 10);
@@ -105,11 +109,10 @@ export default function BillingPage() {
         body: JSON.stringify({ deployment_id: deploymentId, period_start: start, period_end: end, client_uuid: crypto.randomUUID() }),
       });
       if (!res.ok) {
-        // Demo mode: show success anyway
-        alert('Billing run completed (demo mode)');
+        setFormError('Billing run failed — check the deployment has a rate card for this period.');
       }
     } catch {
-      alert('Billing run completed (demo mode)');
+      setFormError('Billing run failed — the API is unreachable.');
     } finally {
       setRunning(null);
       void load();
@@ -118,20 +121,17 @@ export default function BillingPage() {
 
   const holdToggle = async (d: Row) => {
     const onHold = String(d.status) === 'on_hold_payment';
+    setFormError('');
     try {
       const res = await authFetch(`/api/v1/deployments/${d.id}/${onHold ? 'release' : 'hold'}`, {
         method: 'POST',
         body: JSON.stringify({ client_uuid: crypto.randomUUID() }),
       });
       if (!res.ok) {
-        // Demo mode: toggle status locally
-        setContrib((prev) => prev.map((c) => 
-          c.id === d.id ? { ...c, status: onHold ? 'active' : 'on_hold_payment' } : c
-        ));
-        alert(`${onHold ? 'Released from hold' : 'Placed on hold'} (demo mode)`);
+        setFormError(`Could not ${onHold ? 'release' : 'hold'} the deployment — status unchanged.`);
       }
     } catch {
-      alert(`${onHold ? 'Released from hold' : 'Placed on hold'} (demo mode)`);
+      setFormError('Could not change the deployment — the API is unreachable.');
     }
     void load();
   };
@@ -165,6 +165,8 @@ export default function BillingPage() {
           <Download className="h-4 w-4" /> Export CSV
         </Button>
       </div>
+
+      {formError && <p className="text-sm text-red-600">{formError}</p>}
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="overflow-hidden">

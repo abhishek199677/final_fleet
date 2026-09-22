@@ -20,6 +20,7 @@ export default function NewSite() {
   });
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [error, setError] = useState('');
   const [apiError, setApiError] = useState(false);
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export default function NewSite() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
     try {
       const res = await authFetch('/api/v1/sites', {
         method: 'POST',
@@ -41,13 +43,14 @@ export default function NewSite() {
         }),
       });
       if (res.ok) {
-        alert('Site created (demo mode)');
         router.push('/sites');
         return;
       }
-    } catch { /* demo mode */ }
-    alert('Site created (demo mode)');
-    router.push('/sites');
+      setError('Site was not created — nothing was saved.');
+    } catch {
+      setError('Site was not created — the API is unreachable.');
+    }
+    setLoading(false);
   };
 
   if (fetching) return <p className="text-muted-foreground">Loading...</p>;
@@ -59,6 +62,7 @@ export default function NewSite() {
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+            {error && <p className="text-sm text-red-600">{error}</p>}
             <div>
               <label className="text-sm font-medium">Client *</label>
               <select

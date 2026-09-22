@@ -30,6 +30,8 @@ export default function CashPage() {
   const [accountId, setAccountId] = useState('');
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ from_account_id: '', to_account_id: '', currency: 'INR', amount: '', reference: '' });
+  const [accountForm, setAccountForm] = useState({ name: '', type: 'site_cash' });
+  const [error, setError] = useState('');
 
   const [apiError, setApiError] = useState(false);
 
@@ -68,6 +70,7 @@ export default function CashPage() {
 
   const transfer = async (ev: React.FormEvent) => {
     ev.preventDefault();
+    setError('');
     try {
       const res = await authFetch('/api/v1/cash/transfers', {
         method: 'POST',
@@ -86,25 +89,33 @@ export default function CashPage() {
         void load();
         return;
       }
-    } catch { /* fallback to demo */ }
-    
-    // Demo mode: add transfer locally
-    const fromAcc = accounts.find(a => a.id === form.from_account_id);
-    const toAcc = accounts.find(a => a.id === form.to_account_id);
-    const newTransfer = {
-      id: `ct${Date.now()}`,
-      from_account_id: form.from_account_id,
-      to_account_id: form.to_account_id,
-      from_name: String(fromAcc?.name ?? ''),
-      to_name: String(toAcc?.name ?? ''),
-      amount_minor: Math.round(parseFloat(form.amount || '0') * 100),
-      reference: form.reference,
-      transfer_date: new Date().toISOString().slice(0, 10),
-      status: 'completed',
-    };
-    setTransfers(prev => [newTransfer, ...prev]);
-    setForm({ from_account_id: '', to_account_id: '', currency: 'INR', amount: '', reference: '' });
-    alert('Transfer completed (demo mode)');
+      setError('Transfer failed — no money was moved.');
+    } catch {
+      setError('Transfer failed — the API is unreachable.');
+    }
+  };
+
+  const addAccount = async (ev: React.FormEvent) => {
+    ev.preventDefault();
+    setError('');
+    try {
+      const res = await authFetch('/api/v1/cash/accounts', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: accountForm.name,
+          type: accountForm.type,
+          currency: 'INR',
+        }),
+      });
+      if (res.ok) {
+        setAccountForm({ name: '', type: 'site_cash' });
+        void load();
+        return;
+      }
+      setError('Cash account was not created — nothing was saved.');
+    } catch {
+      setError('Cash account was not created — the API is unreachable.');
+    }
   };
 
   const totalBalance = accounts.reduce((sum, a) => sum + num(a.balance_minor), 0);
@@ -117,6 +128,12 @@ export default function CashPage() {
         <h1 className="text-3xl font-bold">Cash</h1>
         <p className="text-muted-foreground mt-1">Accounts, remittances and physical counts</p>
       </div>
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      {!loading && accounts.length === 0 && (
+        <p className="text-sm text-muted-foreground">
+          No cash accounts yet — add one below so counts, remittances and cash expenses can be recorded.
+        </p>
+      )}
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="overflow-hidden">
@@ -224,6 +241,41 @@ export default function CashPage() {
               );
             })}
           </div>
+
+          <Card className="overflow-hidden">
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-700 p-4">
+              <CardTitle className="text-white flex items-center gap-2">
+                <Wallet className="h-5 w-5" /> New Cash Account
+              </CardTitle>
+            </div>
+            <CardContent className="pt-6">
+              <form onSubmit={(e) => void addAccount(e)} className="flex flex-wrap items-end gap-3">
+                <div className="min-w-48 flex-1">
+                  <label className="text-sm font-medium text-gray-700">Name *</label>
+                  <Input
+                    value={accountForm.name}
+                    onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })}
+                    placeholder="Site Cash — Block A"
+                    required
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Type</label>
+                  <select
+                    className="w-full border border-gray-200 rounded-lg p-2.5 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    value={accountForm.type}
+                    onChange={(e) => setAccountForm({ ...accountForm, type: e.target.value })}
+                  >
+                    <option value="site_cash">Site cash</option>
+                    <option value="bank">Bank</option>
+                    <option value="petty">Petty cash</option>
+                  </select>
+                </div>
+                <Button type="submit" disabled={!accountForm.name.trim()}>Add account</Button>
+              </form>
+            </CardContent>
+          </Card>
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Card className="overflow-hidden">

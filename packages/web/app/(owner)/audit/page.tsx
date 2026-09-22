@@ -40,6 +40,7 @@ export default function AuditPage() {
   const [filters, setFilters] = useState({ user_id: '', table: '', machine_id: '', from: '', to: '' });
   const [voiding, setVoiding] = useState<string | null>(null);
   const [reason, setReason] = useState('');
+  const [voidError, setVoidError] = useState('');
 
   const [apiError, setApiError] = useState(false);
 
@@ -60,7 +61,7 @@ export default function AuditPage() {
     }
 
     try {
-      const res = await authFetch('/api/v1/auth/users').catch(() => null);
+      const res = await authFetch('/api/v1/users').catch(() => null);
       if (res && res.ok) {
         const j = await res.json();
         setUsers(Array.isArray(j) ? j : []);
@@ -106,27 +107,32 @@ export default function AuditPage() {
   const voidEntry = async (row: Row) => {
     if (!reason.trim()) return;
     setVoiding(String(row.id));
+    setVoidError('');
     try {
       const table = String(row.table_name);
       const recordId = String(row.record_id);
+      let res: Response | null = null;
       if (table === 'work_sessions') {
-        await authFetch(`/api/v1/work-sessions/${recordId}/corrections`, {
+        res = await authFetch(`/api/v1/work-sessions/${recordId}/corrections`, {
           method: 'POST',
           body: JSON.stringify({ billable: false, notes: `VOID: ${reason.trim()}`, client_uuid: crypto.randomUUID() }),
         });
       } else if (table === 'expenses') {
-        await authFetch(`/api/v1/expenses/${recordId}/corrections`, {
+        res = await authFetch(`/api/v1/expenses/${recordId}/corrections`, {
           method: 'POST',
           body: JSON.stringify({ note: `VOID: ${reason.trim()}`, client_uuid: crypto.randomUUID() }),
         });
       }
-      alert('Entry voided (demo mode)');
-    } catch {
-      alert('Entry voided (demo mode)');
-    } finally {
-      setVoiding(null);
+      if (!res || !res.ok) {
+        setVoidError('Void failed — the entry was not changed.');
+        return;
+      }
       setReason('');
       void load();
+    } catch {
+      setVoidError('Void failed — the API is unreachable.');
+    } finally {
+      setVoiding(null);
     }
   };
 
@@ -139,6 +145,7 @@ export default function AuditPage() {
         <h1 className="text-3xl font-bold">Audit</h1>
         <p className="text-muted-foreground mt-1">Every write, filterable. Voids create new versions with a reason.</p>
       </div>
+      {voidError && <p className="text-sm text-red-600">{voidError}</p>}
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="overflow-hidden">
