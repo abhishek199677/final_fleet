@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { fetchList } from '@/lib/api/fetch-list';
+import { fetchListStrict } from '@/lib/api/fetch-list';
 import { useAuth } from '@/lib/auth/context';
-import { sampleExpenses } from '@/lib/sample-data';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 import { Receipt, Plus, AlertCircle } from 'lucide-react';
 
 interface ExpenseEntry {
@@ -24,22 +24,24 @@ export default function OpsExpense() {
   
   const [expenses, setExpenses] = useState<ExpenseEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(false);
 
-  useEffect(() => {
-    void fetchList<ExpenseEntry>('/api/v1/expenses')
+  const loadExpenses = () => {
+    setApiError(false);
+    void fetchListStrict<ExpenseEntry>('/api/v1/expenses')
       .then(data => {
-        if (data.length > 0) {
-          setExpenses(data);
-        } else {
-          setExpenses(sampleExpenses);
-        }
+        // API up → show exactly what's in the DB (empty = empty state)
+        setExpenses(data);
       })
-      .catch(() => setExpenses(sampleExpenses))
+      .catch(() => setApiError(true))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadExpenses(); }, []);
 
   return (
     <div className="space-y-6">
+      {apiError && <ApiErrorBanner onRetry={loadExpenses} />}
       <div className="rounded-xl bg-gradient-to-r from-gray-800 to-gray-700 p-6 text-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -53,7 +55,7 @@ export default function OpsExpense() {
           </div>
           {!isReadOnly && (
             <Link href="/expense/new">
-              <Button className="bg-white text-red-600 hover:bg-red-50">
+              <Button>
                 <Plus className="mr-2 h-4 w-4" />
                 Log Expense
               </Button>

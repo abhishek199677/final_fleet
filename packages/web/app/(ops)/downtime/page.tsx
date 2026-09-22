@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { fetchList } from '@/lib/api/fetch-list';
+import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
 import { useOfflineQueue } from '@/hooks/use-offline-queue';
 import { useAuth } from '@/lib/auth/context';
-import { sampleDowntime, sampleMachines } from '@/lib/sample-data';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 import { Clock, AlertTriangle } from 'lucide-react';
 
 interface Row extends Record<string, unknown> {
@@ -24,23 +24,17 @@ export default function DowntimePage() {
   const [recent, setRecent] = useState<Row[]>([]);
   const [form, setForm] = useState({ machine_id: '', started_at: '', ended_at: '', reason_code: 'breakdown', note: '' });
   const [saving, setSaving] = useState(false);
+  const [apiError, setApiError] = useState(false);
 
   const load = () => {
-    void fetchList<Row>('/api/v1/machines').then(data => {
-      if (data.length > 0) {
-        setMachines(data);
-      } else {
-        setMachines(sampleMachines);
-      }
-    }).catch(() => setMachines(sampleMachines));
-    
-    void fetchList<Row>('/api/v1/fuel-downtime/downtime').then(data => {
-      if (data.length > 0) {
-        setRecent(data.slice(0, 10));
-      } else {
-        setRecent(sampleDowntime);
-      }
-    }).catch(() => setRecent(sampleDowntime));
+    setApiError(false);
+    void fetchListStrict<Row>('/api/v1/machines').then(data => {
+      setMachines(data);
+    }).catch(() => setApiError(true));
+
+    void fetchListStrict<Row>('/api/v1/fuel-downtime/downtime').then(data => {
+      setRecent(data.slice(0, 10));
+    }).catch(() => setApiError(true));
   };
 
   useEffect(() => {
@@ -70,6 +64,7 @@ export default function DowntimePage() {
 
   return (
     <div className="space-y-6">
+      {apiError && <ApiErrorBanner onRetry={load} />}
       <div className="rounded-xl bg-gradient-to-r from-gray-800 to-gray-700 p-6 text-white">
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-white/20 p-2">
@@ -121,7 +116,7 @@ export default function DowntimePage() {
                 <label className="text-sm font-medium text-slate-700">Note</label>
                 <Input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} className="border-[#E5E2DB] focus:border-slate-400" />
               </div>
-              <Button type="submit" disabled={saving} className="bg-slate-900 text-white hover:bg-slate-800">{saving ? 'Saving…' : 'Save Downtime'}</Button>
+              <Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save Downtime'}</Button>
             </form>
           </div>
         )}

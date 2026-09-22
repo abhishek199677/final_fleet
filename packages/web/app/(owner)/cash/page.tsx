@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Wallet, ArrowRightLeft, Banknote, TrendingUp, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { fetchList } from '@/lib/api/fetch-list';
-import { sampleCashAccounts, sampleCashTransfers, sampleCashCounts } from '@/lib/sample-data';
+import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 
 interface Row extends Record<string, unknown> {
   id?: string;
@@ -31,22 +31,26 @@ export default function CashPage() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ from_account_id: '', to_account_id: '', currency: 'INR', amount: '', reference: '' });
 
+  const [apiError, setApiError] = useState(false);
+
   const load = async () => {
     setLoading(true);
-    const [a, t, e] = await Promise.all([
-      fetchList<Row>('/api/v1/cash/accounts'),
-      fetchList<Row>('/api/v1/cash/transfers'),
-      fetchList<Row>('/api/v1/cash/expected'),
-    ]);
-    setAccounts(a.length > 0 ? a : sampleCashAccounts);
-    setTransfers(t.length > 0 ? t : sampleCashTransfers);
-    setExpected(e.length > 0 ? e : sampleCashAccounts.map(acc => ({
-      account_id: acc.id,
-      expected_minor: acc.balance_minor,
-      last_count_minor: acc.balance_minor,
-      variance_minor: 0
-    })));
-    if (a.length > 0 && !accountId) setAccountId(String(a[0].id));
+    setApiError(false);
+    try {
+      const [a, t, e] = await Promise.all([
+        fetchListStrict<Row>('/api/v1/cash/accounts'),
+        fetchListStrict<Row>('/api/v1/cash/transfers'),
+        fetchListStrict<Row>('/api/v1/cash/expected'),
+      ]);
+      // API up → show exactly what's in the DB (empty = empty state)
+      setAccounts(a);
+      setTransfers(t);
+      setExpected(e);
+      if (a.length > 0 && !accountId) setAccountId(String(a[0].id));
+    } catch {
+      // API down → banner only, never fake accounts
+      setApiError(true);
+    }
     setLoading(false);
   };
 
@@ -56,11 +60,9 @@ export default function CashPage() {
 
   useEffect(() => {
     if (accountId) {
-      void fetchList<Row>(`/api/v1/cash/accounts/${accountId}/counts`).then((data) => {
-        setCounts(data.length > 0 ? data : sampleCashCounts.filter(c => c.account_id === accountId));
-      }).catch(() => {
-        setCounts(sampleCashCounts.filter(c => c.account_id === accountId));
-      });
+      void fetchListStrict<Row>(`/api/v1/cash/accounts/${accountId}/counts`).then((data) => {
+        setCounts(data);
+      }).catch(() => setApiError(true));
     }
   }, [accountId]);
 
@@ -110,6 +112,7 @@ export default function CashPage() {
 
   return (
     <div className="space-y-6">
+      {apiError && <ApiErrorBanner onRetry={load} />}
       <div>
         <h1 className="text-3xl font-bold">Cash</h1>
         <p className="text-muted-foreground mt-1">Accounts, remittances and physical counts</p>
@@ -261,7 +264,7 @@ export default function CashPage() {
                       <Input value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} className="mt-1" />
                     </div>
                   </div>
-                  <Button type="submit" className="w-full bg-gradient-to-r from-gray-900 to-gray-800 hover:from-emerald-600 hover:to-teal-600">
+                  <Button type="submit" className="w-full">
                     Transfer
                   </Button>
                 </form>

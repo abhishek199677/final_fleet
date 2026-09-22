@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { fetchList } from '@/lib/api/fetch-list';
+import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
 import { useAuth } from '@/lib/auth/context';
-import { sampleSessions, sampleMachines } from '@/lib/sample-data';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 import { Play, Clock, ArrowRight, CheckCircle, Gauge } from 'lucide-react';
 
 export default function OpsWorkSession() {
@@ -14,37 +14,24 @@ export default function OpsWorkSession() {
   
   const [activeSessions, setActiveSessions] = useState<Record<string, unknown>[]>([]);
   const [completedSessions, setCompletedSessions] = useState<Record<string, unknown>[]>([]);
+  const [apiError, setApiError] = useState(false);
 
-  useEffect(() => {
-    void fetchList<Record<string, unknown>>('/api/v1/work-sessions')
+  const loadSessions = () => {
+    setApiError(false);
+    void fetchListStrict<Record<string, unknown>>('/api/v1/work-sessions')
       .then(sessions => {
-        if (sessions.length > 0) {
-          setActiveSessions(sessions.filter(s => !s.end_at));
-          setCompletedSessions(sessions.filter(s => s.end_at).slice(0, 5));
-        } else {
-          const sampleActive = sampleSessions.filter(s => !s.end_at).map(s => ({
-            ...s,
-            machine_code: sampleMachines.find(m => m.id === s.machine_id)?.code || 'Unknown',
-          }));
-          const sampleCompleted = sampleSessions.filter(s => s.end_at).slice(0, 5).map(s => ({
-            ...s,
-            machine_code: sampleMachines.find(m => m.id === s.machine_id)?.code || 'Unknown',
-          }));
-          setActiveSessions(sampleActive);
-          setCompletedSessions(sampleCompleted);
-        }
+        // API up → show exactly what's in the DB (empty = empty state)
+        setActiveSessions(sessions.filter(s => !s.end_at));
+        setCompletedSessions(sessions.filter(s => s.end_at).slice(0, 5));
       })
-      .catch(() => {
-        const sampleActive = sampleSessions.filter(s => !s.end_at).map(s => ({
-          ...s,
-          machine_code: sampleMachines.find(m => m.id === s.machine_id)?.code || 'Unknown',
-        }));
-        setActiveSessions(sampleActive);
-      });
-  }, []);
+      .catch(() => setApiError(true));
+  };
+
+  useEffect(() => { loadSessions(); }, []);
 
   return (
     <div className="space-y-6">
+      {apiError && <ApiErrorBanner onRetry={loadSessions} />}
       {/* Header */}
       <div className="rounded-xl bg-gradient-to-r from-gray-800 to-gray-700 p-6 shadow-lg">
         <div className="flex items-center justify-between">
@@ -170,7 +157,7 @@ export default function OpsWorkSession() {
           <p className="text-slate-500 mb-6">Start your first work session to begin tracking machine activity.</p>
           {!isReadOnly && (
             <Link href="/work-session/new">
-              <Button className="bg-gradient-to-r from-gray-800 to-gray-700 hover:from-amber-600 hover:to-orange-600">
+              <Button>
                 <Play className="mr-2 h-4 w-4" /> Start First Session
               </Button>
             </Link>

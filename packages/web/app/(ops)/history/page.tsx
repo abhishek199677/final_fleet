@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { fetchList } from '@/lib/api/fetch-list';
+import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
 import { useAuth } from '@/lib/auth/context';
-import { sampleSessions, sampleFuelLogs, sampleDowntime, sampleExpenses, sampleReceipts, sampleMachines } from '@/lib/sample-data';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 import { History as HistoryIcon, Fuel, Droplets, Clock, Receipt, Banknote } from 'lucide-react';
 
 interface Row extends Record<string, unknown> {
@@ -47,6 +47,7 @@ export default function HistoryPage() {
   
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(false);
 
   useEffect(() => {
     const id = myId();
@@ -54,20 +55,22 @@ export default function HistoryPage() {
       setLoading(false);
       return;
     }
+    setApiError(false);
     void Promise.all([
-      fetchList<Row>('/api/v1/work-sessions'),
-      fetchList<Row>('/api/v1/fuel-downtime/fuel-logs'),
-      fetchList<Row>('/api/v1/fuel-downtime/downtime'),
-      fetchList<Row>('/api/v1/expenses'),
-      fetchList<Row>('/api/v1/client-money/events'),
-      fetchList<Row>('/api/v1/machines'),
+      fetchListStrict<Row>('/api/v1/work-sessions'),
+      fetchListStrict<Row>('/api/v1/fuel-downtime/fuel-logs'),
+      fetchListStrict<Row>('/api/v1/fuel-downtime/downtime'),
+      fetchListStrict<Row>('/api/v1/expenses'),
+      fetchListStrict<Row>('/api/v1/client-money/events'),
+      fetchListStrict<Row>('/api/v1/machines'),
     ]).then(([s, f, d, e, c, m]) => {
       const code = new Map(m.map((x) => [String(x.id), String(x.code ?? '')]));
       const mine = (rows: Row[]) => rows.filter((r) => String(r.created_by ?? '') === id);
-      
+
+      // API up → show exactly what's in the DB (empty = empty state)
       let all: Entry[] = [];
-      
-      if (s.length > 0 && f.length > 0) {
+
+      if (s.length > 0 || f.length > 0 || d.length > 0 || e.length > 0 || c.length > 0) {
         all = [
           ...mine(s).map((x) => ({ id: String(x.id), kind: 'Session', text: `${code.get(String(x.machine_id)) ?? 'Machine'} · ${new Date(String(x.start_at)).toLocaleString()}`, t: ts(x.start_at ?? x.created_at) })),
           ...mine(f).map((x) => ({ id: String(x.id), kind: 'Fuel', text: `${code.get(String(x.machine_id)) ?? 'Machine'} · ${x.litres} L`, t: ts(x.created_at) })),
@@ -75,23 +78,19 @@ export default function HistoryPage() {
           ...mine(e).map((x) => ({ id: String(x.id), kind: 'Expense', text: `${String(x.category_name ?? x.category ?? 'Expense')}`, t: ts(x.date ?? x.created_at) })),
           ...mine(c).map((x) => ({ id: String(x.id), kind: 'Receipt', text: `${String(x.event_type)}`, t: ts(x.event_date ?? x.created_at) })),
         ];
-      } else {
-        const machineMap = new Map(sampleMachines.map(m => [m.id, m.code]));
-        all = [
-          ...sampleSessions.map((x) => ({ id: String(x.id), kind: 'Session', text: `${machineMap.get(x.machine_id) || 'Machine'} · ${new Date(x.start_at).toLocaleString()}`, t: ts(x.start_at) })),
-          ...sampleFuelLogs.map((x) => ({ id: String(x.id), kind: 'Fuel', text: `${machineMap.get(x.machine_id) || 'Machine'} · ${x.litres} L`, t: ts(x.created_at) })),
-          ...sampleDowntime.map((x) => ({ id: String(x.id), kind: 'Downtime', text: `${machineMap.get(x.machine_id) || 'Machine'} · ${x.reason_code.replace(/_/g, ' ')}`, t: ts(x.started_at) })),
-          ...sampleExpenses.map((x) => ({ id: String(x.id), kind: 'Expense', text: `${x.expense_categories?.name ?? 'Expense'}`, t: ts(x.date) })),
-          ...sampleReceipts.map((x) => ({ id: String(x.id), kind: 'Receipt', text: `${x.event_type}`, t: ts(x.event_date) })),
-        ];
       }
-      
+
       setEntries(all.sort((a, b) => b.t - a.t).slice(0, 50));
+    }).catch(() => {
+      // API unreachable — banner only, never fake history
+      setApiError(true);
+      setEntries([]);
     }).finally(() => setLoading(false));
   }, []);
 
   return (
     <div className="space-y-6">
+      {apiError && <ApiErrorBanner />}
       <div className="rounded-xl bg-gradient-to-r from-gray-950 to-gray-900 p-6 text-white">
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-white/20 p-2">

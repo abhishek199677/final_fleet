@@ -12,9 +12,9 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { fetchList } from '@/lib/api/fetch-list';
+import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
 import { useAuth } from '@/lib/auth/context';
-import { sampleMachines, sampleSessions, sampleFuelLogs, sampleDowntime, sampleExpenses, sampleAlerts } from '@/lib/sample-data';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 
 type RangeKey = '1d' | '7d';
 
@@ -144,24 +144,29 @@ export default function OpsToday() {
   const [alerts, setAlerts] = useState<Row[]>([]);
   const [maintenance, setMaintenance] = useState<Row[]>([]);
   const [myId, setMyId] = useState<string | null>(null);
+  const [apiError, setApiError] = useState(false);
 
   useEffect(() => {
     setMyId(getMyId());
     setLoading(true);
+    setApiError(false);
     void Promise.all([
-      fetchList<Row>('/api/v1/machines'),
-      fetchList<Row>('/api/v1/work-sessions'),
-      fetchList<Row>('/api/v1/fuel-downtime/fuel-logs'),
-      fetchList<Row>('/api/v1/fuel-downtime/downtime'),
-      fetchList<Row>('/api/v1/expenses'),
-      fetchList<Row>('/api/v1/alerts?status=unread'),
+      fetchListStrict<Row>('/api/v1/machines'),
+      fetchListStrict<Row>('/api/v1/work-sessions'),
+      fetchListStrict<Row>('/api/v1/fuel-downtime/fuel-logs'),
+      fetchListStrict<Row>('/api/v1/fuel-downtime/downtime'),
+      fetchListStrict<Row>('/api/v1/expenses'),
+      fetchListStrict<Row>('/api/v1/alerts?status=unread'),
     ]).then(([m, s, f, d, e, al]) => {
-      setMachines(m.length > 0 ? m : sampleMachines);
-      setSessions(s.length > 0 ? s : sampleSessions);
-      setFuelLogs(f.length > 0 ? f : sampleFuelLogs);
-      setDowntime(d.length > 0 ? d : sampleDowntime);
-      setExpenses(e.length > 0 ? e : sampleExpenses);
-      setAlerts(al.length > 0 ? al.slice(0, 4) : sampleAlerts);
+      // API is up — show exactly what the database has (empty = empty state,
+      // never fake sample data when the backend is reachable).
+      setApiError(false);
+      setMachines(m);
+      setSessions(s);
+      setFuelLogs(f);
+      setDowntime(d);
+      setExpenses(e);
+      setAlerts(al.slice(0, 4));
       // Maintenance status per machine (shared ops-readable view)
       void Promise.all(m.map((mm) => fetchList<Row>(`/api/v1/maintenance/machines/${mm.id}/status`)))
         .then((lists) => {
@@ -173,6 +178,9 @@ export default function OpsToday() {
           );
         })
         .catch(() => undefined);
+    }).catch(() => {
+      // API unreachable — banner only, never fake records
+      setApiError(true);
     }).finally(() => setLoading(false));
   }, [nonce]);
 
@@ -321,6 +329,7 @@ export default function OpsToday() {
 
   return (
     <div className="space-y-6">
+      {apiError && <ApiErrorBanner onRetry={() => setNonce((n) => n + 1)} />}
       {/* Title + quick actions */}
       <div className="rounded-xl bg-gradient-to-r from-gray-950 to-gray-900 p-6 shadow-lg">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -332,28 +341,28 @@ export default function OpsToday() {
             {!isReadOnly && (
               <>
                 <Link href="/work-session/new">
-                  <Button size="sm" className="bg-white text-gray-700 hover:bg-gray-50">
+                  <Button size="sm">
                     <Play className="mr-2 h-4 w-4" /> Start Session
                   </Button>
                 </Link>
                 <Link href="/fuel/new">
-                  <Button size="sm" variant="outline" className="border-white/30 text-white hover:bg-white/10">
+                  <Button size="sm" variant="outline">
                     <Fuel className="mr-2 h-4 w-4" /> Log Fuel
                   </Button>
                 </Link>
                 <Link href="/expense/new">
-                  <Button size="sm" variant="outline" className="border-white/30 text-white hover:bg-white/10">
+                  <Button size="sm" variant="outline">
                     <Receipt className="mr-2 h-4 w-4" /> Log Expense
                   </Button>
                 </Link>
                 <Link href="/cash-count">
-                  <Button size="sm" variant="outline" className="border-white/30 text-white hover:bg-white/10">
+                  <Button size="sm" variant="outline">
                     <ClipboardCheck className="mr-2 h-4 w-4" /> Cash Count
                   </Button>
                 </Link>
               </>
             )}
-            <Button size="sm" variant="outline" onClick={() => setNonce((n) => n + 1)} className="border-white/30 text-white hover:bg-white/10">
+            <Button size="sm" variant="outline" onClick={() => setNonce((n) => n + 1)}>
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
             <div className="inline-flex items-center rounded-lg bg-white/20 p-0.5">

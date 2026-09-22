@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { History, Filter, User, FileText, AlertTriangle, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { fetchList } from '@/lib/api/fetch-list';
-import { sampleUsers, sampleAuditEntries, sampleMachines } from '@/lib/sample-data';
+import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 
 interface Row extends Record<string, unknown> {
   id?: string;
@@ -40,43 +40,35 @@ export default function AuditPage() {
   const [filters, setFilters] = useState({ user_id: '', table: '', machine_id: '', from: '', to: '' });
   const [voiding, setVoiding] = useState<string | null>(null);
   const [reason, setReason] = useState('');
-  const [usingSample, setUsingSample] = useState(false);
+
+  const [apiError, setApiError] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    const [a, m] = await Promise.all([
-      fetchList<Row>('/api/v1/audit'),
-      fetchList<Row>('/api/v1/machines'),
-    ]);
-    
-    if (a.length > 0) {
+    setApiError(false);
+    try {
+      const [a, m] = await Promise.all([
+        fetchListStrict<Row>('/api/v1/audit'),
+        fetchListStrict<Row>('/api/v1/machines'),
+      ]);
+      // API up → show exactly what's in the DB (empty = empty state)
       setAllRows(a);
-      setUsingSample(false);
-    } else {
-      setAllRows(sampleAuditEntries);
-      setUsingSample(true);
-    }
-    
-    if (m.length > 0) {
       setMachines(m);
-    } else {
-      setMachines(sampleMachines);
+    } catch {
+      // API down → banner only, never fake audit entries
+      setApiError(true);
     }
-    
+
     try {
       const res = await authFetch('/api/v1/auth/users').catch(() => null);
       if (res && res.ok) {
         const j = await res.json();
-        if (Array.isArray(j) && j.length > 0) {
-          setUsers(j);
-        } else {
-          setUsers(sampleUsers);
-        }
+        setUsers(Array.isArray(j) ? j : []);
       } else {
-        setUsers(sampleUsers);
+        setApiError(true);
       }
     } catch {
-      setUsers(sampleUsers);
+      setApiError(true);
     }
     setLoading(false);
   };
@@ -86,16 +78,6 @@ export default function AuditPage() {
   }, []);
 
   const rows = useMemo(() => {
-    if (!usingSample) {
-      const q = new URLSearchParams();
-      if (filters.user_id) q.set('user_id', filters.user_id);
-      if (filters.table) q.set('table', filters.table);
-      if (filters.machine_id) q.set('machine_id', filters.machine_id);
-      if (filters.from) q.set('from', filters.from);
-      if (filters.to) q.set('to', filters.to);
-      return allRows;
-    }
-
     return allRows.filter((r) => {
       if (filters.user_id) {
         const user = users.find((u) => String(u.id) === filters.user_id);
@@ -119,7 +101,7 @@ export default function AuditPage() {
       }
       return true;
     });
-  }, [allRows, filters, users, usingSample]);
+  }, [allRows, filters, users]);
 
   const voidEntry = async (row: Row) => {
     if (!reason.trim()) return;
@@ -152,6 +134,7 @@ export default function AuditPage() {
 
   return (
     <div className="space-y-6">
+      {apiError && <ApiErrorBanner onRetry={load} />}
       <div>
         <h1 className="text-3xl font-bold">Audit</h1>
         <p className="text-muted-foreground mt-1">Every write, filterable. Voids create new versions with a reason.</p>

@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { fetchList } from '@/lib/api/fetch-list';
+import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
 import { useOfflineQueue } from '@/hooks/use-offline-queue';
 import { useAuth } from '@/lib/auth/context';
-import { sampleReceipts, sampleClients } from '@/lib/sample-data';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 import { Banknote, ArrowDownToLine } from 'lucide-react';
 
 interface Row extends Record<string, unknown> {
@@ -30,23 +30,17 @@ export default function ReceiptPage() {
     event_date: new Date().toISOString().slice(0, 10),
   });
   const [saving, setSaving] = useState(false);
+  const [apiError, setApiError] = useState(false);
 
   const load = () => {
-    void fetchList<Row>('/api/v1/clients').then(data => {
-      if (data.length > 0) {
-        setClients(data);
-      } else {
-        setClients(sampleClients);
-      }
-    }).catch(() => setClients(sampleClients));
-    
-    void fetchList<Row>('/api/v1/client-money/events').then(data => {
-      if (data.length > 0) {
-        setMine(data.slice(0, 10));
-      } else {
-        setMine(sampleReceipts);
-      }
-    }).catch(() => setMine(sampleReceipts));
+    setApiError(false);
+    void fetchListStrict<Row>('/api/v1/clients').then(data => {
+      setClients(data);
+    }).catch(() => setApiError(true));
+
+    void fetchListStrict<Row>('/api/v1/client-money/events').then(data => {
+      setMine(data.slice(0, 10));
+    }).catch(() => setApiError(true));
   };
 
   useEffect(() => {
@@ -78,6 +72,7 @@ export default function ReceiptPage() {
 
   return (
     <div className="space-y-6">
+      {apiError && <ApiErrorBanner onRetry={load} />}
       <div className="rounded-xl bg-gradient-to-r from-gray-900 to-gray-800 p-6 text-white">
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-white/20 p-2">
@@ -136,7 +131,7 @@ export default function ReceiptPage() {
                   <Input value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} className="border-[#E5E2DB] focus:border-emerald-400" />
                 </div>
               </div>
-              <Button type="submit" disabled={saving} className="bg-emerald-600 text-white hover:bg-emerald-700">{saving ? 'Saving…' : 'Save'}</Button>
+              <Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
             </form>
           </div>
         )}

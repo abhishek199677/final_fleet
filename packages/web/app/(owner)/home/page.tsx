@@ -3,20 +3,28 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import {
   Bar, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import {
   Download, RefreshCw, TrendingUp, AlertTriangle,
-  ArrowUpRight, ArrowDownRight, MoreHorizontal, ChevronRight,
+  ArrowUpRight, MoreHorizontal, ChevronRight,
 } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { fetchList } from '@/lib/api/fetch-list';
+import { fetchListStrict } from '@/lib/api/fetch-list';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 import { useAuth } from '@/lib/auth/context';
 import { cn } from '@/lib/utils';
 import { GlassCard } from '@/components/dashboard/glass-card';
 import { GlareCard } from '@/components/fx/glare-card';
 import { Reveal } from '@/components/fx/reveal';
+
+// Orbit hero — WebGL canvas, skip SSR
+const OrbitDeliveryHero = dynamic(
+  () => import('@/components/ui/orbit-delivery-hero'),
+  { ssr: false },
+);
 
 interface Row extends Record<string, unknown> {
   id?: string;
@@ -131,6 +139,7 @@ function DashboardInner() {
   const [loading, setLoading] = useState(true);
   const [nonce, setNonce] = useState(0);
   const [period, setPeriod] = useState<'today' | 'month' | 'year'>('today');
+  const [apiError, setApiError] = useState(false);
 
   const nowTs = Date.now();
   const hr = 3_600_000;
@@ -144,6 +153,22 @@ function DashboardInner() {
   const [receivables, setReceivables] = useState<Row[]>([]);
   const [advances, setAdvances] = useState<Row[]>([]);
   const [alerts, setAlerts] = useState<Row[]>([]);
+  const [heroOpacity, setHeroOpacity] = useState(1);
+  const [heroScale, setHeroScale] = useState(1);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const scrollY = window.scrollY;
+      const fadeStart = 100;
+      const fadeEnd = 400;
+      const opacity = 1 - Math.min(Math.max((scrollY - fadeStart) / (fadeEnd - fadeStart), 0), 1);
+      const scale = 1 - Math.min(Math.max((scrollY - fadeStart) / (fadeEnd - fadeStart), 0), 1) * 0.03;
+      setHeroOpacity(opacity);
+      setHeroScale(scale);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -157,26 +182,31 @@ function DashboardInner() {
         return null;
       }
     };
+    setApiError(false);
     void Promise.all([
       getKpis(),
-      fetchList<Row>('/api/v1/machines'),
-      fetchList<Row>('/api/v1/work-sessions'),
-      fetchList<Row>('/api/v1/deployments'),
-      fetchList<Row>('/api/v1/sites'),
-      fetchList<Row>('/api/v1/clients'),
-      fetchList<Row>('/api/v1/billing/receivables'),
-      fetchList<Row>('/api/v1/billing/unused-advances'),
-      fetchList<Row>('/api/v1/alerts'),
+      fetchListStrict<Row>('/api/v1/machines'),
+      fetchListStrict<Row>('/api/v1/work-sessions'),
+      fetchListStrict<Row>('/api/v1/deployments'),
+      fetchListStrict<Row>('/api/v1/sites'),
+      fetchListStrict<Row>('/api/v1/clients'),
+      fetchListStrict<Row>('/api/v1/billing/receivables'),
+      fetchListStrict<Row>('/api/v1/billing/unused-advances'),
+      fetchListStrict<Row>('/api/v1/alerts'),
     ]).then(([k, m, s, d, st, c, r, a, al]) => {
+      // API up → show exactly what's in the DB (empty = empty state)
       if (k) setKpis(k);
-      if (m.length > 0) setMachines(m);
-      if (s.length > 0) setSessions(s);
-      if (d.length > 0) setDeployments(d);
-      if (st.length > 0) setSites(st);
-      if (c.length > 0) setClients(c);
-      if (r.length > 0) setReceivables(r);
-      if (a.length > 0) setAdvances(a);
-      if (al.length > 0) setAlerts(al.filter((x) => x.is_resolved !== true).slice(0, 5));
+      setMachines(m);
+      setSessions(s);
+      setDeployments(d);
+      setSites(st);
+      setClients(c);
+      setReceivables(r);
+      setAdvances(a);
+      setAlerts(al.filter((x) => x.is_resolved !== true).slice(0, 5));
+    }).catch(() => {
+      // API unreachable — show banner
+      setApiError(true);
     }).finally(() => setLoading(false));
   }, [nonce]);
 
@@ -249,19 +279,13 @@ function DashboardInner() {
 
   const totalBilled = num(kpis?.total_billed_minor);
   const totalExpenses = num(kpis?.expense_total);
-  const utilisation = num(kpis?.utilization_pct, 78);
+  const utilisation = num(kpis?.utilization_pct, 0);
   const workingNow = statusCounts.working || 0;
   const totalMachines = fleetActive.length || machines.length;
 
-  const chartData = [
-    { label: 'Mon', revenue: 42000, cost: 28000 },
-    { label: 'Tue', revenue: 38000, cost: 25000 },
-    { label: 'Wed', revenue: 51000, cost: 32000 },
-    { label: 'Thu', revenue: 45000, cost: 29000 },
-    { label: 'Fri', revenue: 55000, cost: 35000 },
-    { label: 'Sat', revenue: 48000, cost: 31000 },
-    { label: 'Sun', revenue: 62000, cost: 38000 },
-  ];
+  // No revenue time-series endpoint exists yet — keep empty and show an
+  // empty state instead of fabricating weekly numbers.
+  const chartData: { label: string; revenue: number; cost: number }[] = [];
 
   const todayStr = new Date(now).toLocaleDateString('en-GB', {
     weekday: 'long',
@@ -292,8 +316,21 @@ function DashboardInner() {
 
   return (
     <div className="min-w-0 space-y-6">
-      {/* Header */}
+      {apiError && <ApiErrorBanner onRetry={() => setNonce((n) => n + 1)} />}
+      {/* Orbit Delivery Hero — fades on scroll */}
       <Reveal delay={0}>
+        <div
+          className="relative overflow-hidden rounded-2xl border border-white/18 bg-white/72 dark:bg-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.06)] transition-opacity duration-300 ease-out"
+          style={{ opacity: heroOpacity, transform: `scale(${heroScale})`, transformOrigin: 'top center' }}
+        >
+          <div className="dashboard-hero">
+            <OrbitDeliveryHero theme="auto" />
+          </div>
+        </div>
+      </Reveal>
+
+      {/* Header */}
+      <Reveal delay={1}>
         <GlassCard hover={false}>
           <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
@@ -387,15 +424,13 @@ function DashboardInner() {
               </div>
               <div className="mt-3">
                 <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-                  {minorToMoney(totalBilled || 187338300)}
+                  {minorToMoney(totalBilled)}
                 </p>
               </div>
-              <div className="mt-3 flex items-center gap-1.5">
-                <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                  <ArrowUpRight className="h-3 w-3" />
-                  12%
-                </span>
-                <span className="text-xs text-gray-400">vs last period</span>
+              <div className="mt-3">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Billed this {period === 'today' ? 'day' : period === 'month' ? 'month' : 'year'}
+                </p>
               </div>
             </div>
           </GlareCard>
@@ -413,15 +448,13 @@ function DashboardInner() {
               </div>
               <div className="mt-3">
                 <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-                  {minorToMoney(totalExpenses || 93669150)}
+                  {minorToMoney(totalExpenses)}
                 </p>
               </div>
-              <div className="mt-3 flex items-center gap-1.5">
-                <span className="inline-flex items-center gap-0.5 rounded-full bg-red-500/10 dark:bg-red-500/20 px-2 py-0.5 text-xs font-medium text-red-600 dark:text-red-400">
-                  <ArrowDownRight className="h-3 w-3" />
-                  3%
-                </span>
-                <span className="text-xs text-gray-400">vs last period</span>
+              <div className="mt-3">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Expenses this {period === 'today' ? 'day' : period === 'month' ? 'month' : 'year'}
+                </p>
               </div>
             </div>
           </GlareCard>
@@ -439,12 +472,12 @@ function DashboardInner() {
               </div>
               <div className="mt-3">
                 <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-                  {minorToMoney(receivables.reduce((a, r) => a + num(r.amount_minor), 0) || 69200000)}
+                  {minorToMoney(receivables.reduce((a, r) => a + num(r.amount_minor), 0))}
                 </p>
               </div>
               <div className="mt-3">
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {receivables.length || 3} clients with pending balance
+                  {receivables.length} client{receivables.length === 1 ? '' : 's'} with pending balance
                 </p>
               </div>
             </div>
@@ -476,6 +509,12 @@ function DashboardInner() {
                 </div>
               </div>
               <div className="h-64 w-full">
+                {chartData.length === 0 ? (
+                  <div className="flex h-full flex-col items-center justify-center rounded-xl border border-white/10 bg-white/30 dark:bg-white/5">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-200">No revenue data yet</p>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Revenue vs operating cost will appear once billing data is available</p>
+                  </div>
+                ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
@@ -505,6 +544,7 @@ function DashboardInner() {
                     <Bar dataKey="cost" name="Operating cost" fill="hsl(var(--fleet-gray-300))" radius={[4, 4, 0, 0]} barSize={24} />
                   </ComposedChart>
                 </ResponsiveContainer>
+                )}
               </div>
             </GlassCard>
           </Reveal>
@@ -624,18 +664,18 @@ function DashboardInner() {
                 )}
               </div>
               <div className="space-y-3">
-                {(alerts.length > 0
-                  ? alerts.map((a) => ({
+                {alerts.length === 0 ? (
+                  <div className="rounded-xl border border-emerald-200/30 bg-emerald-500/10 p-4">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-50">All clear</p>
+                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Nothing needs attention right now</p>
+                  </div>
+                ) : (
+                alerts.map((a) => ({
                       id: String(a.id),
                       message: String(a.title ?? a.type ?? 'Alert'),
                       subtitle: String(a.message ?? a.machine_code ?? ''),
                       severity: String(a.severity ?? 'warning'),
-                    }))
-                  : [
-                      { id: '1', message: 'BLR-005 hydraulic failure', subtitle: 'Overdue repair', severity: 'critical' },
-                      { id: '2', message: 'EXC-001 fuel efficiency dropped', subtitle: '15% this week', severity: 'warning' },
-                      { id: '3', message: 'CRN-003 service due', subtitle: 'In 2 operating hours', severity: 'info' },
-                    ]
+                    })
                 ).map((alert) => {
                   const isCritical = alert.severity === 'critical' || alert.severity === 'urgent';
                   const isWarning = alert.severity === 'warning';
@@ -663,7 +703,7 @@ function DashboardInner() {
                       </div>
                     </div>
                   );
-                })}
+                }))}
               </div>
             </GlassCard>
           </Reveal>
@@ -675,24 +715,24 @@ function DashboardInner() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500 dark:text-gray-400">Active deployments</span>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-50">{deployments.length || 4}</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-50">{deployments.filter((d) => String(d.status ?? 'active') === 'active').length}</span>
                 </div>
                 <div className="h-px bg-white/10" />
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500 dark:text-gray-400">Active clients</span>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-50">{clients.length || 3}</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-50">{clients.length}</span>
                 </div>
                 <div className="h-px bg-white/10" />
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500 dark:text-gray-400">Unused advances</span>
                   <span className="text-sm font-semibold text-gray-900 dark:text-gray-50">
-                    {minorToMoney(advances.reduce((a, adv) => a + num(adv.amount_minor) - num(adv.consumed_minor), 0) || 4500000)}
+                    {minorToMoney(advances.reduce((a, adv) => a + num(adv.amount_minor) - num(adv.consumed_minor), 0))}
                   </span>
                 </div>
                 <div className="h-px bg-white/10" />
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500 dark:text-gray-400">Sites</span>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-50">{sites.length || 2}</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-50">{sites.length}</span>
                 </div>
               </div>
             </GlassCard>

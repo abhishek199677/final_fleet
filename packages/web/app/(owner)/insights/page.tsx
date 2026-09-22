@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { fetchList } from '@/lib/api/fetch-list';
+import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
@@ -12,7 +12,7 @@ import {
   AlertTriangle, Brain, Clock, Coins, Gauge, Power, TrendingUp, Wrench, Fuel,
   CheckCircle2, ArrowRight,
 } from 'lucide-react';
-import { sampleMachines, sampleSessions, sampleFuelLogs, sampleDowntime } from '@/lib/sample-data';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 
 function num(v: unknown, fallback = 0): number {
   const n = typeof v === 'string' ? Number(v) : (v as number);
@@ -99,18 +99,17 @@ export default function Insights() {
   const [insights, setInsights] = useState<MachineInsight[]>([]);
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(false);
 
   useEffect(() => {
     void Promise.all([
-      fetchList<Record<string, unknown>>('/api/v1/machines'),
-      fetchList<Record<string, unknown>>('/api/v1/work-sessions'),
+      fetchListStrict<Record<string, unknown>>('/api/v1/machines'),
+      fetchListStrict<Record<string, unknown>>('/api/v1/work-sessions'),
     ]).then(([m, s]) => {
-      setMachines(m.length > 0 ? m : sampleMachines);
-      setSessions(s.length > 0 ? s : sampleSessions);
-    }).catch(() => {
-      setMachines(sampleMachines);
-      setSessions(sampleSessions);
-    }).finally(() => setLoading(false));
+      // API up → show exactly what's in the DB (empty = empty state)
+      setMachines(m);
+      setSessions(s);
+    }).catch(() => setApiError(true)).finally(() => setLoading(false));
   }, []);
 
   // Fetch computed insights
@@ -121,56 +120,12 @@ export default function Insights() {
       .then(async (res) => {
         if (!res.ok) throw new Error('Failed to load insights');
         const data = await res.json();
-        if (data.insights && data.insights.length > 0) {
-          setInsights(data.insights);
-        } else {
-          setInsights(generateSampleInsights());
-        }
+        // API up → show exactly what it returns (empty = empty state)
+        setInsights(data.insights ?? []);
       })
-      .catch(() => setInsights(generateSampleInsights()))
+      .catch(() => setApiError(true))
       .finally(() => setInsightsLoading(false));
   }, [loading, machines]);
-
-  const generateSampleInsights = (): MachineInsight[] => {
-    return sampleMachines.slice(0, 6).map((m, i) => ({
-      machine_code: m.code,
-      machine_id: m.id,
-      type: m.type,
-      make: '',
-      model: '',
-      year: 2022,
-      health_score: [92, 87, 78, 95, 65, 82][i] || 80,
-      status: ['operating', 'operating', 'downtime', 'operating', 'idle', 'operating'][i] || 'operating',
-      performance_summary: `${m.code} has been performing well with consistent output. ${i === 2 ? 'Currently under scheduled maintenance.' : i === 4 ? 'Awaiting deployment to new site.' : 'Operating at optimal capacity.'}`,
-      issues: i === 2 ? ['Scheduled maintenance in progress'] : i === 4 ? ['No active deployment'] : [],
-      earnings_per_day: Array.from({ length: 14 }, (_, j) => ({
-        date: new Date(Date.now() - (13 - j) * 86400000).toISOString().slice(0, 10),
-        hours: Math.round((4 + Math.random() * 4) * 10) / 10,
-        amount: Math.round(8000 + Math.random() * 4000),
-      })),
-      earnings_total: {
-        total: Math.round(80000 + Math.random() * 40000),
-        daily_average: Math.round(8000 + Math.random() * 4000),
-        monthly_estimate: Math.round(240000 + Math.random() * 120000),
-        currency: 'INR',
-      },
-      recommendations: i === 2 ? ['Complete maintenance and return to service'] : i === 4 ? ['Assign to active deployment'] : ['Continue current operations'],
-      stats: {
-        total_hours: Math.round(120 + Math.random() * 80),
-        billable_hours: Math.round(100 + Math.random() * 60),
-        billable_ratio: Math.round(80 + Math.random() * 15),
-        total_sessions: Math.round(15 + Math.random() * 10),
-        downtime_hours: i === 2 ? 24 : Math.round(Math.random() * 8),
-        downtime_events: i === 2 ? 1 : Math.round(Math.random() * 2),
-        fuel_litres: Math.round(800 + Math.random() * 400),
-        fuel_cost: Math.round(88000 + Math.random() * 44000),
-        avg_session_hours: Math.round((5 + Math.random() * 3) * 10) / 10,
-        days_since_last_session: i === 4 ? 7 : Math.round(Math.random() * 2),
-        current_meter: Math.round(10000 + Math.random() * 5000),
-        meter_unit: 'hrs',
-      },
-    }));
-  };
 
   // Fleet totals from raw data
   const totalUnits = useMemo(() =>
@@ -228,6 +183,7 @@ export default function Insights() {
 
   return (
     <div className="space-y-6">
+      {apiError && <ApiErrorBanner />}
       <div>
         <h1 className="text-3xl font-bold">Fleet Insights</h1>
         <p className="text-muted-foreground mt-1">

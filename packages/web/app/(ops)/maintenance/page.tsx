@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { fetchList } from '@/lib/api/fetch-list';
+import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
 import { useAuth } from '@/lib/auth/context';
-import { sampleMachines, sampleMaintenance } from '@/lib/sample-data';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 import { Wrench, History } from 'lucide-react';
 
 interface Row extends Record<string, unknown> {
@@ -31,47 +31,26 @@ export default function MaintenanceVisitPage() {
     notes: '',
   });
   const [saving, setSaving] = useState(false);
+  const [apiError, setApiError] = useState(false);
 
   useEffect(() => {
-    void fetchList<Row>('/api/v1/machines').then(data => {
-      if (data.length > 0) {
-        setMachines(data);
-      } else {
-        setMachines(sampleMachines);
-      }
-    }).catch(() => setMachines(sampleMachines));
+    void fetchListStrict<Row>('/api/v1/machines').then(data => {
+      setMachines(data);
+    }).catch(() => setApiError(true));
   }, []);
 
   useEffect(() => {
     if (machineId) {
-      void fetchList<Row>(`/api/v1/maintenance/machines/${machineId}/visits`)
+      void fetchListStrict<Row>(`/api/v1/maintenance/machines/${machineId}/visits`)
         .then(data => {
-          if (data.length > 0) {
-            setVisits(data);
-          } else {
-            setVisits(sampleMaintenance.filter(v => v.machine_code === machines.find(m => m.id === machineId)?.code));
-          }
+          setVisits(data);
         })
-        .catch(() => setVisits(sampleMaintenance.filter(v => v.machine_code === machines.find(m => m.id === machineId)?.code)));
-      void fetchList<Row>(`/api/v1/maintenance/machines/${machineId}/tasks`)
+        .catch(() => setApiError(true));
+      void fetchListStrict<Row>(`/api/v1/maintenance/machines/${machineId}/tasks`)
         .then(data => {
-          if (data.length > 0) {
-            setTasks(data);
-          } else {
-            setTasks([
-              { id: 't1', name: 'Oil change' },
-              { id: 't2', name: 'Filter replacement' },
-              { id: 't3', name: 'Grease all fittings' },
-              { id: 't4', name: 'Check hydraulic levels' },
-            ]);
-          }
+          setTasks(data);
         })
-        .catch(() => setTasks([
-          { id: 't1', name: 'Oil change' },
-          { id: 't2', name: 'Filter replacement' },
-          { id: 't3', name: 'Grease all fittings' },
-          { id: 't4', name: 'Check hydraulic levels' },
-        ]));
+        .catch(() => { setApiError(true); setTasks([]); });
       setTicked([]);
     } else {
       setVisits([]);
@@ -117,6 +96,7 @@ export default function MaintenanceVisitPage() {
 
   return (
     <div className="space-y-6">
+      {apiError && <ApiErrorBanner />}
       <div className="rounded-xl bg-gradient-to-r from-gray-950 to-gray-900 p-6 text-white">
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-white/20 p-2">
@@ -198,7 +178,7 @@ export default function MaintenanceVisitPage() {
               <div>
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-slate-700">Parts used</label>
-                  <Button type="button" size="sm" variant="outline" onClick={() => setParts([...parts, { item: '', qty: '1', cost: '' }])} className="border-[#E5E2DB] text-slate-700 hover:bg-slate-50">
+                  <Button type="button" size="sm" variant="outline" onClick={() => setParts([...parts, { item: '', qty: '1', cost: '' }])}>
                     + Add part
                   </Button>
                 </div>
@@ -210,7 +190,7 @@ export default function MaintenanceVisitPage() {
                   </div>
                 ))}
               </div>
-              <Button type="submit" disabled={saving || !machineId} className="bg-sky-600 text-white hover:bg-sky-700">{saving ? 'Saving…' : 'Save Visit'}</Button>
+              <Button type="submit" disabled={saving || !machineId}>{saving ? 'Saving…' : 'Save Visit'}</Button>
             </form>
           </div>
         )}

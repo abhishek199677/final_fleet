@@ -6,8 +6,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { AlertTriangle, ArrowLeft, ChevronDown, Clock, Fuel, Gauge as GaugeIcon, Star, Tractor, User, Wrench } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { fetchList } from '@/lib/api/fetch-list';
-import { sampleMachines, sampleSessions, sampleFuelLogs, sampleDowntime, sampleMaintenance } from '@/lib/sample-data';
+import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 
 interface Row extends Record<string, unknown> {
   id?: string;
@@ -135,6 +135,7 @@ export default function MachineDetail() {
   const [operators, setOperators] = useState<Row[]>([]);
   const [contrib, setContrib] = useState<Row | null>(null);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -149,35 +150,32 @@ export default function MachineDetail() {
         return null;
       }
     };
+    setApiError(false);
     void Promise.all([
       getOne(`/api/v1/machines/${id}`),
-      fetchList<Row>('/api/v1/machines'),
-      fetchList<Row>(`/api/v1/work-sessions?machine_id=${id}`),
-      fetchList<Row>(`/api/v1/fuel-downtime/fuel-logs?machine_id=${id}`),
-      fetchList<Row>(`/api/v1/fuel-downtime/downtime?machine_id=${id}`),
-      fetchList<Row>(`/api/v1/maintenance/machines/${id}/status`),
+      fetchListStrict<Row>('/api/v1/machines'),
+      fetchListStrict<Row>(`/api/v1/work-sessions?machine_id=${id}`),
+      fetchListStrict<Row>(`/api/v1/fuel-downtime/fuel-logs?machine_id=${id}`),
+      fetchListStrict<Row>(`/api/v1/fuel-downtime/downtime?machine_id=${id}`),
+      fetchListStrict<Row>(`/api/v1/maintenance/machines/${id}/status`),
       getOne(`/api/v1/deployments/machine/${id}/active`),
-      fetchList<Row>('/api/v1/operators'),
-      fetchList<Row>('/api/v1/billing/contribution'),
+      fetchListStrict<Row>('/api/v1/operators'),
+      fetchListStrict<Row>('/api/v1/billing/contribution'),
     ]).then(([m, ml, s, f, d, t, dep, ops, c]) => {
-      const machineData = m || sampleMachines.find(x => x.id === id) || null;
-      setMachine(machineData);
-      setMachineList(ml.length > 0 ? ml : sampleMachines);
-      setSessions(s.length > 0 ? s : sampleSessions.filter(x => x.machine_id === id));
-      setFuelLogs(f.length > 0 ? f : sampleFuelLogs.filter(x => x.machine_id === id));
-      setDowntime(d.length > 0 ? d : sampleDowntime.filter(x => x.machine_id === id));
-      setTasks(t.length > 0 ? t : sampleMaintenance.filter(x => x.machine_code === machineData?.code));
+      // API up → show exactly what's in the DB (empty = empty state)
+      if (!m) setApiError(true);
+      setMachine(m);
+      setMachineList(ml);
+      setSessions(s);
+      setFuelLogs(f);
+      setDowntime(d);
+      setTasks(t);
       setDeployment(dep);
       setOperators(ops);
       setContrib(c.find((x) => String(x.machine_id) === String(id)) ?? null);
     }).catch(() => {
-      const m = sampleMachines.find(x => x.id === id);
-      if (m) setMachine(m);
-      setMachineList(sampleMachines);
-      setSessions(sampleSessions.filter(x => x.machine_id === id));
-      setFuelLogs(sampleFuelLogs.filter(x => x.machine_id === id));
-      setDowntime(sampleDowntime.filter(x => x.machine_id === id));
-      if (m) setTasks(sampleMaintenance.filter(x => x.machine_code === m.code));
+      // API down → banner only, never fabricate a machine record
+      setApiError(true);
     }).finally(() => setLoading(false));
   }, [id]);
   //     setContrib(c.find((x) => String(x.machine_id) === String(id)) ?? null);
@@ -272,6 +270,7 @@ export default function MachineDetail() {
 
   return (
     <div className="p-4 md:p-6">
+      {apiError && <div className="mb-4"><ApiErrorBanner /></div>}
       {/* Header: back + selector */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Link href="/machines" className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">

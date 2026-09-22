@@ -6,8 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { fetchList } from '@/lib/api/fetch-list';
-import { sampleClients } from '@/lib/sample-data';
+import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 
 export default function NewSite() {
   const router = useRouter();
@@ -20,11 +20,12 @@ export default function NewSite() {
   });
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [apiError, setApiError] = useState(false);
 
   useEffect(() => {
-    void fetchList<Record<string, unknown>>('/api/v1/clients')
-      .then((list) => setClients(list.length > 0 ? list : sampleClients))
-      .catch(() => setClients(sampleClients))
+    void fetchListStrict<Record<string, unknown>>('/api/v1/clients')
+      .then((list) => setClients(list))
+      .catch(() => setApiError(true))
       .finally(() => setFetching(false));
   }, []);
 
@@ -53,6 +54,7 @@ export default function NewSite() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {apiError && <ApiErrorBanner />}
       <h1 className="text-3xl font-bold">New Site</h1>
       <Card>
         <CardContent className="pt-6">

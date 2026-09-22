@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { fetchList } from '@/lib/api/fetch-list';
+import { fetchListStrict } from '@/lib/api/fetch-list';
 import { useAuth } from '@/lib/auth/context';
-import { sampleFuelLogs, sampleMachines } from '@/lib/sample-data';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 import { Droplets, Plus, Fuel } from 'lucide-react';
 
 interface FuelLogEntry {
@@ -26,30 +26,24 @@ export default function OpsFuel() {
   
   const [logs, setLogs] = useState<FuelLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(false);
 
-  useEffect(() => {
-    void fetchList<FuelLogEntry>('/api/v1/fuel-downtime/fuel-logs')
+  const loadLogs = () => {
+    setApiError(false);
+    void fetchListStrict<FuelLogEntry>('/api/v1/fuel-downtime/fuel-logs')
       .then(data => {
-        if (data.length > 0) {
-          setLogs(data);
-        } else {
-          setLogs(sampleFuelLogs.map(l => ({
-            ...l,
-            machines: { code: sampleMachines.find(m => m.id === l.machine_id)?.code || 'Unknown' },
-          })));
-        }
+        // API up → show exactly what's in the DB (empty = empty state)
+        setLogs(data);
       })
-      .catch(() => {
-        setLogs(sampleFuelLogs.map(l => ({
-          ...l,
-          machines: { code: sampleMachines.find(m => m.id === l.machine_id)?.code || 'Unknown' },
-        })));
-      })
+      .catch(() => setApiError(true))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadLogs(); }, []);
 
   return (
     <div className="space-y-6">
+      {apiError && <ApiErrorBanner onRetry={loadLogs} />}
       <div className="rounded-xl bg-gradient-to-r from-gray-800 to-gray-700 p-6 text-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -63,7 +57,7 @@ export default function OpsFuel() {
           </div>
           {!isReadOnly && (
             <Link href="/fuel/new">
-              <Button className="bg-white text-amber-600 hover:bg-amber-50">
+              <Button>
                 <Plus className="mr-2 h-4 w-4" />
                 Log Fuel
               </Button>

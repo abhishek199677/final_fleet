@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Download, CreditCard, TrendingUp, AlertCircle, Receipt, IndianRupee, Plus } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { fetchList } from '@/lib/api/fetch-list';
-import { sampleDeployments, sampleRateCards, sampleContribution, sampleReceivables, sampleExtraCharges } from '@/lib/sample-data';
+import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 
 interface Row extends Record<string, unknown> {
   id?: string;
@@ -39,20 +39,29 @@ export default function BillingPage() {
   });
   const [running, setRunning] = useState<string | null>(null);
 
+  const [apiError, setApiError] = useState(false);
+
   const load = async () => {
     setLoading(true);
-    const [d, r, e, c, rec] = await Promise.all([
-      fetchList<Row>('/api/v1/deployments'),
-      fetchList<Row>('/api/v1/billing/rate-cards'),
-      fetchList<Row>('/api/v1/billing/extra-charges'),
-      fetchList<Row>('/api/v1/billing/contribution'),
-      fetchList<Row>('/api/v1/billing/receivables'),
-    ]);
-    setDeployments(d.length > 0 ? d : sampleDeployments);
-    setRates(r.length > 0 ? r : sampleRateCards);
-    setExtras(e.length > 0 ? e : sampleExtraCharges);
-    setContrib(c.length > 0 ? c : sampleContribution);
-    setReceivables(rec.length > 0 ? rec : sampleReceivables);
+    setApiError(false);
+    try {
+      const [d, r, e, c, rec] = await Promise.all([
+        fetchListStrict<Row>('/api/v1/deployments'),
+        fetchListStrict<Row>('/api/v1/billing/rate-cards'),
+        fetchListStrict<Row>('/api/v1/billing/extra-charges'),
+        fetchListStrict<Row>('/api/v1/billing/contribution'),
+        fetchListStrict<Row>('/api/v1/billing/receivables'),
+      ]);
+      // API up → show exactly what's in the DB (empty = empty state)
+      setDeployments(d);
+      setRates(r);
+      setExtras(e);
+      setContrib(c);
+      setReceivables(rec);
+    } catch {
+      // API down → banner only, never fake billing records
+      setApiError(true);
+    }
     setLoading(false);
   };
 
@@ -146,6 +155,7 @@ export default function BillingPage() {
 
   return (
     <div className="space-y-6">
+      {apiError && <ApiErrorBanner onRetry={load} />}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Billing</h1>
@@ -303,7 +313,7 @@ export default function BillingPage() {
                       <Input type="date" value={form.effective_from} onChange={(e) => setForm({ ...form, effective_from: e.target.value })} required className="mt-1" />
                     </div>
                   </div>
-                  <Button type="submit" className="w-full bg-gradient-to-r from-gray-900 to-gray-800 hover:from-emerald-600 hover:to-teal-600">
+                  <Button type="submit" className="w-full">
                     Save Rate Card
                   </Button>
                 </form>

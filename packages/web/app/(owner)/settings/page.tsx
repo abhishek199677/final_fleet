@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Settings as SettingsIcon, Users, Truck, Tag, DollarSign, Camera, Bell, Clock, Globe, Shield, Wrench, CheckCircle } from 'lucide-react';
-import { fetchList } from '@/lib/api/fetch-list';
+import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { useLocale, type Locale } from '@/components/i18n-provider';
-import { sampleUsers, sampleMachines, sampleOperators } from '@/lib/sample-data';
+import { ApiErrorBanner } from '@/components/api-error-banner';
 
 interface TenantSettings {
   evidence_policy: Record<string, string>;
@@ -31,14 +31,6 @@ const TAB_CONFIG = [
   { id: 'language', label: 'Language', icon: Globe, color: 'from-purple-500 to-pink-500' },
 ] as const;
 
-const SAMPLE_SETTINGS: TenantSettings = {
-  evidence_policy: { fuel_log: 'required', expense: 'optional', work_session: 'required' },
-  fx_defaults: { USD: { currency: 'USD', rate: 83.5 }, EUR: { currency: 'EUR', rate: 91.2 }, KES: { currency: 'KES', rate: 0.65 } },
-  cut_off_time: '18:00',
-  working_units_per_day: 8,
-  working_days_per_month: 26,
-};
-
 export default function Settings() {
   const t = useTranslations('settings');
   const tCommon = useTranslations('common');
@@ -57,25 +49,23 @@ export default function Settings() {
   const [fxCurrencies, setFxCurrencies] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [apiError, setApiError] = useState(false);
 
   useEffect(() => {
+    setApiError(false);
     void Promise.all([
-      fetchList<Record<string, unknown>>('/api/v1/users'),
-      fetchList<Record<string, unknown>>('/api/v1/machines'),
-      fetchList<Record<string, unknown>>('/api/v1/maintenance/tasks'),
-      fetchList<Record<string, unknown>>('/api/v1/expenses/categories'),
+      fetchListStrict<Record<string, unknown>>('/api/v1/users'),
+      fetchListStrict<Record<string, unknown>>('/api/v1/machines'),
+      fetchListStrict<Record<string, unknown>>('/api/v1/maintenance/tasks'),
+      fetchListStrict<Record<string, unknown>>('/api/v1/expenses/categories'),
       authFetch('/api/v1/tenants/settings').then(r => r.ok ? r.json() : null).catch(() => null),
-      fetchList<Record<string, unknown>>('/api/v1/tenants/period-closes'),
+      fetchListStrict<Record<string, unknown>>('/api/v1/tenants/period-closes'),
     ]).then(([u, m, mt, c, s, pc]) => {
-      setUsers(u.length > 0 ? u : sampleUsers);
-      setMachines(m.length > 0 ? m : sampleMachines);
-      setMaintenanceTasks(mt.length > 0 ? mt : []);
-      setCategories(c.length > 0 ? c : [
-        { id: 'cat1', name: 'Fuel', type: 'operational' },
-        { id: 'cat2', name: 'Spare Parts', type: 'maintenance' },
-        { id: 'cat3', name: 'Labour', type: 'operational' },
-        { id: 'cat4', name: 'Transport', type: 'logistics' },
-      ]);
+      // API up → show exactly what's in the DB (empty = empty state)
+      setUsers(u);
+      setMachines(m);
+      setMaintenanceTasks(mt);
+      setCategories(c);
       setPeriodCloses(pc);
       if (s) {
         setSettings(s);
@@ -87,9 +77,12 @@ export default function Settings() {
         }
         setFxCurrencies(rates);
       } else {
-        setSettings(SAMPLE_SETTINGS);
-        setFxCurrencies({ USD: '83.5', EUR: '91.2', KES: '0.65' });
+        // Settings row missing — surface the banner, leave tabs empty
+        setApiError(true);
       }
+    }).catch(() => {
+      // API down → banner only, never fake users/machines/categories
+      setApiError(true);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -107,6 +100,7 @@ export default function Settings() {
 
   return (
     <div className="space-y-6">
+      {apiError && <ApiErrorBanner />}
       <div>
         <h1 className="text-3xl font-bold">Settings</h1>
         <p className="text-muted-foreground mt-1">Manage your tenant configuration and preferences</p>
@@ -393,7 +387,7 @@ export default function Settings() {
                     <Input type="number" value={settings.working_days_per_month} onChange={(e) => { void saveSettings({ working_days_per_month: parseInt(e.target.value) || 26 }); }} className="mt-1" />
                   </div>
                 </div>
-                <Button onClick={() => { void saveSettings(settings); }} disabled={saving} className="mt-4 bg-gradient-to-r from-gray-950 to-gray-900 hover:from-indigo-600 hover:to-blue-600">
+                <Button onClick={() => { void saveSettings(settings); }} disabled={saving} className="mt-4">
                   {saving ? 'Saving...' : 'Save Thresholds'}
                 </Button>
               </CardContent>
