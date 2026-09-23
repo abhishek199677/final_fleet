@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { PasswordInput } from '@/components/password-input';
 
 /* ============================================
    RIPPLE — Animated concentric circles
@@ -224,18 +225,32 @@ export function AuthTabs({ formFields, goTo, handleSubmit, defaultTab = 'login' 
               <label className="text-sm font-medium text-white/70">
                 {field.label}
               </label>
-              <input
-                type={field.type}
-                placeholder={field.placeholder}
-                required={field.required}
-                onChange={field.onChange}
-                className={cn(
-                  'h-12 w-full rounded-xl border border-white/[0.08] bg-white/[0.06] px-4',
-                  'text-sm text-white placeholder:text-white/25',
-                  'outline-none transition-all duration-200',
-                  'focus:border-white/20 focus:bg-white/[0.08] focus:ring-2 focus:ring-white/[0.06]',
-                )}
-              />
+              {field.type === 'password' ? (
+                <PasswordInput
+                  placeholder={field.placeholder}
+                  required={field.required}
+                  onChange={field.onChange}
+                  inputClassName={cn(
+                    'h-12 w-full rounded-xl border border-white/[0.08] bg-white/[0.06] px-4 pe-11',
+                    'text-sm text-white placeholder:text-white/25',
+                    'outline-none transition-all duration-200',
+                    'focus:border-white/20 focus:bg-white/[0.08] focus:ring-2 focus:ring-white/[0.06]',
+                  )}
+                />
+              ) : (
+                <input
+                  type={field.type}
+                  placeholder={field.placeholder}
+                  required={field.required}
+                  onChange={field.onChange}
+                  className={cn(
+                    'h-12 w-full rounded-xl border border-white/[0.08] bg-white/[0.06] px-4',
+                    'text-sm text-white placeholder:text-white/25',
+                    'outline-none transition-all duration-200',
+                    'focus:border-white/20 focus:bg-white/[0.08] focus:ring-2 focus:ring-white/[0.06]',
+                  )}
+                />
+              )}
             </div>
           ))}
 

@@ -4,6 +4,16 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import { Spinner } from '@/components/ui/spinner';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import {
+  MessageScrollerProvider, MessageScroller, MessageScrollerViewport,
+  MessageScrollerContent, MessageScrollerItem, MessageScrollerButton,
+} from '@/components/ui/message-scroller';
+import { Message, MessageContent, MessageFooter } from '@/components/ui/message';
+import { Bubble, BubbleContent } from '@/components/ui/bubble';
 import { Headphones, MessageCircle, Send, CheckCircle, Clock, AlertCircle, HelpCircle } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchListStrict } from '@/lib/api/fetch-list';
@@ -115,32 +125,36 @@ export default function SupportPage() {
           </div>
           <CardContent className="pt-6">
             <form onSubmit={(e) => void submit(e)} className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Subject *</label>
-                <Input 
-                  value={subject} 
-                  onChange={(e) => setSubject(e.target.value)} 
-                  placeholder="e.g. Billing total looks off" 
-                  required 
-                  className="mt-1"
+              <Field>
+                <FieldLabel htmlFor="ticket-subject">Subject *</FieldLabel>
+                <Input
+                  id="ticket-subject"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="e.g. Billing total looks off"
+                  required
                 />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  className="w-full border border-gray-200 rounded-lg p-3 text-sm mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 min-h-[120px]"
+                <FieldDescription>One line that summarises the problem.</FieldDescription>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="ticket-description">Description</FieldLabel>
+                <Textarea
+                  id="ticket-description"
+                  className="min-h-[120px]"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="What happened, which machine/client, when…"
                 />
-              </div>
+              </Field>
               <Button 
                 type="submit" 
                 disabled={sending}
                 className="w-full bg-gradient-to-r from-gray-900 to-gray-800 hover:from-emerald-600 hover:to-teal-600 gap-2"
               >
                 {sending ? (
-                  <>Sending…</>
+                  <>
+                    <Spinner /> Sending…
+                  </>
                 ) : (
                   <><Send className="h-4 w-4" /> Send Ticket</>
                 )}
@@ -182,35 +196,60 @@ export default function SupportPage() {
           </div>
           <CardContent className="pt-6">
             {tickets.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">🎧</div>
-                <p className="text-gray-500 text-lg">No tickets yet</p>
-                <p className="text-gray-400 text-sm mt-2">Submit a problem above to get started</p>
-              </div>
+              <Empty>
+                <EmptyHeader>
+                  <EmptyMedia variant="icon"><Headphones /></EmptyMedia>
+                  <EmptyTitle>No tickets yet</EmptyTitle>
+                  <EmptyDescription>Submit a problem above to get started</EmptyDescription>
+                </EmptyHeader>
+              </Empty>
             ) : (
-              <div className="space-y-3">
-                {tickets.map((t) => {
-                  const statusStyle = STATUS_STYLES[String(t.status)] || STATUS_STYLES.open;
-                  const StatusIcon = statusStyle.icon;
-                  
-                  return (
-                    <div key={String(t.id)} className="rounded-xl border border-gray-100 bg-gray-50 p-4 hover:shadow-md transition-all">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <h3 className="font-bold text-gray-800">{String(t.subject)}</h3>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {new Date(String(t.created_at)).toLocaleString()}
-                          </p>
-                        </div>
-                        <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyle.bg} ${statusStyle.text}`}>
-                          <StatusIcon className="h-3 w-3" />
-                          {String(t.status)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <MessageScrollerProvider defaultScrollPosition="start">
+                <MessageScroller className="h-[26rem]">
+                  <MessageScrollerViewport>
+                    <MessageScrollerContent className="gap-4">
+                      {tickets.map((t) => {
+                        const statusStyle = STATUS_STYLES[String(t.status)] || STATUS_STYLES.open;
+                        const StatusIcon = statusStyle.icon;
+                        const descriptionText =
+                          typeof t.description === 'string' ? t.description : '';
+
+                        return (
+                          <MessageScrollerItem
+                            key={String(t.id)}
+                            messageId={String(t.id)}
+                            scrollAnchor
+                          >
+                            <Message align="end">
+                              <MessageContent>
+                                <Bubble variant="tinted">
+                                  <BubbleContent className="px-3.5 py-2.5 text-sm">
+                                    <p className="font-semibold">{String(t.subject)}</p>
+                                    {descriptionText && (
+                                      <p className="mt-1 whitespace-pre-wrap">
+                                        {descriptionText}
+                                      </p>
+                                    )}
+                                  </BubbleContent>
+                                </Bubble>
+                                <MessageFooter className="px-0">
+                                  <span className="inline-flex items-center gap-1.5">
+                                    <StatusIcon className={`h-3.5 w-3.5 ${statusStyle.text}`} />
+                                    <span className={statusStyle.text}>{String(t.status)}</span>
+                                    <span aria-hidden="true">·</span>
+                                    <span>{new Date(String(t.created_at)).toLocaleString()}</span>
+                                  </span>
+                                </MessageFooter>
+                              </MessageContent>
+                            </Message>
+                          </MessageScrollerItem>
+                        );
+                      })}
+                    </MessageScrollerContent>
+                  </MessageScrollerViewport>
+                  <MessageScrollerButton direction="start" />
+                </MessageScroller>
+              </MessageScrollerProvider>
             )}
           </CardContent>
         </Card>

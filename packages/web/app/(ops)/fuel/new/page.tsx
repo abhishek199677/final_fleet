@@ -6,6 +6,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhotoCapture } from '@/components/ui/photo-capture';
+import {
+  Attachment, AttachmentActions, AttachmentAction, AttachmentContent,
+  AttachmentDescription, AttachmentMedia, AttachmentTitle,
+} from '@/components/ui/attachment';
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import { Spinner } from '@/components/ui/spinner';
+import { Image as ImageIcon, X } from 'lucide-react';
 import { fetchList } from '@/lib/api/fetch-list';
 import { useOfflineQueue } from '@/hooks/use-offline-queue';
 import { useAuth } from '@/lib/auth/context';
@@ -115,12 +122,12 @@ export default function NewFuelLog() {
               </div>
               <div>
                 <label className="text-sm font-medium">Currency</label>
-                <select className="w-full border rounded-md p-2" value={formData.currency} onChange={e => setFormData({ ...formData, currency: e.target.value })}>
-                  <option value="INR">INR</option>
-                  <option value="USD">USD</option>
-                  <option value="KES">KES</option>
-                  <option value="EUR">EUR</option>
-                </select>
+                <NativeSelect className="w-full" value={formData.currency} onChange={e => setFormData({ ...formData, currency: e.target.value })}>
+                  <NativeSelectOption value="INR">INR</NativeSelectOption>
+                  <NativeSelectOption value="USD">USD</NativeSelectOption>
+                  <NativeSelectOption value="KES">KES</NativeSelectOption>
+                  <NativeSelectOption value="EUR">EUR</NativeSelectOption>
+                </NativeSelect>
               </div>
               <div>
                 <label className="text-sm font-medium">FX Rate</label>
@@ -144,15 +151,44 @@ export default function NewFuelLog() {
               <label className="text-sm font-medium">Odometer Photo (optional)</label>
               <PhotoCapture
                 onPhoto={setOdometerPhoto}
-                label={odometerPhoto ? `✓ ${odometerPhoto.name}` : 'Capture Odometer Reading'}
+                label="Capture Odometer Reading"
               />
+              {odometerPhoto && (
+                <Attachment className="mt-2">
+                  <AttachmentMedia>
+                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                  </AttachmentMedia>
+                  <AttachmentContent>
+                    <AttachmentTitle>{odometerPhoto.name}</AttachmentTitle>
+                    <AttachmentDescription>
+                      {Math.max(1, Math.round(odometerPhoto.size / 1024))} KB · ready to upload
+                    </AttachmentDescription>
+                  </AttachmentContent>
+                  <AttachmentActions>
+                    <AttachmentAction
+                      aria-label="Remove photo"
+                      onClick={() => setOdometerPhoto(null)}
+                    >
+                      <X />
+                    </AttachmentAction>
+                  </AttachmentActions>
+                </Attachment>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium">Notes</label>
               <textarea className="w-full border rounded-md p-2" rows={2} value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} />
             </div>
             <div className="flex gap-4">
-              <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Save Fuel Log'}</Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Spinner /> Saving…
+                  </>
+                ) : (
+                  'Save Fuel Log'
+                )}
+              </Button>
               <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
             </div>
           </form>

@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/date-picker';
+import { format, parse } from 'date-fns';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchList } from '@/lib/api/fetch-list';
 
@@ -92,6 +94,10 @@ function NewDeploymentInner() {
     e.preventDefault();
     if (deployedMachineIds.has(formData.machine_id)) {
       alert(`This machine is already deployed at ${deployedSiteByMachine.get(formData.machine_id)}. End that deployment first.`);
+      return;
+    }
+    if (!formData.start_date) {
+      alert('Please pick a start date.');
       return;
     }
     setLoading(true);
@@ -204,11 +210,10 @@ function NewDeploymentInner() {
             </div>
             <div>
               <label className="text-sm font-medium">Start Date *</label>
-              <Input
-                type="date"
-                value={formData.start_date}
-                onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                required
+              <DatePicker
+                className="w-full"
+                selected={formData.start_date ? parse(formData.start_date, 'yyyy-MM-dd', new Date()) : undefined}
+                onSelect={d => setFormData({ ...formData, start_date: d ? format(d, 'yyyy-MM-dd') : '' })}
               />
             </div>
             <div className="border-t pt-4 mt-4">

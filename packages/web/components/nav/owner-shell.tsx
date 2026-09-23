@@ -2,16 +2,24 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   Bell, Building2, ChevronsLeft, CircleDollarSign, LayoutDashboard, LifeBuoy, Menu,
-  Receipt, Scale, ScrollText, Search, Settings, Tractor, Users, X, BarChart3,
-  MapPin, Rocket, Moon, Sun, LogOut, ChevronDown, Truck,
+  Receipt, Scale, ScrollText, Settings, Tractor, Users, X, BarChart3,
+  MapPin, Rocket, LogOut, Truck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchList } from '@/lib/api/fetch-list';
 import { useAuth } from '@/lib/auth/context';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { SkipToMain } from '@/components/skip-to-main';
+import { CommandMenu } from '@/components/command-menu';
+import { ConfigDrawer } from '@/components/config-drawer';
+import { ProfileDropdown } from '@/components/profile-dropdown';
+import { Search } from '@/components/search';
+import { ThemeSwitch } from '@/components/theme-switch';
+import { useSearch } from '@/context/search-provider';
 
 interface NavEntry {
   section?: 'overview' | 'manage' | 'tools';
@@ -50,24 +58,6 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
   const pathname = usePathname();
   const t = useTranslations('sidebar');
   const { logout } = useAuth();
-  const [darkMode, setDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('fleetos_dark') === '1';
-    }
-    return false;
-  });
-
-  useEffect(() => {
-    const isDark = document.documentElement.classList.contains('dark');
-    setDarkMode(isDark);
-  }, []);
-
-  const toggleDark = () => {
-    const next = !darkMode;
-    setDarkMode(next);
-    document.documentElement.classList.toggle('dark', next);
-    localStorage.setItem('fleetos_dark', next ? '1' : '0');
-  };
 
   return (
     <div className="flex h-full flex-col bg-white/80 dark:bg-white/5 backdrop-blur-xl border-r border-white/20 dark:border-white/8">
@@ -83,6 +73,16 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
             </span>
           )}
         </Link>
+      </div>
+
+      {/* Theme Toggle */}
+      <div
+        className={cn(
+          'flex w-full items-center py-2',
+          collapsed ? 'justify-center' : 'justify-end px-3',
+        )}
+      >
+        <ThemeSwitch />
       </div>
 
       {/* Navigation */}
@@ -129,18 +129,6 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
 
       {/* Bottom section */}
       <div className="border-t border-white/10 p-3 space-y-2">
-        {/* Dark mode toggle */}
-        <button
-          onClick={toggleDark}
-          className={cn(
-            'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 transition-all hover:bg-white/40 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-gray-50',
-            collapsed && 'justify-center px-2',
-          )}
-        >
-          {darkMode ? <Sun className="h-[18px] w-[18px] shrink-0 text-gray-400" /> : <Moon className="h-[18px] w-[18px] shrink-0 text-gray-400" />}
-          {!collapsed && <span>{darkMode ? 'Light mode' : 'Dark mode'}</span>}
-        </button>
-
         {/* User */}
         <div className={cn(
           'flex items-center gap-3 rounded-lg bg-white/40 dark:bg-white/5 p-2.5 backdrop-blur-md',
@@ -168,12 +156,10 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
 
 export function OwnerShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations('sidebar');
-  const { logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
-  const [search, setSearch] = useState('');
-  const router = useRouter();
+  const { setOpen: setCommandOpen } = useSearch();
 
   useEffect(() => {
     fetchList<Record<string, unknown>>('/api/v1/alerts')
@@ -183,8 +169,22 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
       .catch(() => undefined);
   }, []);
 
+  // ⌘K / Ctrl+K opens the command palette.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setCommandOpen((open) => !open);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [setCommandOpen]);
+
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-transparent">
+    <SidebarProvider>
+    <SkipToMain />
+    <div className="flex min-h-screen w-full bg-gray-50 dark:bg-transparent">
       {/* Desktop sidebar */}
       <aside
         className={cn(
@@ -235,25 +235,10 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
             <ChevronsLeft className={cn('h-4 w-4 transition-transform', collapsed && 'rotate-180')} />
           </button>
 
-          {/* Search */}
-          <form
-            className="relative hidden w-full max-w-md sm:block"
-            onSubmit={(e) => {
-              e.preventDefault();
-              router.push(search.trim() ? `/home?q=${encodeURIComponent(search.trim())}` : '/home');
-            }}
-          >
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t('searchMachines')}
-              className="h-9 w-full rounded-lg border border-white/20 dark:border-white/8 bg-white/40 dark:bg-white/5 pl-9 pr-12 text-sm text-gray-900 dark:text-gray-100 outline-none placeholder:text-gray-400 focus:border-brand-500 focus:bg-white/60 dark:focus:bg-white/10 focus:ring-1 focus:ring-brand-500/20 backdrop-blur-md transition-all"
-            />
-            <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-gray-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-gray-400">
-              ⌘K
-            </kbd>
-          </form>
+          {/* Search (opens the ⌘K command palette) */}
+          <div className="hidden w-full max-w-md sm:block">
+            <Search />
+          </div>
 
           <div className="ml-auto flex items-center gap-2">
             {/* Alert bell */}
@@ -273,37 +258,19 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
             {/* Divider */}
             <div className="hidden h-6 w-px bg-white/20 dark:bg-white/10 sm:block" />
 
-            {/* User menu */}
-            <div className="relative group">
-              <button className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-white/40 dark:hover:bg-white/10">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/60 dark:bg-white/10 text-xs font-semibold text-gray-700 dark:text-gray-200 backdrop-blur-md">
-                  OW
-                </div>
-                <ChevronDown className="hidden h-4 w-4 text-gray-400 sm:block" />
-              </button>
-              {/* Dropdown */}
-              <div className="invisible group-hover:visible absolute right-0 top-full mt-1 w-48 rounded-lg border border-white/20 dark:border-white/8 bg-white/90 dark:bg-white/10 backdrop-blur-2xl py-1 shadow-lg z-50">
-                <div className="px-3 py-2 border-b border-white/10">
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-50">Owner</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">demo@fleetos.com</p>
-                </div>
-                <button
-                  onClick={logout}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Log out
-                </button>
-              </div>
-            </div>
+            {/* Layout config + user menu */}
+            <ConfigDrawer />
+            <ProfileDropdown />
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8">
+        <main id="content" className="flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8">
           {children}
         </main>
       </div>
     </div>
+    <CommandMenu />
+    </SidebarProvider>
   );
 }

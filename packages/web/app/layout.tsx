@@ -3,6 +3,11 @@ import './globals.css';
 import { AmbientBackground } from '@/components/fx/ambient-background';
 import { AuthProvider } from '@/lib/auth/context';
 import { I18nProvider } from '@/components/i18n-provider';
+import { DirectionProvider } from '@/context/direction-provider';
+import { ThemeProvider } from '@/context/theme-provider';
+import { SearchProvider } from '@/context/search-provider';
+import { LayoutProvider } from '@/context/layout-provider';
+import { NavigationProgress } from '@/components/navigation-progress';
 
 export const metadata: Metadata = {
   title: 'Fleet OS',
@@ -25,8 +30,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-background font-sans antialiased" suppressHydrationWarning>
         <AuthProvider>
           <I18nProvider>
-            <AmbientBackground />
-            <div className="fleet-shell">{children}</div>
+            <ThemeProvider>
+              <DirectionProvider dir="ltr">
+                <SearchProvider>
+                  <LayoutProvider>
+                    <NavigationProgress />
+                    <AmbientBackground />
+                    <div className="fleet-shell">{children}</div>
+                  </LayoutProvider>
+                </SearchProvider>
+              </DirectionProvider>
+            </ThemeProvider>
           </I18nProvider>
         </AuthProvider>
       </body>

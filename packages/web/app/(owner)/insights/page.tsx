@@ -13,6 +13,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { ApiErrorBanner } from '@/components/api-error-banner';
+import { Spinner } from '@/components/ui/spinner';
 
 function sessionHours(s: Record<string, unknown>): number {
   const a = new Date(String(s.start_at ?? '')).getTime();
@@ -145,7 +146,8 @@ export default function Insights() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="flex items-center justify-center gap-2 py-20">
+        <Spinner className="h-5 w-5" />
         <p className="text-muted-foreground">Loading fleet insights...</p>
       </div>
     );
@@ -360,8 +362,8 @@ export default function Insights() {
           <Card>
             <CardContent className="py-12">
               <div className="flex flex-col items-center gap-3">
-                <div className="animate-pulse rounded-full bg-violet-100 p-3 dark:bg-violet-900/30">
-                  <Brain className="h-8 w-8 text-violet-500 animate-pulse" />
+                <div className="rounded-full bg-violet-100 p-3 dark:bg-violet-900/30">
+                  <Spinner className="h-8 w-8 text-violet-500" />
                 </div>
                 <p className="text-muted-foreground">Computing vehicle insights...</p>
               </div>

@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '@/components/ui/input-group';
+import { Spinner } from '@/components/ui/spinner';
+import { Phone } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
 
 export default function NewClient() {
@@ -54,33 +58,75 @@ export default function NewClient() {
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Name *</label>
-              <Input value={formData.name} onChange={(e) => set('name', e.target.value)} placeholder="BuildIt Corp" required />
+            <Field>
+              <FieldLabel htmlFor="client-name">Name *</FieldLabel>
+              <Input
+                id="client-name"
+                value={formData.name}
+                onChange={(e) => set('name', e.target.value)}
+                placeholder="BuildIt Corp"
+                required
+              />
+            </Field>
+            <div className="grid grid-cols-2 gap-4">
+              <Field>
+                <FieldLabel htmlFor="client-contact">Contact</FieldLabel>
+                <Input
+                  id="client-contact"
+                  value={formData.contact}
+                  onChange={(e) => set('contact', e.target.value)}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="client-phone">Phone</FieldLabel>
+                <InputGroup>
+                  <InputGroupAddon align="inline-start">
+                    <Phone />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id="client-phone"
+                    value={formData.phone}
+                    onChange={(e) => set('phone', e.target.value)}
+                  />
+                </InputGroup>
+              </Field>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Contact</label>
-                <Input value={formData.contact} onChange={(e) => set('contact', e.target.value)} />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Phone</label>
-                <Input value={formData.phone} onChange={(e) => set('phone', e.target.value)} />
-              </div>
+              <Field>
+                <FieldLabel htmlFor="client-currency">Currency</FieldLabel>
+                <Input
+                  id="client-currency"
+                  value={formData.currency}
+                  onChange={(e) => set('currency', e.target.value)}
+                  placeholder="INR"
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="client-terms">Payment Terms</FieldLabel>
+                <InputGroup>
+                  <InputGroupInput
+                    id="client-terms"
+                    type="number"
+                    value={formData.payment_terms_days}
+                    onChange={(e) => set('payment_terms_days', e.target.value)}
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupText>days</InputGroupText>
+                  </InputGroupAddon>
+                </InputGroup>
+              </Field>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Currency</label>
-                <Input value={formData.currency} onChange={(e) => set('currency', e.target.value)} placeholder="INR" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Payment Terms (days)</label>
-                <Input type="number" value={formData.payment_terms_days} onChange={(e) => set('payment_terms_days', e.target.value)} />
-              </div>
-            </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <FieldError>{error}</FieldError>}
             <div className="flex gap-4">
-              <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Add Client'}</Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Spinner /> Saving…
+                  </>
+                ) : (
+                  'Add Client'
+                )}
+              </Button>
               <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
             </div>
           </form>

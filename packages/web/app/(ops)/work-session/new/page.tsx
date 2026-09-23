@@ -6,6 +6,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhotoCapture } from '@/components/ui/photo-capture';
+import {
+  Attachment, AttachmentActions, AttachmentAction, AttachmentContent,
+  AttachmentDescription, AttachmentMedia, AttachmentTitle,
+} from '@/components/ui/attachment';
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import { Spinner } from '@/components/ui/spinner';
+import { Image as ImageIcon, X } from 'lucide-react';
 import { fetchList } from '@/lib/api/fetch-list';
 import { useOfflineQueue } from '@/hooks/use-offline-queue';
 import { useAuth } from '@/lib/auth/context';
@@ -111,31 +118,31 @@ export default function NewWorkSession() {
           <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
             <div>
               <label className="text-sm font-medium">Machine *</label>
-              <select
-                className="w-full border rounded-md p-2"
+              <NativeSelect
+                className="w-full"
                 value={formData.machine_id}
                 onChange={e => setFormData({ ...formData, machine_id: e.target.value })}
                 required
               >
-                <option value="">Select machine...</option>
+                <NativeSelectOption value="">Select machine…</NativeSelectOption>
                 {machines.map((m: Record<string, unknown>) => (
-                  <option key={m.id as string} value={m.id as string}>{m.code as string} — {m.type as string}</option>
+                  <NativeSelectOption key={m.id as string} value={m.id as string}>{m.code as string} — {m.type as string}</NativeSelectOption>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
             <div>
               <label className="text-sm font-medium">Operator *</label>
-              <select
-                className="w-full border rounded-md p-2"
+              <NativeSelect
+                className="w-full"
                 value={formData.operator_id}
                 onChange={e => setFormData({ ...formData, operator_id: e.target.value })}
                 required
               >
-                <option value="">Select operator...</option>
+                <NativeSelectOption value="">Select operator…</NativeSelectOption>
                 {uniqueOperators.map((o: Record<string, unknown>) => (
-                  <option key={o.id as string} value={o.id as string}>{o.name as string}</option>
+                  <NativeSelectOption key={o.id as string} value={o.id as string}>{o.name as string}</NativeSelectOption>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
             <div>
               <label className="text-sm font-medium">Start Meter *</label>
@@ -151,8 +158,29 @@ export default function NewWorkSession() {
               <label className="text-sm font-medium">Meter Photo (optional)</label>
               <PhotoCapture
                 onPhoto={setMeterPhoto}
-                label={meterPhoto ? `✓ ${meterPhoto.name}` : 'Capture Odometer'}
+                label="Capture Odometer"
               />
+              {meterPhoto && (
+                <Attachment className="mt-2">
+                  <AttachmentMedia>
+                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                  </AttachmentMedia>
+                  <AttachmentContent>
+                    <AttachmentTitle>{meterPhoto.name}</AttachmentTitle>
+                    <AttachmentDescription>
+                      {Math.max(1, Math.round(meterPhoto.size / 1024))} KB · ready to upload
+                    </AttachmentDescription>
+                  </AttachmentContent>
+                  <AttachmentActions>
+                    <AttachmentAction
+                      aria-label="Remove photo"
+                      onClick={() => setMeterPhoto(null)}
+                    >
+                      <X />
+                    </AttachmentAction>
+                  </AttachmentActions>
+                </Attachment>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium">Notes</label>
@@ -164,7 +192,15 @@ export default function NewWorkSession() {
               />
             </div>
             <div className="flex gap-4">
-              <Button type="submit" disabled={loading}>{loading ? 'Starting...' : 'Start Session'}</Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Spinner /> Starting…
+                  </>
+                ) : (
+                  'Start Session'
+                )}
+              </Button>
               <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
             </div>
           </form>

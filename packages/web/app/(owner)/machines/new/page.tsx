@@ -5,6 +5,14 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import {
+  Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList,
+} from '@/components/ui/combobox';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Spinner } from '@/components/ui/spinner';
+import { Hash } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
 
 const METER_TYPES = ['hours', 'km', 'cycles', 'metres', 'tonnes', 'trips'];
@@ -124,70 +132,88 @@ export default function NewMachine() {
           <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
             {/* Code */}
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Code *</label>
-                <Input
-                  value={formData.code}
-                  onChange={(e) => set('code', e.target.value)}
-                  placeholder="EXC-005"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Type *</label>
-                <select
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+              <Field>
+                <FieldLabel htmlFor="machine-code">Code *</FieldLabel>
+                <InputGroup>
+                  <InputGroupAddon align="inline-start">
+                    <Hash />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id="machine-code"
+                    value={formData.code}
+                    onChange={(e) => set('code', e.target.value)}
+                    placeholder="EXC-005"
+                    required
+                  />
+                </InputGroup>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="machine-type">Type *</FieldLabel>
+                <NativeSelect
+                  id="machine-type"
+                  className="w-full"
                   value={formData.type}
                   onChange={(e) => set('type', e.target.value)}
                   required
                 >
-                  <option value="">Select type...</option>
+                  <NativeSelectOption value="">Select type…</NativeSelectOption>
                   {MACHINE_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
+                    <NativeSelectOption key={t.value} value={t.value}>{t.label}</NativeSelectOption>
                   ))}
-                </select>
-              </div>
+                </NativeSelect>
+              </Field>
             </div>
 
             {/* Make & Model */}
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Make</label>
-                <select
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
-                  value={formData.make}
-                  onChange={(e) => {
-                    set('make', e.target.value);
-                    set('model', '');
-                  }}
+              <Field>
+                <FieldLabel>Make</FieldLabel>
+                <Combobox
+                  items={MAKES}
+                  itemToStringValue={(m) => m.label}
+                  value={MAKES.find((m) => m.value === formData.make) ?? null}
+                  onValueChange={(m) =>
+                    setFormData((f) => ({ ...f, make: m ? m.value : '', model: '' }))
+                  }
                 >
-                  <option value="">Select make...</option>
-                  {MAKES.map((m) => (
-                    <option key={m.value} value={m.value}>{m.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Model</label>
-                <select
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+                  <ComboboxInput placeholder="Search make…" />
+                  <ComboboxContent>
+                    <ComboboxEmpty>No makes found.</ComboboxEmpty>
+                    <ComboboxList>
+                      {(m) => (
+                        <ComboboxItem key={m.value} value={m}>
+                          {m.label}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="machine-model">Model</FieldLabel>
+                <NativeSelect
+                  id="machine-model"
+                  className="w-full"
                   value={formData.model}
                   onChange={(e) => set('model', e.target.value)}
                   disabled={!formData.make}
                 >
-                  <option value="">{formData.make ? 'Select model...' : 'Select make first'}</option>
+                  <NativeSelectOption value="">
+                    {formData.make ? 'Select model…' : 'Select make first'}
+                  </NativeSelectOption>
                   {availableModels.map((m) => (
-                    <option key={m} value={m}>{m}</option>
+                    <NativeSelectOption key={m} value={m}>{m}</NativeSelectOption>
                   ))}
-                </select>
-              </div>
+                </NativeSelect>
+              </Field>
             </div>
 
             {/* Year & Chassis */}
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Year</label>
+              <Field>
+                <FieldLabel htmlFor="machine-year">Year</FieldLabel>
                 <Input
+                  id="machine-year"
                   type="number"
                   value={formData.year}
                   onChange={(e) => set('year', e.target.value)}
@@ -195,38 +221,48 @@ export default function NewMachine() {
                   min="1970"
                   max="2099"
                 />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Chassis No</label>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="machine-chassis">Chassis No</FieldLabel>
                 <Input
+                  id="machine-chassis"
                   value={formData.chassis_no}
                   onChange={(e) => set('chassis_no', e.target.value)}
                   placeholder="Optional"
                 />
-              </div>
+              </Field>
             </div>
 
             {/* Meter Type */}
-            <div>
-              <label className="text-sm font-medium">Meter Type *</label>
-              <select
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+            <Field>
+              <FieldLabel htmlFor="machine-meter">Meter Type *</FieldLabel>
+              <NativeSelect
+                id="machine-meter"
+                className="w-full"
                 value={formData.primary_meter_type}
                 onChange={(e) => set('primary_meter_type', e.target.value)}
                 required
               >
                 {METER_TYPES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                  <NativeSelectOption key={t} value={t}>{t}</NativeSelectOption>
                 ))}
-              </select>
-              <p className="text-xs text-gray-500 mt-1">Used for tracking usage — hours, distance, cycles, etc.</p>
-            </div>
+              </NativeSelect>
+              <FieldDescription>
+                Used for tracking usage — hours, distance, cycles, etc.
+              </FieldDescription>
+            </Field>
 
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <FieldError>{error}</FieldError>}
 
             <div className="flex gap-4 pt-2">
               <Button type="submit" disabled={loading}>
-                {loading ? 'Saving...' : 'Add Machine'}
+                {loading ? (
+                  <>
+                    <Spinner /> Saving…
+                  </>
+                ) : (
+                  'Add Machine'
+                )}
               </Button>
               <Button type="button" variant="outline" onClick={() => router.back()}>
                 Cancel

@@ -7,8 +7,12 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Truck, MapPin, Clock, CheckCircle, AlertCircle, Pencil, Trash2 } from 'lucide-react';
 import { fetchList } from '@/lib/api/fetch-list';
-import { apiDelete, confirmDelete } from '@/lib/api/mutations';
+import { apiDelete } from '@/lib/api/mutations';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { AlertTriangle } from 'lucide-react';
+import {
+  Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
+} from '@/components/ui/empty';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: typeof CheckCircle }> = {
   working: { label: 'Working', color: 'text-green-700', bg: 'bg-green-100', icon: CheckCircle },
@@ -22,6 +26,8 @@ export default function OwnerMachines() {
   const [machines, setMachines] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadMachines = () => {
     setApiError(false);
@@ -33,13 +39,19 @@ export default function OwnerMachines() {
 
   useEffect(() => { loadMachines(); }, []);
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!(confirmDelete(name))) return;
+  const handleDelete = (id: string, name: string) => setDeleteTarget({ id, label: name });
+
+  const confirmDeleteMachine = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await apiDelete(`/api/v1/machines/${id}`);
-      setMachines((prev) => prev.filter((m) => m.id !== id));
+      await apiDelete(`/api/v1/machines/${deleteTarget.id}`);
+      setMachines((prev) => prev.filter((m) => m.id !== deleteTarget.id));
+      setDeleteTarget(null);
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : 'Delete failed');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -123,13 +135,19 @@ export default function OwnerMachines() {
         </div>
       ) : machines.length === 0 ? (
         <Card>
-          <CardContent className="py-16 text-center">
-            <div className="text-6xl mb-4">🚜</div>
-            <p className="text-gray-500 text-lg mb-2">No machines yet</p>
-            <p className="text-gray-400 text-sm">Add your first machine to get started</p>
-            <Button className="mt-6">
-              <span className="mr-2">+</span> Add First Machine
-            </Button>
+          <CardContent className="pt-6">
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><Truck /></EmptyMedia>
+                <EmptyTitle>No machines yet</EmptyTitle>
+                <EmptyDescription>Add your first machine to get started</EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button>
+                  <span className="mr-2">+</span> Add First Machine
+                </Button>
+              </EmptyContent>
+            </Empty>
           </CardContent>
         </Card>
       ) : (
@@ -203,6 +221,17 @@ export default function OwnerMachines() {
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete machine"
+        desc={`Are you sure you want to delete "${deleteTarget?.label}"? This action cannot be undone.`}
+        confirmText="Delete"
+        destructive
+        isLoading={deleting}
+        handleConfirm={() => { void confirmDeleteMachine(); }}
+      />
     </div>
   );
 }

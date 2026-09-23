@@ -8,6 +8,11 @@ import { Download, CreditCard, TrendingUp, AlertCircle, Receipt, IndianRupee, Pl
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchListStrict } from '@/lib/api/fetch-list';
 import { ApiErrorBanner } from '@/components/api-error-banner';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { Field, FieldLabel } from '@/components/ui/field';
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '@/components/ui/input-group';
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import { Spinner } from '@/components/ui/spinner';
 
 interface Row extends Record<string, unknown> {
   id?: string;
@@ -228,7 +233,13 @@ export default function BillingPage() {
             </div>
             <CardContent className="pt-6">
               {deployments.length === 0 ? (
-                <p className="text-muted-foreground">No deployments yet.</p>
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon"><Receipt /></EmptyMedia>
+                    <EmptyTitle>No deployments yet</EmptyTitle>
+                    <EmptyDescription>Create a deployment first — billing runs against active deployments.</EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -255,7 +266,13 @@ export default function BillingPage() {
                           <td className="py-3 text-right">
                             <div className="flex justify-end gap-2">
                               <Button size="sm" variant="outline" disabled={running === String(d.id)} onClick={() => void runBilling(String(d.id))}>
-                                {running === String(d.id) ? 'Running…' : 'Run billing'}
+                                {running === String(d.id) ? (
+                                  <>
+                                    <Spinner /> Running…
+                                  </>
+                                ) : (
+                                  'Run billing'
+                                )}
                               </Button>
                               <Button size="sm" variant={String(d.status) === 'on_hold_payment' ? 'default' : 'destructive'} onClick={() => void holdToggle(d)}>
                                 {String(d.status) === 'on_hold_payment' ? 'Release' : 'Hold'}
@@ -280,40 +297,75 @@ export default function BillingPage() {
               </div>
               <CardContent className="pt-6">
                 <form onSubmit={(e) => void createRate(e)} className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Deployment *</label>
-                    <select className="w-full border border-gray-200 rounded-lg p-2.5 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" value={form.deployment_id} onChange={(e) => setForm({ ...form, deployment_id: e.target.value })} required>
-                      <option value="">Select deployment...</option>
+                  <Field>
+                    <FieldLabel htmlFor="rate-deployment">Deployment *</FieldLabel>
+                    <NativeSelect
+                      id="rate-deployment"
+                      className="w-full"
+                      value={form.deployment_id}
+                      onChange={(e) => setForm({ ...form, deployment_id: e.target.value })}
+                      required
+                    >
+                      <NativeSelectOption value="">Select deployment…</NativeSelectOption>
                       {deployments.map((d) => (
-                        <option key={String(d.id)} value={String(d.id)}>
+                        <NativeSelectOption key={String(d.id)} value={String(d.id)}>
                           {String(d.machine_code)} · {String(d.site_name)}
-                        </option>
+                        </NativeSelectOption>
                       ))}
-                    </select>
+                    </NativeSelect>
+                  </Field>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field>
+                      <FieldLabel htmlFor="rate-strategy">Strategy *</FieldLabel>
+                      <NativeSelect
+                        id="rate-strategy"
+                        className="w-full"
+                        value={form.strategy}
+                        onChange={(e) => setForm({ ...form, strategy: e.target.value })}
+                      >
+                        <NativeSelectOption value="hourly">Hourly</NativeSelectOption>
+                        <NativeSelectOption value="daily">Daily fixed</NativeSelectOption>
+                        <NativeSelectOption value="monthly">Monthly hire</NativeSelectOption>
+                      </NativeSelect>
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="rate-amount">Rate (major) *</FieldLabel>
+                      <InputGroup>
+                        <InputGroupAddon align="inline-start">
+                          <InputGroupText>₹</InputGroupText>
+                        </InputGroupAddon>
+                        <InputGroupInput
+                          id="rate-amount"
+                          type="number"
+                          step="0.01"
+                          value={form.rate}
+                          onChange={(e) => setForm({ ...form, rate: e.target.value })}
+                          required
+                        />
+                      </InputGroup>
+                    </Field>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Strategy *</label>
-                      <select className="w-full border border-gray-200 rounded-lg p-2.5 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" value={form.strategy} onChange={(e) => setForm({ ...form, strategy: e.target.value })}>
-                        <option value="hourly">Hourly</option>
-                        <option value="daily">Daily fixed</option>
-                        <option value="monthly">Monthly hire</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Rate (major) *</label>
-                      <Input type="number" step="0.01" value={form.rate} onChange={(e) => setForm({ ...form, rate: e.target.value })} required className="mt-1" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Min units/day</label>
-                      <Input type="number" step="0.1" value={form.min_units_per_day} onChange={(e) => setForm({ ...form, min_units_per_day: e.target.value })} className="mt-1" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Effective from *</label>
-                      <Input type="date" value={form.effective_from} onChange={(e) => setForm({ ...form, effective_from: e.target.value })} required className="mt-1" />
-                    </div>
+                    <Field>
+                      <FieldLabel htmlFor="rate-min-units">Min units/day</FieldLabel>
+                      <Input
+                        id="rate-min-units"
+                        type="number"
+                        step="0.1"
+                        value={form.min_units_per_day}
+                        onChange={(e) => setForm({ ...form, min_units_per_day: e.target.value })}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="rate-effective">Effective from *</FieldLabel>
+                      <Input
+                        id="rate-effective"
+                        type="date"
+                        value={form.effective_from}
+                        onChange={(e) => setForm({ ...form, effective_from: e.target.value })}
+                        required
+                      />
+                    </Field>
                   </div>
                   <Button type="submit" className="w-full">
                     Save Rate Card

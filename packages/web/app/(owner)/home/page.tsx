@@ -6,9 +6,11 @@ import dynamic from 'next/dynamic';
 import {
   Bar, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
+import Link from 'next/link';
 import {
   Download, RefreshCw, TrendingUp, AlertTriangle,
   ArrowUpRight, MoreHorizontal, ChevronRight,
+  Tractor, MapPin, Rocket, Building2, Users, LifeBuoy, Play,
 } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchListStrict } from '@/lib/api/fetch-list';
@@ -18,6 +20,11 @@ import { cn } from '@/lib/utils';
 import { GlassCard } from '@/components/dashboard/glass-card';
 import { GlareCard } from '@/components/fx/glare-card';
 import { Reveal } from '@/components/fx/reveal';
+import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
+import {
+  Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious,
+} from '@/components/ui/carousel';
 
 // Orbit hero — WebGL canvas, skip SSR
 const OrbitDeliveryHero = dynamic(
@@ -28,6 +35,15 @@ const OrbitDeliveryHero = dynamic(
 interface Row extends Record<string, unknown> {
   id?: string;
 }
+
+const QUICK_ACTIONS = [
+  { href: '/machines/new', label: 'Add machine', hint: 'Grow the fleet', icon: Tractor },
+  { href: '/sites/new', label: 'New site', hint: 'Project location', icon: MapPin },
+  { href: '/deployments/new', label: 'New deployment', hint: 'Assign a machine', icon: Rocket },
+  { href: '/clients/new', label: 'Add client', hint: 'New account', icon: Building2 },
+  { href: '/operators/new', label: 'Add operator', hint: 'Crew roster', icon: Users },
+  { href: '/support', label: 'Support', hint: 'Report a problem', icon: LifeBuoy },
+] as const;
 
 function num(v: unknown, fallback = 0): number {
   const n = typeof v === 'string' ? Number(v) : (v as number);
@@ -317,22 +333,23 @@ function DashboardInner() {
             </div>
             <div className="flex shrink-0 items-center gap-3">
               {/* Period toggle */}
-              <div className="flex items-center rounded-lg border border-white/20 bg-white/40 dark:bg-white/5 p-1 backdrop-blur-md">
+              <ButtonGroup className="rounded-lg border border-white/20 bg-white/40 p-1 shadow-none backdrop-blur-md dark:bg-white/5">
                 {(['today', 'month', 'year'] as const).map((p) => (
-                  <button
+                  <Button
                     key={p}
+                    size="sm"
+                    variant={period === p ? 'default' : 'ghost'}
                     onClick={() => setPeriod(p)}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200',
-                      period === p
-                        ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-50 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
+                      'px-3',
+                      period !== p &&
+                        'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
                     )}
                   >
                     {p === 'today' ? 'Today' : p === 'month' ? 'Month' : 'Year'}
-                  </button>
+                  </Button>
                 ))}
-              </div>
+              </ButtonGroup>
               <button
                 onClick={() => setNonce((n) => n + 1)}
                 aria-label="Refresh"
@@ -362,10 +379,17 @@ function DashboardInner() {
                 </div>
               </div>
               <div className="mt-3">
-                <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-                  <AnimatedKPI value={workingNow} />
-                  <span className="text-lg font-normal text-gray-400">/{totalMachines}</span>
-                </p>
+                {loading ? (
+                  <div className="flex items-center">
+                    <AnimatedKPI value={0} className="animate-pulse" />
+                    <span className="text-lg font-normal text-gray-400 animate-pulse">/—</span>
+                  </div>
+                ) : (
+                  <>
+                    <AnimatedKPI value={workingNow} />
+                    <span className="text-lg font-normal text-gray-400">/{totalMachines}</span>
+                  </>
+                )}
               </div>
               <div className="mt-3 flex items-center gap-3">
                 <ProgressRing value={utilisation} />
@@ -397,9 +421,15 @@ function DashboardInner() {
                 </div>
               </div>
               <div className="mt-3">
-                <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-                  {minorToMoney(totalBilled)}
-                </p>
+                {loading ? (
+                  <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50 animate-pulse">
+                    ₹0
+                  </p>
+                ) : (
+                  <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+                    {minorToMoney(totalBilled)}
+                  </p>
+                )}
               </div>
               <div className="mt-3">
                 <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -421,9 +451,15 @@ function DashboardInner() {
                 </div>
               </div>
               <div className="mt-3">
-                <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-                  {minorToMoney(totalExpenses)}
-                </p>
+                {loading ? (
+                  <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50 animate-pulse">
+                    ₹0
+                  </p>
+                ) : (
+                  <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+                    {minorToMoney(totalExpenses)}
+                  </p>
+                )}
               </div>
               <div className="mt-3">
                 <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -445,9 +481,15 @@ function DashboardInner() {
                 </div>
               </div>
               <div className="mt-3">
-                <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
-                  {minorToMoney(receivables.reduce((a, r) => a + num(r.amount_minor), 0))}
-                </p>
+                {loading ? (
+                  <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50 animate-pulse">
+                    ₹0
+                  </p>
+                ) : (
+                  <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50">
+                    {minorToMoney(receivables.reduce((a, r) => a + num(r.amount_minor), 0))}
+                  </p>
+                )}
               </div>
               <div className="mt-3">
                 <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -458,6 +500,44 @@ function DashboardInner() {
           </GlareCard>
         </Reveal>
       </div>
+
+      {/* Application Preview */}
+      <Reveal delay={0}>
+        <GlassCard className="h-full">
+          <div className="rounded-2xl border border-white/18 bg-white/72 dark:bg-white/5 backdrop-blur-xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.06)] transition-all duration-300 hover:bg-white/82 dark:hover:bg-white/8 hover:shadow-[0_12px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 h-full">
+            <div className="space-y-4">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">Application Preview</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                See FleetOS in action - preview of the complete application
+              </p>
+              <div className="relative">
+                <video
+                  controls
+                  autoPlay
+                  muted
+                  loop
+                  poster="/placeholder-video.jpg"
+                  className="w-full h-[300px] object-cover rounded-xl"
+                >
+                  <source src="/preview-video.mp4" type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <Play
+                    className="h-8 w-8 text-white/80 hover:text-white/100 transition-colors"
+                    aria-label="Play video preview"
+                    title="Play video preview"
+                  />
+                </div>
+                {/* Note about accessibility */}
+                <p className="absolute bottom-2 left-2 right-2 text-xs text-center text-muted-foreground/80">
+                  Video is muted. Captions available via video controls.
+                </p>
+              </div>
+            </div>
+          </div>
+        </GlassCard>
+      </Reveal>
 
       {/* Main content grid */}
       <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3">
@@ -529,7 +609,15 @@ function DashboardInner() {
               <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
                 <div>
                   <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">Machine activity</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{machines.length} machines · live status</p>
+                  {loading ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 animate-pulse">
+                      Loading machines...
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {machines.length} machines · live status
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 px-2.5 py-1">
@@ -638,7 +726,16 @@ function DashboardInner() {
                 )}
               </div>
               <div className="space-y-3">
-                {alerts.length === 0 ? (
+                {loading ? (
+                  <div className="rounded-xl border border-emerald-200/30 bg-emerald-500/10 p-4">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-50 animate-pulse">
+                      Loading alerts...
+                    </p>
+                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400 animate-pulse">
+                      Fetching latest alerts...
+                    </p>
+                  </div>
+                ) : alerts.length === 0 ? (
                   <div className="rounded-xl border border-emerald-200/30 bg-emerald-500/10 p-4">
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-50">All clear</p>
                     <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Nothing needs attention right now</p>

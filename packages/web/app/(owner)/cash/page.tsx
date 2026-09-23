@@ -1,9 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { flexRender } from '@tanstack/react-table';
+import {
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useLegacyTable,
+  type LegacyColumnDef,
+} from '@tanstack/react-table/legacy';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DataTableToolbar } from '@/components/data-table/toolbar';
+import { DataTableColumnHeader } from '@/components/data-table/column-header';
+import { DataTablePagination } from '@/components/data-table/pagination';
+import { SelectDropdown } from '@/components/select-dropdown';
 import { Wallet, ArrowRightLeft, Banknote, CheckCircle, Clock } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchListStrict } from '@/lib/api/fetch-list';
@@ -119,6 +133,65 @@ export default function CashPage() {
   };
 
   const totalBalance = accounts.reduce((sum, a) => sum + num(a.balance_minor), 0);
+
+  const countColumns = useMemo<LegacyColumnDef<Row>[]>(
+    () => [
+      {
+        accessorKey: 'count_date',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Date' />,
+        cell: ({ row }) => String(row.original.count_date ?? '').slice(0, 10),
+      },
+      {
+        accessorKey: 'counted_minor',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Counted' />,
+        cell: ({ row }) => money(row.original.counted_minor),
+      },
+      {
+        accessorKey: 'expected_minor',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Expected' />,
+        cell: ({ row }) => money(row.original.expected_minor),
+      },
+      {
+        id: 'variance',
+        accessorFn: (row) => num(row.variance_minor),
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Variance' />,
+        cell: ({ row }) => {
+          const v = num(row.original.variance_minor);
+          return (
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                v === 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+              }`}
+            >
+              {v === 0 ? 'Balanced' : money(v)}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: 'counted_by',
+        header: 'By',
+        cell: ({ row }) => String(row.original.counted_by ?? ''),
+      },
+      {
+        accessorKey: 'note',
+        header: 'Note',
+        cell: ({ row }) => (
+          <span className='text-gray-500'>{String(row.original.note ?? '')}</span>
+        ),
+      },
+    ],
+    []
+  );
+
+  const countsTable = useLegacyTable({
+    data: counts,
+    columns: countColumns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+  });
 
   return (
     <div className="space-y-6">
@@ -261,15 +334,17 @@ export default function CashPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">Type</label>
-                  <select
-                    className="w-full border border-gray-200 rounded-lg p-2.5 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    value={accountForm.type}
-                    onChange={(e) => setAccountForm({ ...accountForm, type: e.target.value })}
-                  >
-                    <option value="site_cash">Site cash</option>
-                    <option value="bank">Bank</option>
-                    <option value="petty">Petty cash</option>
-                  </select>
+                  <SelectDropdown
+                    className="mt-1 w-full border border-gray-200 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    isControlled
+                    defaultValue={accountForm.type}
+                    onValueChange={(value) => setAccountForm({ ...accountForm, type: value })}
+                    items={[
+                      { label: 'Site cash', value: 'site_cash' },
+                      { label: 'Bank', value: 'bank' },
+                      { label: 'Petty cash', value: 'petty' },
+                    ]}
+                  />
                 </div>
                 <Button type="submit" disabled={!accountForm.name.trim()}>Add account</Button>
               </form>
@@ -366,37 +441,47 @@ export default function CashPage() {
               {counts.length === 0 ? (
                 <p className="text-muted-foreground">No counts for this account yet.</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-left text-muted-foreground">
-                        <th className="py-2 pr-2">Date</th>
-                        <th className="py-2 pr-2">Counted</th>
-                        <th className="py-2 pr-2">Expected</th>
-                        <th className="py-2 pr-2">Variance</th>
-                        <th className="py-2 pr-2">By</th>
-                        <th className="py-2 pr-2">Note</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {counts.slice(0, 8).map((c) => (
-                        <tr key={String(c.id)} className="border-b last:border-0 hover:bg-gray-50">
-                          <td className="py-3 pr-2 font-medium">{String(c.count_date).slice(0, 10)}</td>
-                          <td className="py-3 pr-2">{money(c.counted_minor)}</td>
-                          <td className="py-3 pr-2">{money(c.expected_minor)}</td>
-                          <td className="py-3 pr-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                              num(c.variance_minor) === 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                            }`}>
-                              {num(c.variance_minor) === 0 ? 'Balanced' : money(c.variance_minor)}
-                            </span>
-                          </td>
-                          <td className="py-3 pr-2">{String(c.counted_by ?? '')}</td>
-                          <td className="py-3 pr-2 text-gray-500">{String(c.note ?? '')}</td>
-                        </tr>
+                <div className="space-y-3">
+                  <DataTableToolbar
+                    table={countsTable}
+                    searchKey="note"
+                    searchPlaceholder="Filter by note..."
+                  />
+                  <Table>
+                    <TableHeader>
+                      {countsTable.getHeaderGroups().map((headerGroup) => (
+                        <TableRow key={headerGroup.id}>
+                          {headerGroup.headers.map((header) => (
+                            <TableHead key={header.id}>
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(header.column.columnDef.header, header.getContext())}
+                            </TableHead>
+                          ))}
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableHeader>
+                    <TableBody>
+                      {countsTable.getRowModel().rows.length ? (
+                        countsTable.getRowModel().rows.map((row) => (
+                          <TableRow key={row.id}>
+                            {row.getVisibleCells().map((cell) => (
+                              <TableCell key={cell.id}>
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={countColumns.length} className="text-center text-muted-foreground">
+                            No counts match your filter.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                  <DataTablePagination table={countsTable} />
                 </div>
               )}
               <p className="mt-4 text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">

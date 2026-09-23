@@ -6,10 +6,10 @@ Fleet OS is a multi-tenant SaaS operations and finance-visibility platform for h
 
 This README is the product, UX, and engineering handoff for generating or improving the Fleet OS web UI. Treat the existing repository as the source of truth for routes, components, APIs, tokens, and dependencies. Do not invent a different product, role model, or visual language.
 
-**Vendor:** Perceptiqx
-**Status:** Web pilot
-**Primary users:** Owners and operations/site staff
-**Locales:** English (`en`) and French (`fr`)
+**Vendor:** Perceptiqx  
+**Status:** Web pilot  
+**Primary users:** Owners and operations/site staff  
+**Locales:** English (`en`) and French (`fr`)  
 **Authoritative documents:** `docs/BRD.md`, `docs/TSD.md`, `CLAUDE.md`
 
 ## 1. Product Context
@@ -357,22 +357,53 @@ Do not generate:
 
 - Node.js 22 or newer.
 - pnpm 9 or newer.
-- Docker for local PostgreSQL.
+- PostgreSQL (via local installation, Docker, or Neon serverless).
+
+### Database Setup
+
+Fleet OS requires a PostgreSQL database named `fleetos` with user `postgres` and password `postgres` (as configured in `.env`). Choose one of these methods:
+
+**Option 1: Docker (Recommended for consistency)**
+```bash
+docker run -d \
+  --name fleetos-postgres \
+  -p 5432:5432 \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=fleetos \
+  postgres:16
+```
+
+**Option 2: Local Installation**
+- Install PostgreSQL 14+ via your system package manager (Homebrew, apt-get, etc.)
+- Ensure the `postgres` service is running on port 5432
+- Create database: `createdb fleetos`
+- The default `postgres` user should have password `postgres` (update `.env` if different)
+
+**Option 3: Neon Serverless (Managed)**
+- Sign up at [neon.tech](https://neon.tech)
+- Create a project and database
+- Update `.env` with your Neon connection string:
+  ```env
+  DATABASE_URL=postgres://[USER]:[PASSWORD]@[HOST]/fleetos?sslmode=require
+  ```
 
 ### Install and run
 
 ```bash
 pnpm install
-docker-compose up -d postgres
-pnpm db:migrate
-pnpm db:seed
-pnpm dev
+pnpm db:migrate      # Apply database migrations
+pnpm db:seed         # Seed initial data
+pnpm dev             # Start both API (port 3001) and Web (port 3000)
 ```
 
 Run only the web UI with:
-
 ```bash
 pnpm dev:web
+```
+
+Run only the API with:
+```bash
+pnpm dev:api
 ```
 
 ### Checks
@@ -390,14 +421,47 @@ pnpm db:lint
 ```
 
 Web-only checks:
-
 ```bash
 pnpm --filter web typecheck
 pnpm --filter web test
 pnpm --filter web build
 ```
 
-## 15. Reference Documents And Requirements
+## 15. Deployment
+
+### Docker Build
+
+Build Docker images for production deployment:
+```bash
+# Build API image
+docker build -t fleetos-api -f packages/api/Dockerfile .
+
+# Build Web image
+docker build -t fleetos-web -f packages/web/Dockerfile .
+```
+
+### Render.com Deployment
+
+The web Dockerfile is pre-configured for Render.com deployment:
+- API_URL defaults to `https://fleetos-api-rdwp.onrender.com`
+- Set environment variables in Render dashboard:
+  - `DATABASE_URL` (Neon or PostgreSQL connection string)
+  - `JWT_SECRET` (strong secret for production)
+  - `API_URL` (your Render API service URL)
+  - `NEXT_PUBLIC_API_URL` (same as API_URL)
+  - `GEMINI_API_KEY` (for OCR functionality)
+  - `OPENAI_API_KEY` (for AI insights)
+  - Optional: WhatsApp and SMS credentials
+
+### Neon Database (Production)
+
+For production deployments, consider using [Neon](https://neon.tech) serverless PostgreSQL:
+1. Create a Neon project
+2. Copy the connection string from Neon dashboard
+3. Set as `DATABASE_URL` in your deployment environment
+4. The `@neondatabase/serverless` driver is already included in dependencies
+
+## 16. Reference Documents And Requirements
 
 - [Business Requirements](docs/BRD.md): functional requirements and acceptance criteria.
 - [Technical Specification](docs/TSD.md): architecture, data model, API, security, and delivery plan.

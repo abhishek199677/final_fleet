@@ -7,7 +7,11 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { User, Phone, Award, MapPin, Truck, Pencil, Trash2 } from 'lucide-react';
 import { fetchList } from '@/lib/api/fetch-list';
-import { apiDelete, confirmDelete } from '@/lib/api/mutations';
+import { apiDelete } from '@/lib/api/mutations';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import {
+  Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
+} from '@/components/ui/empty';
 
 interface OperatorEntry {
   id: string;
@@ -25,6 +29,8 @@ export default function OwnerOperators() {
   const router = useRouter();
   const [operators, setOperators] = useState<OperatorEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchList<OperatorEntry>('/api/v1/operators')
@@ -37,13 +43,19 @@ export default function OwnerOperators() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!(confirmDelete(name))) return;
+  const handleDelete = (id: string, name: string) => setDeleteTarget({ id, label: name });
+
+  const confirmDeleteOperator = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await apiDelete(`/api/v1/operators/${id}`);
-      setOperators((prev) => prev.filter((o) => o.id !== id));
+      await apiDelete(`/api/v1/operators/${deleteTarget.id}`);
+      setOperators((prev) => prev.filter((o) => o.id !== deleteTarget.id));
+      setDeleteTarget(null);
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : 'Delete failed');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -84,13 +96,19 @@ export default function OwnerOperators() {
         </div>
       ) : operators.length === 0 ? (
         <Card>
-          <CardContent className="py-16 text-center">
-            <div className="text-6xl mb-4">👷</div>
-            <p className="text-gray-500 text-lg mb-2">No operators yet</p>
-            <p className="text-gray-400 text-sm">Add your first operator to get started</p>
-            <Button className="mt-6">
-              <span className="mr-2">+</span> Add First Operator
-            </Button>
+          <CardContent className="pt-6">
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><User /></EmptyMedia>
+                <EmptyTitle>No operators yet</EmptyTitle>
+                <EmptyDescription>Add your first operator to get started</EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button>
+                  <span className="mr-2">+</span> Add First Operator
+                </Button>
+              </EmptyContent>
+            </Empty>
           </CardContent>
         </Card>
       ) : (
@@ -178,6 +196,17 @@ export default function OwnerOperators() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete operator"
+        desc={`Are you sure you want to delete "${deleteTarget?.label}"? This action cannot be undone.`}
+        confirmText="Delete"
+        destructive
+        isLoading={deleting}
+        handleConfirm={() => { void confirmDeleteOperator(); }}
+      />
     </div>
   );
 }

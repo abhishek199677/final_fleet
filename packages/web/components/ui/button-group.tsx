@@ -1,5 +1,6 @@
+import * as React from 'react'
 import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "cn"
+import { cn } from '@/lib/utils'
 import { Slot } from "radix-ui"
 
 import { Separator } from "@/components/ui/separator"
@@ -21,31 +22,20 @@ const buttonGroupVariants = cva(
   }
 )
 
-function ButtonGroup({
-  className,
-  orientation,
-  ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>) {
-  return (
-    <div
-      role="group"
-      data-slot="button-group"
-      data-orientation={orientation}
-      className={cn(buttonGroupVariants({ orientation }), className)}
-      {...props}
-    />
-  )
-}
+const ButtonGroup = React.memo(({ className, orientation, ...props }: React.ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>) => (
+  <div
+    role="group"
+    data-slot="button-group"
+    data-orientation={orientation}
+    className={cn(buttonGroupVariants({ orientation }), className)}
+    {...props}
+  />
+))
 
-function ButtonGroupText({
-  className,
-  asChild = false,
-  ...props
-}: React.ComponentProps<"div"> & {
+const ButtonGroupText = React.memo(({ className, asChild = false, ...props }: React.ComponentProps<"div"> & {
   asChild?: boolean
-}) {
-  const Comp = asChild ? Slot.Root : "div"
-
+}) => {
+  const Comp = asChild ? Slot.Root : "div";
   return (
     <Comp
       className={cn(
@@ -54,26 +44,20 @@ function ButtonGroupText({
       )}
       {...props}
     />
-  )
-}
+  );
+})
 
-function ButtonGroupSeparator({
-  className,
-  orientation = "vertical",
-  ...props
-}: React.ComponentProps<typeof Separator>) {
-  return (
-    <Separator
-      data-slot="button-group-separator"
-      orientation={orientation}
-      className={cn(
-        "relative m-0! self-stretch bg-input data-[orientation=vertical]:h-auto",
-        className
-      )}
-      {...props}
-    />
-  )
-}
+const ButtonGroupSeparator = React.memo(({ className, orientation = "vertical", ...props }: React.ComponentProps<typeof Separator>) => (
+  <Separator
+    data-slot="button-group-separator"
+    orientation={orientation}
+    className={cn(
+      "relative m-0! self-stretch bg-input data-[orientation=vertical]:h-auto",
+      className
+    )}
+    {...props}
+  />
+))
 
 export {
   ButtonGroup,

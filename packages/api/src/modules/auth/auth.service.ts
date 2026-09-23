@@ -3,7 +3,10 @@ import { DatabaseService } from '../../common/database/database.service';
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'crypto';
 import { sign, verify, type JwtPayload } from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET must be set in environment variables');
+}
 const REFRESH_EXPIRES = '30d';
 
 function hashPassword(password: string, salt: string): string {

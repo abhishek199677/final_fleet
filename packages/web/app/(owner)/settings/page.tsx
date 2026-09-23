@@ -9,6 +9,9 @@ import { fetchListStrict } from '@/lib/api/fetch-list';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { useLocale, type Locale } from '@/components/i18n-provider';
 import { ApiErrorBanner } from '@/components/api-error-banner';
+import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from '@/components/ui/item';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { Spinner } from '@/components/ui/spinner';
 
 interface TenantSettings {
   evidence_policy: Record<string, string>;
@@ -178,24 +181,24 @@ export default function Settings() {
                 </CardTitle>
               </div>
               <CardContent className="pt-6">
-                <div className="space-y-3">
+                <ItemGroup className="gap-3">
                   {users.map((u: Record<string, unknown>) => (
-                    <div key={u.id as string} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:shadow-md transition-all">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-white ${u.is_active ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-gray-400 to-gray-500'}`}>
-                          <Users className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-800">{u.email as string}</p>
-                          <p className="text-xs text-gray-500">{u.role as string}</p>
-                        </div>
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${u.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {u.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </div>
+                    <Item key={u.id as string} variant="outline">
+                      <ItemMedia className={`size-10 rounded-lg text-white ${u.is_active ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-gray-400 to-gray-500'} [&_svg]:size-5`}>
+                        <Users />
+                      </ItemMedia>
+                      <ItemContent>
+                        <ItemTitle>{u.email as string}</ItemTitle>
+                        <ItemDescription>{u.role as string}</ItemDescription>
+                      </ItemContent>
+                      <ItemActions>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${u.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {u.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </ItemActions>
+                    </Item>
                   ))}
-                </div>
+                </ItemGroup>
               </CardContent>
             </Card>
           )}
@@ -209,30 +212,33 @@ export default function Settings() {
                   </CardTitle>
                 </div>
                 <CardContent className="pt-6">
-                  <div className="space-y-3">
+                  <ItemGroup className="gap-3">
                     {machines.map((m: Record<string, unknown>) => (
-                      <div key={m.id as string} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:shadow-md transition-all">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
-                            <Truck className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-800">{m.code as string}</p>
-                            <p className="text-xs text-gray-500">{m.type as string}</p>
-                          </div>
-                        </div>
-                        <span className="text-sm font-medium text-gray-600">
-                          {m.current_meter as number} {(m.meter_unit_label || m.primary_meter_type || 'hrs') as string}
-                        </span>
-                      </div>
+                      <Item key={m.id as string} variant="outline">
+                        <ItemMedia className="size-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white [&_svg]:size-5">
+                          <Truck />
+                        </ItemMedia>
+                        <ItemContent>
+                          <ItemTitle>{m.code as string}</ItemTitle>
+                          <ItemDescription>{m.type as string}</ItemDescription>
+                        </ItemContent>
+                        <ItemActions>
+                          <span className="text-sm font-medium text-gray-600">
+                            {m.current_meter as number} {(m.meter_unit_label || m.primary_meter_type || 'hrs') as string}
+                          </span>
+                        </ItemActions>
+                      </Item>
                     ))}
-                    {machines.length === 0 && (
-                      <div className="text-center py-8">
-                        <div className="text-6xl mb-4">🚜</div>
-                        <p className="text-gray-500">No machines configured yet</p>
-                      </div>
-                    )}
-                  </div>
+                  </ItemGroup>
+                  {machines.length === 0 && (
+                    <Empty className="py-6">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon"><Truck /></EmptyMedia>
+                        <EmptyTitle>No machines configured yet</EmptyTitle>
+                        <EmptyDescription>Machines you add will show up here.</EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  )}
                 </CardContent>
               </Card>
 
@@ -243,25 +249,30 @@ export default function Settings() {
                   </CardTitle>
                 </div>
                 <CardContent className="pt-6">
-                  <div className="space-y-3">
+                  <ItemGroup className="gap-3">
                     {maintenanceTasks.map((task: Record<string, unknown>) => (
-                      <div key={task.id as string} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <div>
-                          <p className="font-medium text-gray-800">{task.name as string}</p>
-                          <p className="text-xs text-gray-500">
+                      <Item key={task.id as string} variant="outline">
+                        <ItemContent>
+                          <ItemTitle>{task.name as string}</ItemTitle>
+                          <ItemDescription>
                             {task.trigger as string === 'meter' ? `Every ${task.interval_value as number} hours` : `Every ${task.interval_value as number} days`}
-                          </p>
-                        </div>
-                        <span className="text-sm text-amber-600">Warning: {task.warning_value as number}</span>
-                      </div>
+                          </ItemDescription>
+                        </ItemContent>
+                        <ItemActions>
+                          <span className="text-sm text-amber-600">Warning: {task.warning_value as number}</span>
+                        </ItemActions>
+                      </Item>
                     ))}
-                    {maintenanceTasks.length === 0 && (
-                      <div className="text-center py-8">
-                        <div className="text-6xl mb-4">🔧</div>
-                        <p className="text-gray-500">No maintenance tasks configured</p>
-                      </div>
-                    )}
-                  </div>
+                  </ItemGroup>
+                  {maintenanceTasks.length === 0 && (
+                    <Empty className="py-6">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon"><Wrench /></EmptyMedia>
+                        <EmptyTitle>No maintenance tasks configured</EmptyTitle>
+                        <EmptyDescription>Service intervals you define will appear here.</EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -275,21 +286,23 @@ export default function Settings() {
                 </CardTitle>
               </div>
               <CardContent className="pt-6">
-                <div className="space-y-3">
+                <ItemGroup className="gap-3">
                   {categories.map((c: Record<string, unknown>) => (
-                    <div key={c.id as string} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:shadow-md transition-all">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white">
-                          <Tag className="h-5 w-5" />
-                        </div>
-                        <p className="font-medium text-gray-800">{c.name as string}</p>
-                      </div>
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
-                        {c.type as string}
-                      </span>
-                    </div>
+                    <Item key={c.id as string} variant="outline">
+                      <ItemMedia className="size-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 text-white [&_svg]:size-5">
+                        <Tag />
+                      </ItemMedia>
+                      <ItemContent>
+                        <ItemTitle>{c.name as string}</ItemTitle>
+                      </ItemContent>
+                      <ItemActions>
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+                          {c.type as string}
+                        </span>
+                      </ItemActions>
+                    </Item>
                   ))}
-                </div>
+                </ItemGroup>
               </CardContent>
             </Card>
           )}
@@ -328,7 +341,13 @@ export default function Settings() {
                   });
                   void saveSettings({ fx_defaults: fxDefaults });
                 }} disabled={saving} className="mt-4 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-amber-600 hover:to-orange-600">
-                  {saving ? 'Saving...' : 'Save FX Rates'}
+                  {saving ? (
+                    <>
+                      <Spinner /> Saving…
+                    </>
+                  ) : (
+                    'Save FX Rates'
+                  )}
                 </Button>
               </CardContent>
             </Card>
@@ -389,7 +408,13 @@ export default function Settings() {
                   </div>
                 </div>
                 <Button onClick={() => { void saveSettings(settings); }} disabled={saving} className="mt-4">
-                  {saving ? 'Saving...' : 'Save Thresholds'}
+                  {saving ? (
+                    <>
+                      <Spinner /> Saving…
+                    </>
+                  ) : (
+                    'Save Thresholds'
+                  )}
                 </Button>
               </CardContent>
             </Card>

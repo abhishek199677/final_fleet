@@ -1,10 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
+import {
+  Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList,
+} from '@/components/ui/combobox';
+import { Spinner } from '@/components/ui/spinner';
+import { DatePicker } from '@/components/date-picker';
+import { format, parse } from 'date-fns';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchListStrict } from '@/lib/api/fetch-list';
 import { ApiErrorBanner } from '@/components/api-error-banner';
@@ -30,8 +37,21 @@ export default function NewSite() {
       .finally(() => setFetching(false));
   }, []);
 
+  const clientOptions = useMemo(
+    () =>
+      clients.map((c) => ({
+        label: String(c.name ?? 'Untitled client'),
+        value: String(c.id),
+      })),
+    [clients],
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.client_id) {
+      setError('Please select a client.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -53,7 +73,13 @@ export default function NewSite() {
     setLoading(false);
   };
 
-  if (fetching) return <p className="text-muted-foreground">Loading...</p>;
+  if (fetching) {
+    return (
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Spinner /> Loading clients…
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -62,51 +88,66 @@ export default function NewSite() {
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            <div>
-              <label className="text-sm font-medium">Client *</label>
-              <select
-                className="w-full border rounded-md p-2"
-                value={formData.client_id}
-                onChange={e => setFormData({ ...formData, client_id: e.target.value })}
-                required
+            {error && <FieldError>{error}</FieldError>}
+            <Field>
+              <FieldLabel>Client *</FieldLabel>
+              <Combobox
+                items={clientOptions}
+                itemToStringValue={(c) => c.label}
+                value={clientOptions.find((c) => c.value === formData.client_id) ?? null}
+                onValueChange={(c) => setFormData({ ...formData, client_id: c ? c.value : '' })}
               >
-                <option value="">Select client...</option>
-                {clients.map((c: Record<string, unknown>) => (
-                  <option key={c.id as string} value={c.id as string}>
-                    {c.name as string}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Site Name *</label>
+                <ComboboxInput placeholder="Search clients…" />
+                <ComboboxContent>
+                  <ComboboxEmpty>No clients found.</ComboboxEmpty>
+                  <ComboboxList>
+                    {(c) => (
+                      <ComboboxItem key={c.value} value={c}>
+                        {c.label}
+                      </ComboboxItem>
+                    )}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
+              <FieldDescription>Start typing to filter, then pick the client this site belongs to.</FieldDescription>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="site-name">Site Name *</FieldLabel>
               <Input
+                id="site-name"
                 value={formData.name}
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g., Main Yard, Project Alpha"
                 required
               />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Location</label>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="site-location">Location</FieldLabel>
               <Input
+                id="site-location"
                 value={formData.location}
                 onChange={e => setFormData({ ...formData, location: e.target.value })}
                 placeholder="e.g., Nairobi, Kenya"
               />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Start Date</label>
-              <Input
-                type="date"
-                value={formData.start_date}
-                onChange={e => setFormData({ ...formData, start_date: e.target.value })}
+            </Field>
+            <Field>
+              <FieldLabel>Start Date</FieldLabel>
+              <DatePicker
+                className="w-full"
+                selected={formData.start_date ? parse(formData.start_date, 'yyyy-MM-dd', new Date()) : undefined}
+                onSelect={d => setFormData({ ...formData, start_date: d ? format(d, 'yyyy-MM-dd') : '' })}
+                placeholder="Pick a start date"
               />
-            </div>
+            </Field>
             <div className="flex gap-4">
               <Button type="submit" disabled={loading}>
-                {loading ? 'Creating...' : 'Create Site'}
+                {loading ? (
+                  <>
+                    <Spinner /> Creating…
+                  </>
+                ) : (
+                  'Create Site'
+                )}
               </Button>
               <Button type="button" variant="outline" onClick={() => router.back()}>
                 Cancel

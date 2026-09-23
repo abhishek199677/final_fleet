@@ -7,7 +7,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin, Calendar, Briefcase, Pencil, Trash2 } from 'lucide-react';
 import { fetchList } from '@/lib/api/fetch-list';
-import { apiDelete, confirmDelete } from '@/lib/api/mutations';
+import { apiDelete } from '@/lib/api/mutations';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import {
+  Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
+} from '@/components/ui/empty';
 
 interface SiteEntry {
   id: string;
@@ -27,6 +31,8 @@ export default function SitesList() {
   const router = useRouter();
   const [sites, setSites] = useState<SiteEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     void fetchList<SiteEntry>('/api/v1/sites').then((data) => {
@@ -36,13 +42,19 @@ export default function SitesList() {
     }).finally(() => setLoading(false));
   }, []);
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!(confirmDelete(name))) return;
+  const handleDelete = (id: string, name: string) => setDeleteTarget({ id, label: name });
+
+  const confirmDeleteSite = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await apiDelete(`/api/v1/sites/${id}`);
-      setSites((prev) => prev.filter((s) => s.id !== id));
+      await apiDelete(`/api/v1/sites/${deleteTarget.id}`);
+      setSites((prev) => prev.filter((s) => s.id !== deleteTarget.id));
+      setDeleteTarget(null);
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : 'Delete failed');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -83,13 +95,19 @@ export default function SitesList() {
         </div>
       ) : uniqueSites.length === 0 ? (
         <Card>
-          <CardContent className="py-16 text-center">
-            <div className="text-6xl mb-4">🏗️</div>
-            <p className="text-gray-500 text-lg mb-2">No sites yet</p>
-            <p className="text-gray-400 text-sm">Create your first site to start deploying machines</p>
-            <Button className="mt-6">
-              <span className="mr-2">+</span> Create First Site
-            </Button>
+          <CardContent className="pt-6">
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><MapPin /></EmptyMedia>
+                <EmptyTitle>No sites yet</EmptyTitle>
+                <EmptyDescription>Create your first site to start deploying machines</EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button>
+                  <span className="mr-2">+</span> Create First Site
+                </Button>
+              </EmptyContent>
+            </Empty>
           </CardContent>
         </Card>
       ) : (
@@ -169,6 +187,17 @@ export default function SitesList() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete site"
+        desc={`Are you sure you want to delete "${deleteTarget?.label}"? This action cannot be undone.`}
+        confirmText="Delete"
+        destructive
+        isLoading={deleting}
+        handleConfirm={() => { void confirmDeleteSite(); }}
+      />
     </div>
   );
 }

@@ -7,7 +7,12 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Building2, Phone, Mail, MapPin, Briefcase, IndianRupee, ArrowRight, Pencil, Trash2 } from 'lucide-react';
 import { fetchList } from '@/lib/api/fetch-list';
-import { apiDelete, confirmDelete } from '@/lib/api/mutations';
+import { apiDelete } from '@/lib/api/mutations';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import { LongText } from '@/components/long-text';
+import {
+  Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
+} from '@/components/ui/empty';
 
 interface ClientEntry {
   id: string;
@@ -27,6 +32,8 @@ export default function OwnerClients() {
   const router = useRouter();
   const [clients, setClients] = useState<ClientEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchList<ClientEntry>('/api/v1/clients')
@@ -39,13 +46,19 @@ export default function OwnerClients() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!(confirmDelete(name))) return;
+  const handleDelete = (id: string, name: string) => setDeleteTarget({ id, label: name });
+
+  const confirmDeleteClient = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await apiDelete(`/api/v1/clients/${id}`);
-      setClients((prev) => prev.filter((c) => c.id !== id));
+      await apiDelete(`/api/v1/clients/${deleteTarget.id}`);
+      setClients((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+      setDeleteTarget(null);
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : 'Delete failed');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -119,13 +132,19 @@ export default function OwnerClients() {
         </div>
       ) : uniqueClients.length === 0 ? (
         <Card>
-          <CardContent className="py-16 text-center">
-            <div className="text-6xl mb-4">🏢</div>
-            <p className="text-gray-500 text-lg mb-2">No clients yet</p>
-            <p className="text-gray-400 text-sm">Add your first client to start managing projects</p>
-            <Button className="mt-6">
-              <span className="mr-2">+</span> Add First Client
-            </Button>
+          <CardContent className="pt-6">
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><Building2 /></EmptyMedia>
+                <EmptyTitle>No clients yet</EmptyTitle>
+                <EmptyDescription>Add your first client to start managing projects</EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button>
+                  <span className="mr-2">+</span> Add First Client
+                </Button>
+              </EmptyContent>
+            </Empty>
           </CardContent>
         </Card>
       ) : (
@@ -167,14 +186,14 @@ export default function OwnerClients() {
                     )}
                     {c.email && (
                       <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Mail className="h-4 w-4 text-gray-400" />
-                        <span className="truncate">{c.email}</span>
+                        <Mail className="h-4 w-4 shrink-0 text-gray-400" />
+                        <LongText className="min-w-0 flex-1">{c.email}</LongText>
                       </div>
                     )}
                     {c.address && (
                       <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <MapPin className="h-4 w-4 text-gray-400" />
-                        <span className="truncate">{c.address}</span>
+                        <MapPin className="h-4 w-4 shrink-0 text-gray-400" />
+                        <LongText className="min-w-0 flex-1">{c.address}</LongText>
                       </div>
                     )}
                   </div>
@@ -214,6 +233,17 @@ export default function OwnerClients() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete client"
+        desc={`Are you sure you want to delete "${deleteTarget?.label}"? This action cannot be undone.`}
+        confirmText="Delete"
+        destructive
+        isLoading={deleting}
+        handleConfirm={() => { void confirmDeleteClient(); }}
+      />
     </div>
   );
 }

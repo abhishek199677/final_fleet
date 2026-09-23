@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Spinner } from '@/components/ui/spinner';
+import { Phone } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
 
 export default function NewOperator() {
@@ -45,17 +49,41 @@ export default function NewOperator() {
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Name *</label>
-              <Input value={formData.name} onChange={(e) => set('name', e.target.value)} placeholder="Ahmed Hassan" required />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Phone</label>
-              <Input value={formData.phone} onChange={(e) => set('phone', e.target.value)} />
-            </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            <Field>
+              <FieldLabel htmlFor="operator-name">Name *</FieldLabel>
+              <Input
+                id="operator-name"
+                value={formData.name}
+                onChange={(e) => set('name', e.target.value)}
+                placeholder="Ahmed Hassan"
+                required
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="operator-phone">Phone</FieldLabel>
+              <InputGroup>
+                <InputGroupAddon align="inline-start">
+                  <Phone />
+                </InputGroupAddon>
+                <InputGroupInput
+                  id="operator-phone"
+                  value={formData.phone}
+                  onChange={(e) => set('phone', e.target.value)}
+                  placeholder="+91 98765 43210"
+                />
+              </InputGroup>
+            </Field>
+            {error && <FieldError>{error}</FieldError>}
             <div className="flex gap-4">
-              <Button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Add Operator'}</Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Spinner /> Saving…
+                  </>
+                ) : (
+                  'Add Operator'
+                )}
+              </Button>
               <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
             </div>
           </form>

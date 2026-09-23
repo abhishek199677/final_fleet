@@ -7,7 +7,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Truck, MapPin, Calendar, Pencil, Trash2 } from 'lucide-react';
 import { fetchList } from '@/lib/api/fetch-list';
-import { apiDelete, confirmDelete } from '@/lib/api/mutations';
+import { apiDelete } from '@/lib/api/mutations';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 
 interface DeploymentEntry {
   id: string;
@@ -27,6 +28,8 @@ export default function DeploymentsList() {
   const router = useRouter();
   const [deployments, setDeployments] = useState<DeploymentEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     void fetchList<DeploymentEntry>('/api/v1/deployments').then((data) => {
@@ -36,13 +39,19 @@ export default function DeploymentsList() {
     }).finally(() => setLoading(false));
   }, []);
 
-  const handleDelete = async (id: string, label: string) => {
-    if (!(confirmDelete(label))) return;
+  const handleDelete = (id: string, label: string) => setDeleteTarget({ id, label });
+
+  const confirmDeleteDeployment = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await apiDelete(`/api/v1/deployments/${id}`);
-      setDeployments((prev) => prev.filter((d) => d.id !== id));
+      await apiDelete(`/api/v1/deployments/${deleteTarget.id}`);
+      setDeployments((prev) => prev.filter((d) => d.id !== deleteTarget.id));
+      setDeleteTarget(null);
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : 'Delete failed');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -154,6 +163,17 @@ export default function DeploymentsList() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete deployment"
+        desc={`Are you sure you want to delete "${deleteTarget?.label}"? This action cannot be undone.`}
+        confirmText="Delete"
+        destructive
+        isLoading={deleting}
+        handleConfirm={() => { void confirmDeleteDeployment(); }}
+      />
     </div>
   );
 }
