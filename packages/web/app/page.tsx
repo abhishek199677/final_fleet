@@ -129,15 +129,15 @@ export default function LandingPage() {
             <span className="text-lg font-bold tracking-tight text-gray-900">Fleet OS</span>
           </div>
           <div className="hidden items-center gap-8 md:flex">
-            <a href="#features" className="text-sm font-medium text-gray-500 transition-colors hover:text-gray-900">Features</a>
-            <a href="#security" className="text-sm font-medium text-gray-500 transition-colors hover:text-gray-900">Security</a>
-            <a href="#metrics" className="text-sm font-medium text-gray-500 transition-colors hover:text-gray-900">Performance</a>
+            <a href="#features" className="text-sm font-medium text-gray-900 transition-colors hover:text-teal-600">Features</a>
+            <a href="#security" className="text-sm font-medium text-gray-900 transition-colors hover:text-teal-600">Security</a>
+            <a href="#metrics" className="text-sm font-medium text-gray-900 transition-colors hover:text-teal-600">Performance</a>
             {ORBIT_STORIES.map((item) => (
               <button
                 key={item}
                 type="button"
                 onClick={() => setOrbitStory(item)}
-                className="cursor-pointer text-sm font-medium text-gray-500 transition-colors hover:text-gray-900"
+                className="cursor-pointer text-sm font-medium text-gray-900 transition-colors hover:text-teal-600"
               >
                 {item}
               </button>
@@ -146,7 +146,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="inline-flex h-9 items-center justify-center rounded-lg px-4 text-sm font-medium text-gray-600 transition-all hover:text-gray-900 hover:bg-gray-100/80"
+              className="inline-flex h-9 items-center justify-center rounded-lg px-4 text-sm font-medium text-gray-900 transition-all hover:text-teal-600 hover:bg-gray-100/80"
             >
               Sign in
             </Link>
