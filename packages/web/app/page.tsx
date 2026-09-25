@@ -10,6 +10,7 @@ import {
 import { InteractiveHoverButton } from '@/components/ui/interactive-hover-button';
 import InteractiveListPreview from '@/components/ui/interactive-list-preview';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 
 // The Orbit hero boots a WebGL canvas and reads browser-only APIs, so skip SSR.
 const OrbitDeliveryHero = dynamic(
@@ -74,6 +75,7 @@ export default function LandingPage() {
   const { user, loading } = useAuth();
   const [orbitStory, setOrbitStory] = useState<string | null>(null);
   const [heroOpacity, setHeroOpacity] = useState(1);
+  const router = useRouter();
 
   useEffect(() => {
     const onScroll = () => {
@@ -93,30 +95,7 @@ export default function LandingPage() {
     );
   }
 
-  if (user) {
-    const href = user.role === 'ops' ? '/today' : '/home';
-    return (
-      <div style={{ colorScheme: 'light' }} className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="text-center space-y-6">
-          <div className="flex justify-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-600 shadow-lg shadow-teal-600/30">
-              <Truck className="h-7 w-7 text-white" />
-            </div>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Fleet OS</h1>
-          <p className="text-gray-500">Welcome back, {user.email}</p>
-          <Link
-            href={href}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 px-6 text-sm font-semibold text-white shadow-lg shadow-teal-600/25 transition-all hover:from-teal-500 hover:to-emerald-500 hover:shadow-xl hover:shadow-teal-600/30 hover:-translate-y-0.5"
-          >
-            Go to Dashboard
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
+  
   return (
     <div style={{ colorScheme: 'light' }} className="min-h-screen bg-white">
       {/* Navigation */}
