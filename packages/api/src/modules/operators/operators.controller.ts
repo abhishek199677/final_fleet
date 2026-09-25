@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Patch, Delete, Param, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Param, Body, Req, UseGuards, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { OperatorsService } from './operators.service';
 import { Roles, RolesGuard } from '../../common/guards/roles.guard';
@@ -16,7 +16,11 @@ export class OperatorsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get operator by ID' })
-  findOne(@Req() req: TenantRequest, @Param('id') id: string) { return this.service.findById(req.tenant!.tenantId, id); }
+  async findOne(@Req() req: TenantRequest, @Param('id') id: string) {
+    const operator = await this.service.findById(req.tenant!.tenantId, id);
+    if (!operator) throw new NotFoundException('Operator not found');
+    return operator;
+  }
 
   @Post()
   @UseGuards(RolesGuard)

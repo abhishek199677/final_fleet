@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Req, UseGuards, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SitesService } from './sites.service';
 import { Roles, RolesGuard } from '../../common/guards/roles.guard';
@@ -16,7 +16,11 @@ export class SitesController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get site by ID' })
-  findOne(@Req() req: TenantRequest, @Param('id') id: string) { return this.service.findById(req.tenant!.tenantId, id); }
+  async findOne(@Req() req: TenantRequest, @Param('id') id: string) {
+    const site = await this.service.findById(req.tenant!.tenantId, id);
+    if (!site) throw new NotFoundException('Site not found');
+    return site;
+  }
 
   @Post()
   @UseGuards(RolesGuard)

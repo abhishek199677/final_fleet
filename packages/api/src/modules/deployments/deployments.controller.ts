@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Req, UseGuards, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { DeploymentsService } from './deployments.service';
 import { Roles, RolesGuard } from '../../common/guards/roles.guard';
@@ -16,7 +16,11 @@ export class DeploymentsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get deployment by ID' })
-  findOne(@Req() req: TenantRequest, @Param('id') id: string) { return this.service.findById(req.tenant!.tenantId, id); }
+  async findOne(@Req() req: TenantRequest, @Param('id') id: string) {
+    const deployment = await this.service.findById(req.tenant!.tenantId, id);
+    if (!deployment) throw new NotFoundException('Deployment not found');
+    return deployment;
+  }
 
   @Get('machine/:machineId/active')
   @ApiOperation({ summary: 'Get active deployment for a machine' })
