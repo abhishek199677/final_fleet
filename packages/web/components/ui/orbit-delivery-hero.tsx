@@ -889,7 +889,7 @@ function ResponsiveCamera() {
   const { size, camera } = useThree3();
   useEffect5(() => {
     const ortho = camera;
-    ortho.zoom = size.width / (size.width < 700 ? 5.65 : 5.25);
+    ortho.zoom = size.width / (size.width < 700 ? 7.1 : 6.6);
     ortho.updateProjectionMatrix();
   }, [size.width, size.height, camera]);
   return null;
@@ -907,8 +907,9 @@ function World2({ motion, auto, reduced, onReady }) {
   const frame = useMemo(() => ({ screenUp: new Vector37(), localVelocity: new Vector37(), cameraFront: new Vector37(), inverseRunner: new Quaternion8() }), []);
   const size = useThree3((state) => state.size);
   const small = size.width < 700;
-  const zoom = size.width / (small ? 5.65 : 5.25);
-  const centerY = size.height / zoom * (small ? 0.08 : 0.19) - 2.17;
+  // Divisors must match ResponsiveCamera; larger divisor = smaller globe/boy.
+  const zoom = size.width / (small ? 7.1 : 6.6);
+  const centerY = size.height / zoom * (small ? 0.08 : 0.19) - 2.73;
   useFrame4(({ camera }, delta) => {
     if (!asset || !courierReady) return;
     const m = motion.current;
