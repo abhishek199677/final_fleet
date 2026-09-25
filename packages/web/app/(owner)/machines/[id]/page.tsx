@@ -141,6 +141,8 @@ export default function MachineDetail() {
   // Editing state
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Bumped by the error-banner Retry button to re-run the load effect
+  const [reloadKey, setReloadKey] = useState(0);
   const [form, setForm] = useState({
     code: '',
     type: '',
@@ -155,9 +157,10 @@ export default function MachineDetail() {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    const getOne = async (path: string): Promise<Row | null> => {
+    const getOne = async (path: string): Promise<Row | null | 'not-found'> => {
       try {
         const res = await authFetch(path);
+        if (res.status === 404) return 'not-found';
         if (!res.ok) return null;
         const j = await res.json();
         return j && typeof j === 'object' && !Array.isArray(j) ? (j as Row) : null;
@@ -177,36 +180,37 @@ export default function MachineDetail() {
       fetchListStrict<Row>('/api/v1/operators'),
       fetchListStrict<Row>('/api/v1/billing/contribution'),
     ]).then(([m, ml, s, f, d, t, dep, ops, c]) => {
-      // API up → show exactly what's in the DB (empty = empty state)
-      if (!m) setApiError(true);
-      setMachine(m);
+      const row = m && m !== 'not-found' ? m : null;
+      // null => outage (banner + retry); 'not-found' => genuinely missing machine
+      if (m === null) setApiError(true);
+      setMachine(row);
       setMachineList(ml);
       setSessions(s);
       setFuelLogs(f);
       setDowntime(d);
       setTasks(t);
-      setDeployment(dep);
+      setDeployment(dep && dep !== 'not-found' ? dep : null);
       setOperators(ops);
       setContrib(c.find((x) => String(x.machine_id) === String(id)) ?? null);
 
       // Populate form for editing
-      if (m) {
+      if (row) {
         setForm({
-          code: String(m.code ?? ''),
-          type: String(m.type ?? ''),
-          make: String(m.make ?? ''),
-          model: String(m.model ?? ''),
-          year: String(m.year ?? ''),
-          chassis_no: String(m.chassis_no ?? ''),
-          primary_meter_type: String(m.primary_meter_type ?? 'hours'),
-          status_flag: String(m.status_flag ?? 'active'),
+          code: String(row.code ?? ''),
+          type: String(row.type ?? ''),
+          make: String(row.make ?? ''),
+          model: String(row.model ?? ''),
+          year: String(row.year ?? ''),
+          chassis_no: String(row.chassis_no ?? ''),
+          primary_meter_type: String(row.primary_meter_type ?? 'hours'),
+          status_flag: String(row.status_flag ?? 'active'),
         });
       }
     }).catch(() => {
       // API down → banner only, never fabricate a machine record
       setApiError(true);
     }).finally(() => setLoading(false));
-  }, [id]);
+  }, [id, reloadKey]);
   //     setContrib(c.find((x) => String(x.machine_id) === String(id)) ?? null);
   //   }).finally(() => setLoading(false));
   // }, [id]);
@@ -334,7 +338,17 @@ export default function MachineDetail() {
   };
 
   if (loading) return <p className="text-muted-foreground">Loading...</p>;
-  if (!machine) return <p>Machine not found</p>;
+  if (!machine) {
+    // Outage (transient 5xx / network) → banner with retry, NOT a fake 404
+    if (apiError) {
+      return (
+        <div className="p-4 md:p-6">
+          <ApiErrorBanner onRetry={() => setReloadKey((k) => k + 1)} />
+        </div>
+      );
+    }
+    return <p>Machine not found</p>;
+  }
 
   return (
     <div className="p-4 md:p-6">

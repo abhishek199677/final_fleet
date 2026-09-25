@@ -11,6 +11,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   return proxy(request, `/v1/${path.join('/')}`);
 }
 
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const { path } = await params;
+  return proxy(request, `/v1/${path.join('/')}`);
+}
+
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
   return proxy(request, `/v1/${path.join('/')}`);

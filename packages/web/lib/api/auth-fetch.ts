@@ -14,5 +14,22 @@ export async function authFetch(path: string, options: RequestInit = {}): Promis
   // When calling API directly, strip /api prefix (e.g. /api/v1/machines -> /v1/machines)
   const apiPath = API_BASE && path.startsWith('/api') ? path.slice(4) : path;
   const url = API_BASE ? `${API_BASE}${apiPath}` : path;
-  return fetch(url, { ...options, headers });
+  const doFetch = () => fetch(url, { ...options, headers });
+
+  const method = (options.method ?? 'GET').toUpperCase();
+  if (method !== 'GET') return doFetch();
+
+  // GETs are safe to retry: absorb transient proxy/network 5xx (e.g. cold-start
+  // 502s under parallel bursts) with a single short-delay retry.
+  try {
+    const res = await doFetch();
+    if (res.status >= 500) {
+      await new Promise((r) => setTimeout(r, 500));
+      return doFetch();
+    }
+    return res;
+  } catch {
+    await new Promise((r) => setTimeout(r, 500));
+    return doFetch();
+  }
 }
