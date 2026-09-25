@@ -211,7 +211,10 @@ function usePlanetAsset(onReady) {
   const [error, setError] = useState(null);
   useEffect(() => {
     const abort = new AbortController();
-    const draco = new DRACOLoader().setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.7/").setDecoderConfig({ type: "wasm" }).setWorkerLimit(2);
+    // No setDecoderConfig(): it's deprecated (removed in r194) and redundant —
+    // DRACOLoader defaults to the wasm decoder whenever WebAssembly exists,
+    // and only consults decoderConfig.type to opt *into* the JS fallback.
+    const draco = new DRACOLoader().setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.7/").setWorkerLimit(2);
     const loader = new GLTFLoader().setDRACOLoader(draco);
     let disposed = false;
     let scene;
@@ -615,7 +618,9 @@ function Courier({ motion, paused, reduced, onReady }) {
   const [error, setError] = useState2(null);
   useEffect2(() => {
     const abort = new AbortController();
-    const draco = new DRACOLoader2().setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.7/").setDecoderConfig({ type: "wasm" }).setWorkerLimit(1);
+    // setDecoderConfig() removed: deprecated (r194) and a no-op here — wasm is
+    // already DRACOLoader's default decoder path.
+    const draco = new DRACOLoader2().setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.7/").setWorkerLimit(1);
     const loader = new GLTFLoader2().setDRACOLoader(draco);
     let cancelled = false;
     let owned;

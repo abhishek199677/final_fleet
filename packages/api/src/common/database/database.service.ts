@@ -10,10 +10,17 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     const connectionString = process.env.DATABASE_URL;
     const isLocal = !process.env.DB_HOST || process.env.DB_HOST === 'localhost';
 
+    // SSL follows the URL's sslmode: Neon (?sslmode=require) gets TLS, plain
+    // local/CI URLs (no sslmode) stay plaintext. Explicit ssl wins over the
+    // parsed sslmode, so this is the single source of truth.
     const config: PoolConfig = connectionString
       ? {
           connectionString,
-          ssl: { rejectUnauthorized: false },
+          ssl:
+            connectionString.includes('sslmode=disable') ||
+            !connectionString.includes('sslmode=')
+              ? false
+              : { rejectUnauthorized: false },
           max: 10,
         }
       : {

@@ -7,16 +7,16 @@
     "typecheck": "pnpm -r typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:isolation": "DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/fleetos\" node packages/db/generators/test-isolation.js",
-    "test:finance-denial": "DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/fleetos\" node packages/db/generators/test-finance-denial.js",
-    "test:append-only": "DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/fleetos\" node packages/db/generators/test-append-only.js",
+    "test:isolation": "node scripts/run-with-env.js node packages/db/generators/test-isolation.js",
+    "test:finance-denial": "node scripts/run-with-env.js node packages/db/generators/test-finance-denial.js",
+    "test:append-only": "node scripts/run-with-env.js node packages/db/generators/test-append-only.js",
     "test:e2e": "playwright test",
     "pipeline": "node scripts/pipeline.js",
     "test:e2e-api": "node scripts/e2e-pipeline.js",
-    "db:migrate": "DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/fleetos\" pnpm --filter @fleetos/db exec node-pg-migrate up --migrations-dir migrations --database-url-env-var DATABASE_URL",
-    "db:seed": "cd packages/db && node seed.js",
-    "db:lint": "DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/fleetos\" node packages/db/linters/migration-linter.js",
-    "verify:launch": "node --input-type=module -e \"import('pg').catch(()=>null)\" 2>/dev/null; NODE_PATH=\"./packages/db/node_modules:./node_modules\" node scripts/verify-launch-acceptance.js",
+    "db:migrate": "node scripts/run-with-env.js pnpm --filter @fleetos/db exec node-pg-migrate up --migrations-dir migrations --database-url-env-var DATABASE_URL",
+    "db:seed": "node scripts/run-with-env.js node packages/db/seed.js",
+    "db:lint": "node scripts/run-with-env.js node packages/db/linters/migration-linter.js",
+    "verify:launch": "node --input-type=module -e \"import('pg').catch(()=>null)\" 2>/dev/null; NODE_PATH=\"./packages/db/node_modules:./node_modules\" node scripts/run-with-env.js node scripts/verify-launch-acceptance.js",
     "openapi:dump": "pnpm --filter @fleetos/api exec nest build && node packages/api/dist/dump-openapi",
     "dev": "concurrently \"pnpm dev:api\" \"pnpm dev:web\"",
     "dev:api": "cd packages/api && pnpm dev",
@@ -35,7 +35,7 @@
     "vitest": "^3.0.0"
   },
   "engines": {
-    "node": ">=22",
+    "node": ">=18",
     "pnpm": ">=9"
   }
 }

@@ -24,14 +24,25 @@ if (fs.existsSync(envPath)) {
 
 const { Client } = require('pg');
 
-const config = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  database: process.env.DB_NAME || 'fleetos',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
-  ssl: process.env.DB_HOST && process.env.DB_HOST !== 'localhost' ? { rejectUnauthorized: false } : false,
-};
+// DATABASE_URL wins (Neon or any URL-style target); DB_* vars are the local
+// fallback. SSL follows the URL's sslmode (Neon requires it, local/CI don't).
+const config = process.env.DATABASE_URL
+  ? {
+      connectionString: process.env.DATABASE_URL,
+      ssl:
+        process.env.DATABASE_URL.includes('sslmode=disable') ||
+        !process.env.DATABASE_URL.includes('sslmode=')
+          ? false
+          : { rejectUnauthorized: false },
+    }
+  : {
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432', 10),
+      database: process.env.DB_NAME || 'fleetos',
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || 'postgres',
+      ssl: process.env.DB_HOST && process.env.DB_HOST !== 'localhost' ? { rejectUnauthorized: false } : false,
+    };
 
 async function seed() {
   const client = new Client(config);
@@ -40,108 +51,15 @@ async function seed() {
   try {
     console.log('🌱 Seeding database...');
 
-    // Create test tenant
-    await client.query(`
-      INSERT INTO platform.tenants (id, name, slug, country, base_currency, status)
-      VALUES ('00000000-0000-0000-0000-000000000001', 'Demo Construction', 'demo', 'IN', 'INR', 'active')
-      ON CONFLICT (id) DO NOTHING
-    `);
-
-    // Create tenant settings
-    await client.query(`
-      INSERT INTO platform.tenant_settings (tenant_id, working_days_per_month, working_units_per_day, evidence_policy, fx_defaults)
-      VALUES ('00000000-0000-0000-0000-000000000001', 26, 8, '{}', '{}')
-      ON CONFLICT (tenant_id) DO NOTHING
-    `);
-
-    // Create entitlements
-    await client.query(`
-      INSERT INTO platform.entitlements (tenant_id, plan, machine_limit, user_limit)
-      VALUES ('00000000-0000-0000-0000-000000000001', 'pilot', 50, 20)
-      ON CONFLICT (tenant_id) DO NOTHING
-    `);
-
-    // Create owner user (cognito_sub for local auth)
-    await client.query(`
-      INSERT INTO tenant.users (id, tenant_id, cognito_sub, email, name, role, is_active, client_uuid)
-      VALUES ('00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000001', 'owner-local', 'demo@fleetos.com', 'Demo Owner', 'owner', true, gen_random_uuid())
-      ON CONFLICT (id) DO NOTHING
-    `);
-
-    // Create ops user
-    await client.query(`
-      INSERT INTO tenant.users (id, tenant_id, cognito_sub, email, name, role, is_active, client_uuid)
-      VALUES ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000001', 'ops-local', 'ops@fleetos.com', 'Demo Ops', 'ops', true, gen_random_uuid())
-      ON CONFLICT (id) DO NOTHING
-    `);
-
-    // Create machines
-    const machines = [
-      { code: 'EXC-001', type: 'excavator', make: 'Caterpillar', model: '320', year: 2020, meter: 4500 },
-      { code: 'EXC-002', type: 'excavator', make: 'Komatsu', model: 'PC200', year: 2019, meter: 6200 },
-      { code: 'LDR-001', type: 'wheel_loader', make: 'Volvo', model: 'L120', year: 2021, meter: 3200 },
-      { code: 'DMP-001', type: 'dump_truck', make: 'HD325', model: 'HD325', year: 2020, meter: 8900 },
-      { code: 'DOZ-001', type: 'dozer', make: 'Caterpillar', model: 'D6', year: 2018, meter: 7800 },
-    ];
-
-    for (const m of machines) {
-      await client.query(`
-        INSERT INTO tenant.machines (tenant_id, code, type, make, model, year, current_meter, meter_unit_label, primary_meter_type, status_flag, client_uuid)
-        VALUES ('00000000-0000-0000-0000-000000000001', $1, $2, $3, $4, $5, $6, 'hours', 'hours', 'available', gen_random_uuid())
-        ON CONFLICT (tenant_id, code) DO NOTHING
-      `, [m.code, m.type, m.make, m.model, m.year, m.meter]);
-    }
-
-    // Create clients
-    const clientNames = ['BuildIt Corp', 'RoadWorks Inc', 'Metro Construction'];
-    for (const name of clientNames) {
-      await client.query(`
-        INSERT INTO tenant.clients (tenant_id, name, currency, payment_terms_days, client_uuid)
-        VALUES ('00000000-0000-0000-0000-000000000001', $1, 'INR', 30, gen_random_uuid())
-        ON CONFLICT DO NOTHING
-      `, [name]);
-    }
-
-    // Create operators
-    const operatorNames = ['Ahmed Hassan', 'Carlos Rodriguez', 'Mike Johnson'];
-    for (const name of operatorNames) {
-      await client.query(`
-        INSERT INTO tenant.operators (tenant_id, name, is_active, client_uuid)
-        VALUES ('00000000-0000-0000-0000-000000000001', $1, true, gen_random_uuid())
-        ON CONFLICT DO NOTHING
-      `, [name]);
-    }
-
-    // Create expense categories
-    const categories = ['Fuel', 'Maintenance', 'Parts', 'Labour', 'Transport', 'Permits', 'Insurance', 'Other'];
-    for (const cat of categories) {
-      await client.query(`
-        INSERT INTO tenant.expense_categories (tenant_id, name)
-        VALUES ('00000000-0000-0000-0000-000000000001', $1)
-        ON CONFLICT DO NOTHING
-      `, [cat]);
-    }
-
-    // Create cash accounts
-    await client.query(`
-      INSERT INTO tenant.cash_accounts (tenant_id, name, type, currency, is_default)
-      VALUES ('00000000-0000-0000-0000-000000000001', 'Main Cash', 'site_cash', 'INR', true)
-      ON CONFLICT DO NOTHING
-    `);
+    // Clear all existing data from tenant and platform schemas
+    await clearData(client);
 
     // Ensure app roles have proper DML permissions
     await ensureGrants(client);
 
-    console.log('✅ Seed completed successfully');
+    console.log('✅ Seed completed successfully (no demo data inserted)');
     console.log('');
-    console.log('Test accounts (login via /api/auth/login):');
-    console.log('  Owner: demo@fleetos.com');
-    console.log('  Ops:   ops@fleetos.com');
-
-    await seedDemoHistory(client);
-    await seedDemoBilling(client);
-    await seedDemoAlerts(client);
-    await seedAlertTriggerData(client);
+    console.log('Note: Demo tenant and users will be created on first login via auth service.');
   } catch (error) {
     console.error('❌ Seed failed:', error);
     throw error;
@@ -151,335 +69,44 @@ async function seed() {
 }
 
 /**
- * Demo history (S60-lite): 14 days of sessions, fuel, downtime and expenses
- * for the demo tenant so dashboards render realistically. Idempotent — skips
- * entirely when sessions already exist.
+ * Truncate all tables in tenant and platform schemas.
  */
-async function seedDemoHistory(client) {
-  const TENANT = '00000000-0000-0000-0000-000000000001';
-  const OWNER = '00000000-0000-0000-0000-000000000010';
-  const existing = await client.query(`SELECT COUNT(*)::int AS n FROM tenant.work_sessions WHERE tenant_id = $1`, [TENANT]);
-  if (existing.rows[0].n > 0) {
-    console.log('ℹ️  Demo history already present — skipping');
-    return;
-  }
-
-  const q = async (text, params = []) => (await client.query(text, params)).rows;
-
-  // Site + deployments for the first three machines
-  const clientRow = (await q(`SELECT id FROM tenant.clients WHERE tenant_id = $1 ORDER BY name LIMIT 1`, [TENANT]))[0];
-  const siteRows = await q(
-    `INSERT INTO tenant.sites (tenant_id, client_id, name, location, client_uuid)
-     VALUES ($1, $2, 'Demo Quarry Site', 'Demo District', gen_random_uuid())
-     ON CONFLICT DO NOTHING RETURNING id`,
-    [TENANT, clientRow.id],
-  );
-  const siteId = siteRows.length > 0
-    ? siteRows[0].id
-    : (await q(`SELECT id FROM tenant.sites WHERE tenant_id = $1 LIMIT 1`, [TENANT]))[0].id;
-
-  const machines = await q(`SELECT id, code, current_meter FROM tenant.machines WHERE tenant_id = $1 ORDER BY code LIMIT 3`, [TENANT]);
-  const operators = await q(`SELECT id FROM tenant.operators WHERE tenant_id = $1 ORDER BY name`, [TENANT]);
-  const depIds = [];
-  for (const m of machines) {
-    const dep = await q(
-      `INSERT INTO tenant.deployments (tenant_id, machine_id, site_id, start_date, status, client_uuid)
-       VALUES ($1, $2, $3, CURRENT_DATE - 30, 'active', gen_random_uuid()) RETURNING id`,
-      [TENANT, m.id, siteId],
+async function clearData(client) {
+  try {
+    // Get tenant tables (only base tables, not views)
+    const tenantResult = await client.query(
+      "SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema = 'tenant' AND table_type = 'BASE TABLE'"
     );
-    depIds.push({ machine_id: m.id, deployment_id: dep[0].id, meter: Number(m.current_meter) });
-  }
+    const tenantTables = tenantResult.rows;
 
-  // Default service template: General service every 250h, warning 20 (MNT-01).
-  // EXC-001 is set just past due so the maintenance alert fires.
-  for (let i = 0; i < depIds.length; i++) {
-    const d = depIds[i];
-    const nextDue = i === 0 ? d.meter - 10 : d.meter + 240 - i * 30;
-    await q(
-      `INSERT INTO tenant.maintenance_tasks (tenant_id, machine_id, name, trigger, interval_value, warning_value, last_done_value, last_done_date, next_due_value, client_uuid)
-       VALUES ($1, $2, 'General service', 'meter', 250, 20, $3, CURRENT_DATE - 200, $4, gen_random_uuid())`,
-      [TENANT, d.machine_id, nextDue - 250, nextDue],
+    // Get platform tables (only base tables)
+    const platformResult = await client.query(
+      "SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema = 'platform' AND table_type = 'BASE TABLE'"
     );
-  }
+    const platformTables = platformResult.rows;
 
-  // 14 days of sessions (deterministic pattern, some rest days)
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  for (let back = 13; back >= 0; back--) {
-    const day = new Date(today.getTime() - back * 86_400_000);
-    for (let i = 0; i < depIds.length; i++) {
-      const d = depIds[i];
-      if ((back + i) % 5 === 4) continue; // rest day
-      const units = 4 + ((back * 3 + i * 2) % 6); // 4..9
-      const start = new Date(day.getTime() + (7 + i) * 3_600_000);
-      const end = new Date(start.getTime() + (6 + ((back + i) % 3)) * 3_600_000);
-      const startMeter = d.meter;
-      d.meter += units;
-      await q(
-        `INSERT INTO tenant.work_sessions (tenant_id, machine_id, deployment_id, operator_id, start_at, end_at, start_meter, end_meter, units_run, start_evidence, end_evidence, billable, created_by, client_uuid, source, created_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'manual','manual',true,$10,gen_random_uuid(),'seed',$5)`,
-        [TENANT, d.machine_id, d.deployment_id, operators[i % operators.length].id,
-         start.toISOString(), end.toISOString(), startMeter, d.meter, units, OWNER],
-      );
-      if (back % 3 === 0) {
-        const litres = 40 + ((back * 7 + i * 13) % 50);
-        await q(
-          `INSERT INTO tenant.fuel_logs (tenant_id, machine_id, litres, cost_minor, currency, base_minor, created_by, client_uuid)
-           VALUES ($1,$2,$3,$4,'INR',$4,$5,gen_random_uuid())`,
-          [TENANT, d.machine_id, litres, Math.round(litres * 9500), OWNER],
-        );
-      }
+    const allTables = [...tenantTables, ...platformTables];
+
+    if (allTables.length === 0) {
+      console.log('ℹ️  No tables found in tenant/platform schemas to clear');
+      return;
     }
+
+    // Build truncate statement with CASCADE
+    const truncateList = allTables
+      .map(t => `"${t.table_schema}"."${t.table_name}"`)
+      .join(', ');
+    await client.query(`TRUNCATE TABLE ${truncateList} CASCADE`);
+    console.log(`🗑️  Cleared ${allTables.length} tables from tenant and platform schemas`);
+  } catch (err) {
+    console.error('❌ Failed to clear data:', err);
+    throw err;
   }
-  // Push machine meters forward to the latest session meter
-  for (const d of depIds) {
-    await q(`UPDATE tenant.machines SET current_meter = $1 WHERE id = $2`, [d.meter, d.machine_id]);
-  }
-
-  // Downtime samples
-  await q(
-    `INSERT INTO tenant.downtime_segments (tenant_id, machine_id, started_at, ended_at, reason_code, note, created_by, client_uuid)
-     VALUES ($1,$2,NOW() - INTERVAL '5 days',NOW() - INTERVAL '5 days' + INTERVAL '3 hours','breakdown','Hydraulic hose burst',$3,gen_random_uuid())`,
-    [TENANT, depIds[1].machine_id, OWNER],
-  );
-  await q(
-    `INSERT INTO tenant.downtime_segments (tenant_id, machine_id, started_at, ended_at, reason_code, note, created_by, client_uuid)
-     VALUES ($1,$2,NOW() - INTERVAL '1 day',NOW() - INTERVAL '1 day' + INTERVAL '2 hours','no_diesel','Tanker delayed',$3,gen_random_uuid())`,
-    [TENANT, depIds[2].machine_id, OWNER],
-  );
-
-  // Expenses + one receipt so finance views are non-empty
-  const cat = (await q(`SELECT id FROM tenant.expense_categories WHERE tenant_id = $1 AND name = 'Transport'`, [TENANT]))[0];
-  const acct = (await q(`SELECT id FROM tenant.cash_accounts WHERE tenant_id = $1 LIMIT 1`, [TENANT]))[0];
-  if (cat && acct) {
-    await q(
-      `INSERT INTO tenant.expenses (tenant_id, date, category_id, description, currency, amount_minor, base_minor, cash_account_id, paid_by, allocation_type, created_by, client_uuid)
-       VALUES ($1,CURRENT_DATE - 2,$2,'Spare parts run','INR',1500000,1500000,$3,'Demo Ops','overhead',$4,gen_random_uuid())`,
-      [TENANT, cat.id, acct.id, OWNER],
-    );
-  }
-  await q(
-    `INSERT INTO tenant.client_money_events (tenant_id, client_id, event_type, currency, amount_minor, base_minor, mode, reference, event_date, created_by, client_uuid)
-     VALUES ($1,$2,'receipt','INR',5000000,5000000,'bank','REF-DEMO-001',CURRENT_DATE - 3,$3,gen_random_uuid())`,
-    [TENANT, clientRow.id, OWNER],
-  );
-
-  console.log('✅ Demo history seeded (14 days, 3 machines)');
-}
-
-/** Demo rate card + extra charge so billing runs produce a ledger (idempotent). */
-async function seedDemoBilling(client) {
-  const TENANT = '00000000-0000-0000-0000-000000000001';
-  const OWNER = '00000000-0000-0000-0000-000000000010';
-  const existing = await client.query(`SELECT COUNT(*)::int AS n FROM tenant.rate_cards WHERE tenant_id = $1`, [TENANT]);
-  if (existing.rows[0].n > 0) {
-    console.log('ℹ️  Demo billing already present — skipping');
-    return;
-  }
-  const deps = await client.query(`SELECT id FROM tenant.deployments WHERE tenant_id = $1 ORDER BY start_date LIMIT 3`, [TENANT]);
-  for (const d of deps.rows) {
-    await client.query(
-      `INSERT INTO tenant.rate_cards (tenant_id, deployment_id, effective_from, strategy, rate_minor, currency, min_units_per_day)
-       VALUES ($1, $2, CURRENT_DATE - 30, 'hourly', 500000, 'INR', 4)`,
-      [TENANT, d.id],
-    );
-  }
-  if (deps.rows.length > 0) {
-    await client.query(
-      `INSERT INTO tenant.extra_charges (tenant_id, deployment_id, kind, date, currency, amount_minor, base_minor, note, created_by, client_uuid)
-       VALUES ($1, $2, 'mobilisation', CURRENT_DATE - 10, 'INR', 2000000, 2000000, 'Lowbed mobilisation', $3, gen_random_uuid())`,
-      [TENANT, deps.rows[0].id, OWNER],
-    );
-  }
-  console.log('✅ Demo billing seeded (rate cards + mobilisation)');
-
-  // Seed demo alerts
-  await seedDemoAlerts(client);
-}
-
-async function seedDemoAlerts(client) {
-  const TENANT = '00000000-0000-0000-0000-000000000001';
-  const existing = await client.query(`SELECT COUNT(*)::int AS n FROM tenant.alerts WHERE tenant_id = $1`, [TENANT]);
-  if (existing.rows[0].n > 0) {
-    console.log('ℹ️  Demo alerts already present — skipping');
-    return;
-  }
-
-  const q = async (text, params = []) => (await client.query(text, params)).rows;
-
-  // Get some machines and clients for alerts
-  const machines = await q(`SELECT id, code FROM tenant.machines WHERE tenant_id = $1 LIMIT 3`, [TENANT]);
-  const clients = await q(`SELECT id, name FROM tenant.clients WHERE tenant_id = $1 LIMIT 1`, [TENANT]);
-
-  // Payment overdue alert
-  if (clients.length > 0) {
-    await q(
-      `INSERT INTO tenant.alerts (tenant_id, type, client_id, severity, title, detail, is_resolved)
-       VALUES ($1, 'payment_overdue', $2, 'critical', 'Payment overdue: BuildIt Corp', 'Client BuildIt Corp has an overdue payment of ₹50,000 (15 days overdue).', false)`,
-      [TENANT, clients[0].id]
-    );
-  }
-
-  // Maintenance warning alerts
-  if (machines.length > 0) {
-    await q(
-      `INSERT INTO tenant.alerts (tenant_id, type, machine_id, severity, title, detail, is_resolved)
-       VALUES ($1, 'maintenance_warning', $2, 'warning', 'Maintenance due soon: General service', 'Machine EXC-001 needs General service. 20 hours remaining.', false)`,
-      [TENANT, machines[0].id]
-    );
-  }
-
-  if (machines.length > 1) {
-    await q(
-      `INSERT INTO tenant.alerts (tenant_id, type, machine_id, severity, title, detail, is_resolved)
-       VALUES ($1, 'maintenance_overdue', $2, 'critical', 'Maintenance overdue: Hydraulic check', 'Machine EXC-002 hydraulic check is 10 hours overdue.', false)`,
-      [TENANT, machines[1].id]
-    );
-  }
-
-  // Log pending alert
-  if (machines.length > 2) {
-    await q(
-      `INSERT INTO tenant.alerts (tenant_id, type, machine_id, severity, title, detail, is_resolved)
-       VALUES ($1, 'log_pending', $2, 'info', 'No work logged today: LDR-001', 'Machine LDR-001 has no work session logged for today.', false)`,
-      [TENANT, machines[2].id]
-    );
-  }
-
-  console.log('✅ Demo alerts seeded (4 alerts)');
 }
 
 /**
- * Seed additional data to trigger all alert engine checks.
- * Creates: recent large fuel logs, cash counts with variance, duplicate expenses,
- * ongoing downtime, and varied expense categories.
+ * Ensure app roles have proper DML permissions on tenant schema
  */
-async function seedAlertTriggerData(client) {
-  const TENANT = '00000000-0000-0000-0000-000000000001';
-  const OWNER = '00000000-0000-0000-0000-000000000010';
-
-  const existing = await client.query(
-    `SELECT 1 FROM tenant.fuel_logs WHERE tenant_id = $1 AND litres > 500 AND created_at >= NOW() - INTERVAL '7 days' LIMIT 1`,
-    [TENANT]
-  );
-  if (existing.rows.length > 0) {
-    console.log('ℹ️  Alert trigger data already present — skipping');
-    return;
-  }
-
-  const q = async (text, params = []) => (await client.query(text, params)).rows;
-
-  const machines = await q(`SELECT id, code FROM tenant.machines WHERE tenant_id = $1 ORDER BY code`, [TENANT]);
-  const acct = (await q(`SELECT id FROM tenant.cash_accounts WHERE tenant_id = $1 LIMIT 1`, [TENANT]))[0];
-  const fuelCat = (await q(`SELECT id FROM tenant.expense_categories WHERE tenant_id = $1 AND name = 'Fuel'`, [TENANT]))[0];
-  const maintCat = (await q(`SELECT id FROM tenant.expense_categories WHERE tenant_id = $1 AND name = 'Maintenance'`, [TENANT]))[0];
-  const partsCat = (await q(`SELECT id FROM tenant.expense_categories WHERE tenant_id = $1 AND name = 'Parts'`, [TENANT]))[0];
-  const labourCat = (await q(`SELECT id FROM tenant.expense_categories WHERE tenant_id = $1 AND name = 'Labour'`, [TENANT]))[0];
-
-  // 1. Large recent fuel logs (triggers diesel_anomaly: >500L in 7 days)
-  if (machines.length > 0) {
-    await q(
-      `INSERT INTO tenant.fuel_logs (tenant_id, machine_id, litres, cost_minor, currency, base_minor, created_by, client_uuid, created_at)
-       VALUES ($1, $2, 600, 5700000, 'INR', 5700000, $3, gen_random_uuid(), NOW() - INTERVAL '2 days')`,
-      [TENANT, machines[0].id, OWNER]
-    );
-    await q(
-      `INSERT INTO tenant.fuel_logs (tenant_id, machine_id, litres, cost_minor, currency, base_minor, created_by, client_uuid, created_at)
-       VALUES ($1, $2, 150, 1425000, 'INR', 1425000, $3, gen_random_uuid(), NOW() - INTERVAL '1 day')`,
-      [TENANT, machines[0].id, OWNER]
-    );
-  }
-
-  // 2. Cash count with large variance (triggers cash_variance)
-  if (acct) {
-    await q(
-      `INSERT INTO tenant.cash_counts (tenant_id, cash_account_id, count_date, counted, created_by, client_uuid)
-       VALUES ($1, $2, CURRENT_DATE, '[{"denomination": 500, "quantity": 10}]'::jsonb, $3, gen_random_uuid())`,
-      [TENANT, acct.id, OWNER]
-    );
-  }
-
-  // 3. Duplicate expenses (triggers duplicate_expense: same category, month, ±1% amount)
-  if (fuelCat) {
-    await q(
-      `INSERT INTO tenant.expenses (tenant_id, date, category_id, description, currency, amount_minor, base_minor, cash_account_id, paid_by, allocation_type, created_by, client_uuid)
-       VALUES ($1, CURRENT_DATE - 1, $2, 'Diesel fill-up EXC-001', 'INR', 4750000, 4750000, $3, 'Demo Ops', 'machine', $4, gen_random_uuid())`,
-      [TENANT, fuelCat.id, acct?.id, OWNER]
-    );
-    await q(
-      `INSERT INTO tenant.expenses (tenant_id, date, category_id, description, currency, amount_minor, base_minor, cash_account_id, paid_by, allocation_type, created_by, client_uuid)
-       VALUES ($1, CURRENT_DATE - 3, $2, 'Diesel fill-up EXC-002', 'INR', 4760000, 4760000, $3, 'Demo Ops', 'machine', $4, gen_random_uuid())`,
-      [TENANT, fuelCat.id, acct?.id, OWNER]
-    );
-  }
-
-  // 4. More expenses in different categories (for concentration check)
-  if (maintCat) {
-    await q(
-      `INSERT INTO tenant.expenses (tenant_id, date, category_id, description, currency, amount_minor, base_minor, cash_account_id, paid_by, allocation_type, created_by, client_uuid)
-       VALUES ($1, CURRENT_DATE - 1, $2, 'Grease and oil top-up', 'INR', 250000, 250000, $3, 'Demo Ops', 'machine', $4, gen_random_uuid())`,
-      [TENANT, maintCat.id, acct?.id, OWNER]
-    );
-  }
-  if (partsCat) {
-    await q(
-      `INSERT INTO tenant.expenses (tenant_id, date, category_id, description, currency, amount_minor, base_minor, cash_account_id, paid_by, allocation_type, created_by, client_uuid)
-       VALUES ($1, CURRENT_DATE - 1, $2, 'Hydraulic filter replacement', 'INR', 180000, 180000, $3, 'Demo Ops', 'machine', $4, gen_random_uuid())`,
-      [TENANT, partsCat.id, acct?.id, OWNER]
-    );
-  }
-  if (labourCat) {
-    await q(
-      `INSERT INTO tenant.expenses (tenant_id, date, category_id, description, currency, amount_minor, base_minor, cash_account_id, paid_by, allocation_type, created_by, client_uuid)
-       VALUES ($1, CURRENT_DATE - 1, $2, 'Overtime mechanic', 'INR', 350000, 350000, $3, 'Demo Ops', 'overhead', $4, gen_random_uuid())`,
-      [TENANT, labourCat.id, acct?.id, OWNER]
-    );
-  }
-
-  // 5. Ongoing downtime segment (triggers stopped_long: >8h with no ended_at)
-  if (machines.length > 1) {
-    await q(
-      `INSERT INTO tenant.downtime_segments (tenant_id, machine_id, started_at, reason_code, note, created_by, client_uuid)
-       VALUES ($1, $2, NOW() - INTERVAL '12 hours', 'breakdown', 'Engine overheating — awaiting parts', $3, gen_random_uuid())`,
-      [TENANT, machines[1].id, OWNER]
-    );
-  }
-
-  // 6. Second client with overdue billing (triggers payment_overdue)
-  const client2 = (await q(
-    `INSERT INTO tenant.clients (tenant_id, name, currency, payment_terms_days, client_uuid)
-     VALUES ($1, 'AfriBuild Ltd', 'USD', 15, gen_random_uuid()) RETURNING id`,
-    [TENANT]
-  ))[0];
-  // Use a machine outside the first three demo deployments so the seed remains
-  // compatible with the one-active-deployment constraint.
-  if (client2 && machines.length > 3) {
-    const site2 = (await q(
-      `INSERT INTO tenant.sites (tenant_id, client_id, name, location, client_uuid)
-       VALUES ($1, $2, 'Lagos Site', 'Lagos, Nigeria', gen_random_uuid()) RETURNING id`,
-      [TENANT, client2.id]
-    ))[0];
-    if (site2) {
-      const dep2 = (await q(
-        `INSERT INTO tenant.deployments (tenant_id, machine_id, site_id, start_date, status, client_uuid)
-         VALUES ($1, $2, $3, CURRENT_DATE - 45, 'active', gen_random_uuid()) RETURNING id`,
-        [TENANT, machines[3].id, site2.id]
-      ))[0];
-      if (dep2) {
-        // Billing entry from 45 days ago (well past 15-day terms)
-        await q(
-          `INSERT INTO tenant.billing_ledger (tenant_id, deployment_id, entry_date, kind, units, currency, amount_minor, created_at)
-           VALUES ($1, $2, CURRENT_DATE - 45, 'monthly_hire', 26, 'USD', 13000000, NOW() - INTERVAL '45 days')`,
-          [TENANT, dep2.id]
-        );
-      }
-    }
-  }
-
-  console.log('✅ Alert trigger data seeded (diesel, cash variance, duplicates, stopped-long, payment overdue)');
-}
-
-// Ensure app roles have proper DML permissions on tenant schema
 async function ensureGrants(client) {
   await client.query(`
     GRANT USAGE ON SCHEMA tenant TO app_owner, app_ops;

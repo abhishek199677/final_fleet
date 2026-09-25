@@ -13,13 +13,16 @@ import {
   Tractor, MapPin, Rocket, Building2, Users, LifeBuoy, Play,
 } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { fetchListStrict } from '@/lib/api/fetch-list';
+import { fetchListStrict, ApiError } from '@/lib/api/fetch-list';
 import { ApiErrorBanner } from '@/components/api-error-banner';
 import { useAuth } from '@/lib/auth/context';
 import { cn } from '@/lib/utils';
 import { GlassCard } from '@/components/dashboard/glass-card';
 import { GlareCard } from '@/components/fx/glare-card';
 import { Reveal } from '@/components/fx/reveal';
+import SplineSceneBasic from '@/components/spline-scene-basic';
+import { Spotlight } from '@/components/ui/spotlight';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import {
@@ -91,7 +94,7 @@ const STATUS_CONFIG: Record<string, { label: string; dot: string; bg: string; te
 };
 
 /* ── Animated KPI ── */
-function AnimatedKPI({ value, duration = 1200 }: { value: number; duration?: number }) {
+function AnimatedKPI({ value, duration = 1200, className = '' }: { value: number; duration?: number; className?: string }) {
   const [display, setDisplay] = useState(0);
 
   useEffect(() => {
@@ -110,7 +113,7 @@ function AnimatedKPI({ value, duration = 1200 }: { value: number; duration?: num
     return () => clearInterval(timer);
   }, [value, duration]);
 
-  return <>{fmtInt(display)}</>;
+  return <span className={className}>{fmtInt(display)}</span>;
 }
 
 /* ── Progress ring for utilisation ── */
@@ -147,13 +150,14 @@ function ProgressRing({ value, size = 44, stroke = 4 }: { value: number; size?: 
 }
 
 function DashboardInner() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const searchParams = useSearchParams();
   void searchParams;
   const [loading, setLoading] = useState(true);
   const [nonce, setNonce] = useState(0);
   const [period, setPeriod] = useState<'today' | 'month' | 'year'>('today');
-  const [apiError, setApiError] = useState(false);
+  const [apiError, setApiError] = useState<null | 'unavailable' | 'session'>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const [kpis, setKpis] = useState<Row | null>(null);
   const [machines, setMachines] = useState<Row[]>([]);
@@ -163,6 +167,7 @@ function DashboardInner() {
   const [clients, setClients] = useState<Row[]>([]);
   const [receivables, setReceivables] = useState<Row[]>([]);
   const [advances, setAdvances] = useState<Row[]>([]);
+  const [isMuted, setIsMuted] = useState(false);
   const [alerts, setAlerts] = useState<Row[]>([]);
   const [heroOpacity, setHeroOpacity] = useState(1);
   const [heroScale, setHeroScale] = useState(1);
@@ -193,7 +198,7 @@ function DashboardInner() {
         return null;
       }
     };
-    setApiError(false);
+    setApiError(null);
     void Promise.all([
       getKpis(),
       fetchListStrict<Row>('/api/v1/machines'),
@@ -206,6 +211,7 @@ function DashboardInner() {
       fetchListStrict<Row>('/api/v1/alerts'),
     ]).then(([k, m, s, d, st, c, r, a, al]) => {
       // API up → show exactly what's in the DB (empty = empty state)
+      setRetryCount(0);
       if (k) setKpis(k);
       setMachines(m);
       setSessions(s);
@@ -215,11 +221,26 @@ function DashboardInner() {
       setReceivables(r);
       setAdvances(a);
       setAlerts(al.filter((x) => x.is_resolved !== true).slice(0, 5));
-    }).catch(() => {
-      // API unreachable — show banner
-      setApiError(true);
+    }).catch((err) => {
+      if (err instanceof ApiError && err.status === 401) {
+        // Token expired/invalid — offer sign-in instead of claiming an outage
+        setApiError('session');
+        return;
+      }
+      // API unreachable (network / 5xx) — show banner and start backoff retries
+      setRetryCount((c) => c + 1);
+      setApiError('unavailable');
     }).finally(() => setLoading(false));
   }, [nonce]);
+
+  // While the outage banner is up, auto-retry with capped exponential
+  // backoff (5s -> 10s -> 20s -> then every 30s).
+  useEffect(() => {
+    if (apiError !== 'unavailable') return;
+    const delay = Math.min(30000, 5000 * 2 ** Math.max(0, retryCount - 1));
+    const timer = setTimeout(() => setNonce((n) => n + 1), delay);
+    return () => clearTimeout(timer);
+  }, [apiError, retryCount]);
 
   const now = useMemo(() => Date.now(), [nonce]);
   const todayStart = useMemo(() => {
@@ -287,6 +308,20 @@ function DashboardInner() {
     ? user.email.split('@')[0].replace(/[^a-zA-Z]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
     : 'Demo';
 
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 100) {
+        setIsMuted(true);
+      } else {
+        setIsMuted(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -306,7 +341,16 @@ function DashboardInner() {
 
   return (
     <div className="min-w-0 space-y-6">
-      {apiError && <ApiErrorBanner onRetry={() => setNonce((n) => n + 1)} />}
+      {apiError && (
+        <ApiErrorBanner
+          variant={apiError}
+          onRetry={() => {
+            setRetryCount(0);
+            setNonce((n) => n + 1);
+          }}
+          onSignIn={logout}
+        />
+      )}
       {/* Orbit Delivery Hero — fades on scroll */}
       <Reveal delay={0}>
         <div
@@ -501,44 +545,8 @@ function DashboardInner() {
         </Reveal>
       </div>
 
-      {/* Application Preview */}
-      <Reveal delay={0}>
-        <GlassCard className="h-full">
-          <div className="rounded-2xl border border-white/18 bg-white/72 dark:bg-white/5 backdrop-blur-xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.06)] transition-all duration-300 hover:bg-white/82 dark:hover:bg-white/8 hover:shadow-[0_12px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 h-full">
-            <div className="space-y-4">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">Application Preview</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                See FleetOS in action - preview of the complete application
-              </p>
-              <div className="relative">
-                <video
-                  controls
-                  autoPlay
-                  muted
-                  loop
-                  poster="/placeholder-video.jpg"
-                  className="w-full h-[300px] object-cover rounded-xl"
-                >
-                  <source src="/preview-video.mp4" type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <Play
-                    className="h-8 w-8 text-white/80 hover:text-white/100 transition-colors"
-                    aria-label="Play video preview"
-                    title="Play video preview"
-                  />
-                </div>
-                {/* Note about accessibility */}
-                <p className="absolute bottom-2 left-2 right-2 text-xs text-center text-muted-foreground/80">
-                  Video is muted. Captions available via video controls.
-                </p>
-              </div>
-            </div>
-          </div>
-        </GlassCard>
-      </Reveal>
-
+      
+      
       {/* Main content grid */}
       <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Left column — chart + table */}

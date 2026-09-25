@@ -1,3 +1,5 @@
+// Must precede AppModule: env vars are read at import time. See load-env.ts.
+import './load-env';
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as fs from 'fs';

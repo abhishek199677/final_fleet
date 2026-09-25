@@ -1,6 +1,20 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    // Self-contained (no extends): Vercel uploads only this package's subtree,
+    // so ../../tsconfig.base.json is absent on build machines (TS5083).
+    // Values mirror the former extends target — keep in sync if the base changes.
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "lib": ["ES2022"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
     "emitDecoratorMetadata": true,

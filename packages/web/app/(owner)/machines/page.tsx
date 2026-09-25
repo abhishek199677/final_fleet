@@ -142,10 +142,10 @@ export default function OwnerMachines() {
                 <EmptyTitle>No machines yet</EmptyTitle>
                 <EmptyDescription>Add your first machine to get started</EmptyDescription>
               </EmptyHeader>
-              <EmptyContent>
-                <Button>
-                  <span className="mr-2">+</span> Add First Machine
-                </Button>
+              <EmptyContent className="mt-6">
+                <p className="text-sm text-gray-500">
+                  Use the "+ Add Machine" button above to get started
+                </p>
               </EmptyContent>
             </Empty>
           </CardContent>

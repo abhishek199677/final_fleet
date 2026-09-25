@@ -103,10 +103,10 @@ export default function OwnerOperators() {
                 <EmptyTitle>No operators yet</EmptyTitle>
                 <EmptyDescription>Add your first operator to get started</EmptyDescription>
               </EmptyHeader>
-              <EmptyContent>
-                <Button>
-                  <span className="mr-2">+</span> Add First Operator
-                </Button>
+              <EmptyContent className="mt-6">
+                <p className="text-sm text-gray-500">
+                  Use the "+ Add Operator" button above to get started
+                </p>
               </EmptyContent>
             </Empty>
           </CardContent>

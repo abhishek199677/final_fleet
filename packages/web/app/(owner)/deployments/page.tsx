@@ -86,9 +86,9 @@ export default function DeploymentsList() {
             <div className="text-6xl mb-4">🚜</div>
             <p className="text-gray-500 text-lg mb-2">No deployments yet</p>
             <p className="text-gray-400 text-sm">Create one to assign a machine to a site</p>
-            <Button className="mt-6">
-              <span className="mr-2">+</span> Create First Deployment
-            </Button>
+            <p className="mt-4 text-sm text-gray-500">
+              Use the "+ New Deployment" button above to get started
+            </p>
           </CardContent>
         </Card>
       ) : (

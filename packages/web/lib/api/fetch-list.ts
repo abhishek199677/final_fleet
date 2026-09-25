@@ -36,6 +36,20 @@ export async function fetchList<T>(path: string, options: RequestInit = {}): Pro
 }
 
 /**
+ * HTTP error that carries the response status so callers can tell auth
+ * failures (401 → session expired) apart from outages (network / 5xx).
+ */
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(status: number, path: string) {
+    super(`API ${status} on ${path}`);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
+/**
  * Strict variant: THROWS on HTTP error or network failure so callers can
  * distinguish "API is down" (catch → show error banner) from
  * "API is up but database is empty" (empty array → show empty state).
@@ -43,7 +57,7 @@ export async function fetchList<T>(path: string, options: RequestInit = {}): Pro
 export async function fetchListStrict<T>(path: string, options: RequestInit = {}): Promise<T[]> {
   const res = await authFetch(path, options);
   if (!res.ok) {
-    throw new Error(`API ${res.status} on ${path}`);
+    throw new ApiError(res.status, path);
   }
   return toArray<T>(await res.json());
 }

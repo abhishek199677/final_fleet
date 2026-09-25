@@ -102,10 +102,10 @@ export default function SitesList() {
                 <EmptyTitle>No sites yet</EmptyTitle>
                 <EmptyDescription>Create your first site to start deploying machines</EmptyDescription>
               </EmptyHeader>
-              <EmptyContent>
-                <Button>
-                  <span className="mr-2">+</span> Create First Site
-                </Button>
+              <EmptyContent className="mt-6">
+                <p className="text-sm text-gray-500">
+                  Use the "+ New Site" button above to get started
+                </p>
               </EmptyContent>
             </Empty>
           </CardContent>

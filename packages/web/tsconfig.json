@@ -1,6 +1,14 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    // Self-contained (no extends): Vercel uploads only this package's subtree,
+    // so ../../tsconfig.base.json is absent on build machines (TS5083).
+    // Values mirror the former extends target — keep in sync if the base changes.
+    "target": "ES2022",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
     "outDir": "./dist",
     "rootDir": ".",
     "jsx": "preserve",
@@ -37,6 +45,11 @@
   "exclude": [
     "node_modules",
     "dist",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    // Dead scaffolding: not imported by any live module, so never compiled by
+    // webpack. Excluded so typecheck/build gate only live code. Port or delete.
+    "components/ui/questionnaire.tsx",
+    "components/ui/data-table.tsx",
+    "components/ui/pie-chart.tsx"
   ]
 }

@@ -139,10 +139,10 @@ export default function OwnerClients() {
                 <EmptyTitle>No clients yet</EmptyTitle>
                 <EmptyDescription>Add your first client to start managing projects</EmptyDescription>
               </EmptyHeader>
-              <EmptyContent>
-                <Button>
-                  <span className="mr-2">+</span> Add First Client
-                </Button>
+              <EmptyContent className="mt-6">
+                <p className="text-sm text-gray-500">
+                  Use the "+ Add Client" button above to get started
+                </p>
               </EmptyContent>
             </Empty>
           </CardContent>

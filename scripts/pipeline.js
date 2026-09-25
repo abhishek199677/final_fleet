@@ -118,10 +118,10 @@ async function waitForHealth(url, tries = 60) {
 function startApi() {
   fs.writeFileSync(API_LOG, `# pipeline API log ${new Date().toISOString()}\n`);
   const out = fs.openSync(API_LOG, 'a');
-  const env = { ...process.env, PORT: API_PORT, DB_NAME: E2E_DB, JWT_SECRET: 'pipeline-secret' };
-  // DB_NAME must win: DATABASE_URL would route the API (and force its SSL
-  // branch) to the demo database instead.
-  delete env.DATABASE_URL;
+  const env = { ...process.env, PORT: API_PORT, DB_NAME: E2E_DB, JWT_SECRET: 'pipeline-secret', DATABASE_URL: E2E_URL };
+  // DATABASE_URL must win: .env points at the demo (Neon) database and
+  // load-env only fills unset vars. E2E_URL is local with no sslmode, so
+  // DatabaseService's SSL branch stays off.
   apiProc = spawn('node', ['dist/main'], {
     cwd: path.join(ROOT, 'packages/api'),
     env,
@@ -171,8 +171,7 @@ process.on('SIGTERM', () => { stopApi(); process.exit(143); });
   }) && ok;
 
   ok = await stage('seed', () => {
-    const env = { ...process.env, DB_NAME: E2E_DB };
-    delete env.DATABASE_URL;
+    const env = { ...process.env, DB_NAME: E2E_DB, DATABASE_URL: E2E_URL };
     const r = sh('node', ['packages/db/seed.js'], env);
     return { ok: r.code === 0, output: r.out };
   }) && ok;

@@ -23,6 +23,20 @@ export class ProblemErrorFilter implements ExceptionFilter {
       return;
     }
 
+    // Foreign key on tenant_id is gone (e.g. the tenant was wiped while an
+    // old JWT is still stored) → tell the client to re-authenticate instead
+    // of masking it as an unexpected500.
+    const pgConstraint = (exception as { constraint?: string })?.constraint;
+    if (pgCode === '23503' && typeof pgConstraint === 'string' && pgConstraint.includes('tenant_id')) {
+      response.status(401).json({
+        type: 'about:blank',
+        title: 'Unauthorized',
+        status: 401,
+        detail: 'Your session is no longer valid. Sign out and sign in again to continue.',
+      });
+      return;
+    }
+
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const res = exception.getResponse();

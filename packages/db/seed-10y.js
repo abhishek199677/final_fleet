@@ -21,6 +21,20 @@
 const { Client } = require('pg');
 const { randomUUID } = require('crypto');
 
+// Load .env from repo root (packages/db/.env not expected)
+const envPath = require('path').resolve(__dirname, '../../.env');
+if (require('fs').existsSync(envPath)) {
+  for (const line of require('fs').readFileSync(envPath, 'utf8').split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    const val = trimmed.slice(eq + 1).trim();
+    if (!process.env[key]) process.env[key] = val;
+  }
+}
+
 const TENANT = '00000000-0000-0000-0000-000000000001';
 const OWNER = '00000000-0000-0000-0000-000000000010';
 const TAG = 'seed-10y';
@@ -59,13 +73,24 @@ const EXPENSE_DESC = {
 // Units/day by machine type (hours)
 const RATE_BY_TYPE = { excavator: 7, dump_truck: 9, dozer: 6, wheel_loader: 6, pipelayer: 5 };
 
-const config = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  database: process.env.DB_NAME || 'fleetos',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
-};
+// DATABASE_URL wins (Neon or any URL-style target); DB_* vars are the local
+// fallback. SSL follows the URL's sslmode (Neon requires it, local doesn't).
+const config = process.env.DATABASE_URL
+  ? {
+      connectionString: process.env.DATABASE_URL,
+      ssl:
+        process.env.DATABASE_URL.includes('sslmode=disable') ||
+        !process.env.DATABASE_URL.includes('sslmode=')
+          ? false
+          : { rejectUnauthorized: false },
+    }
+  : {
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432', 10),
+      database: process.env.DB_NAME || 'fleetos',
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || 'postgres',
+    };
 
 async function main() {
   const c = new Client(config);

@@ -27,8 +27,16 @@ export function ThemeSwitch() {
   const isDarkMode = effectiveTheme === 'dark'
 
   const toggleTheme = useCallback(() => {
-    setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark')
-  }, [setTheme])
+    // Determine current effective theme (resolve 'system' to actual light/dark)
+    const currentEffective = theme === 'system'
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      : theme;
+
+    // Toggle between light and dark based on current effective theme
+    const newTheme = currentEffective === 'dark' ? 'light' : 'dark';
+
+    setTheme(newTheme);
+  }, [theme, setTheme])
 
   return (
     <div className='flex justify-between items-center w-full'>

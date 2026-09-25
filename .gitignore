@@ -12,3 +12,6 @@ playwright-report/
 *.log
 packages/api/exports/
 .pipeline-api.log
+
+# Vercel project links
+.vercel/

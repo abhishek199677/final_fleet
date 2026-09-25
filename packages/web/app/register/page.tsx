@@ -3,7 +3,9 @@
 import { useState, ChangeEvent } from 'react';
 import { useAuth } from '@/lib/auth/context';
 import Link from 'next/link';
-import { Ripple, AuthTabs, TechOrbitDisplay } from '@/components/blocks/modern-animated-sign-in';
+import { Ripple, AuthTabs } from '@/components/blocks/modern-animated-sign-in';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { Play } from 'lucide-react';
 import {
   Truck, MapPin, BarChart3, Wrench, Shield, Clock, Fuel, FileText,
 } from 'lucide-react';
@@ -199,8 +201,32 @@ export default function RegisterPage() {
     <section className="flex min-h-screen max-lg:justify-center">
       {/* Left Side — animated orbit */}
       <span className="relative flex w-1/2 flex-col justify-center overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 max-lg:hidden">
-        <Ripple mainCircleSize={100} />
-        <TechOrbitDisplay iconsArray={iconsArray} orbits={4} />
+        <AspectRatio ratio={16/9} className="w-[80%] mx-auto flex-1">
+          <video
+            controls
+            autoPlay
+            loop
+            poster="/app-preview-poster.jpg"
+            className="w-full h-full object-cover rounded-xl transition-transform duration-500 hover:scale-[1.02]"
+          >
+            <source src="/app-preview.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
+          <div className="absolute inset-x-0 top-[30%] bottom-[30%] flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 hover:scale-[1.05]">
+            <div className="relative flex items-center space-x-3 group-hover:scale-[1.05]">
+              <Play
+                className="h-6 w-6 text-white/90"
+                aria-label="Play video preview"
+              />
+              <span className="text-sm font-medium text-white/90">Watch Preview</span>
+            </div>
+          </div>
+          {/* Note about accessibility */}
+          <p className="absolute bottom-2 left-2 right-2 text-xs text-center text-white/70">
+            Video is muted · Captions available
+          </p>
+        </AspectRatio>
 
         {/* Brand overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-10">
