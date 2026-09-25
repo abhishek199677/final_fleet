@@ -693,6 +693,9 @@
 
 /* Text — brighten for dark backgrounds */
 .dark .text-gray-900 { color: hsl(210 40% 96%) !important; }
+/* Landing nav sits on a light glass bar — keep its labels dark */
+.dark .landing-nav .text-gray-900 { color: #111827 !important; }
+.dark .landing-nav .text-gray-900:hover { color: #0f766e !important; }
 .dark .text-gray-800 { color: hsl(210 38% 92%) !important; }
 .dark .text-gray-700 { color: hsl(210 30% 82%) !important; }
 .dark .text-gray-600 { color: hsl(215 20% 60%) !important; }
@@ -739,7 +742,9 @@
   background-color: rgba(255, 255, 255, 0.92) !important;
   color: #0f172a !important;
 }
-.dark [class*="text-white"]:not(a *):not(button *) { color: rgba(255, 255, 255, 0.9) !important; }
+/* Exclude the <a>/<button> element itself — only its inner elements are exempt,
+   otherwise buttons that set text-white on the anchor get forced white-on-white */
+.dark [class*="text-white"]:not(a):not(a *):not(button):not(button *) { color: rgba(255, 255, 255, 0.9) !important; }
 
 /* ============================================
    STATUS & COLORED ELEMENTS — Modern dark mode

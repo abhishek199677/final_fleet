@@ -6,6 +6,13 @@
 // Drag to rotate. Pause to greet. Supports .dark and data-theme="dark".
 
 "use client";
+const HERO_FLEET_PHOTOS = [
+  "/fleet/exc-01.jpg",
+  "/fleet/exc-02.jpg",
+  "/fleet/dzr-01.jpg",
+  "/fleet/dtr-01.jpg",
+  "/fleet/dtr-02.jpg",
+];
 const __defProp = Object.defineProperty;
 const __getOwnPropNames = Object.getOwnPropertyNames;
 const __esm = (fn, res) => function __init() {
@@ -1083,6 +1090,18 @@ function App({ story: controlledStory, onStoryChange }) {
         <p className="eyebrow">Your fleet, always in view</p>
         <h1 id="hero-title">Complete fleet visibility, <em>delivered in real time.</em></h1>
         <p className="hero-description">Track every machine, every hour, every site. One platform for your entire operation.</p>
+        <div className="hero-fleet-strip" aria-hidden="true">
+          <div className="hero-fleet-track">
+            {[...HERO_FLEET_PHOTOS, ...HERO_FLEET_PHOTOS].map((src, i) => (
+              <div className="hero-fleet-slot" key={`${src}-${i}`}>
+                <div className="hero-fleet-photo">
+                  <img src={src} alt="" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hero-fleet-sand" />
+        </div>
       </div>
       <div className="visual-column">
         <div
@@ -1188,6 +1207,18 @@ const css = `
 .orbit-delivery .wordmark{color:var(--orbit-ink)}
 .orbit-delivery h1{font-family:inherit}
 .orbit-delivery button:disabled{opacity:1}
+.orbit-delivery .hero-fleet-strip{position:relative;margin-top:clamp(22px,4vh,44px);height:126px;overflow:hidden;pointer-events:none}
+.orbit-delivery .hero-fleet-sand{position:absolute;inset:auto 0 0 0;height:34px;background:linear-gradient(180deg,#e8d5ac 0%,#d4b98c 55%,#bfa473 100%);border-radius:20px 20px 12px 12px;box-shadow:0 -8px 22px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.35)}
+.orbit-delivery .hero-fleet-sand::after{content:"";position:absolute;inset:0;border-radius:inherit;background-image:radial-gradient(rgba(255,255,255,.55) 1px,transparent 1.5px),radial-gradient(rgba(120,90,50,.4) 1px,transparent 1.5px);background-size:23px 15px,17px 12px;background-position:0 0,7px 5px;opacity:.55}
+.orbit-delivery .hero-fleet-track{position:absolute;left:0;bottom:18px;display:flex;width:max-content;animation:heroFleetMarquee 30s linear infinite}
+.orbit-delivery .hero-fleet-slot{width:106px;height:76px;margin-right:16px;flex:0 0 auto}
+.orbit-delivery .hero-fleet-photo{width:100%;height:100%;border-radius:10px;overflow:hidden;border:2px solid rgba(255,255,255,.78);box-shadow:0 10px 18px rgba(0,0,0,.4);animation:heroFleetBob 3.4s ease-in-out infinite}
+.orbit-delivery .hero-fleet-slot:nth-child(even) .hero-fleet-photo{animation-name:heroFleetBobAlt;animation-delay:-1.7s}
+.orbit-delivery .hero-fleet-photo img{display:block;width:100%;height:100%;object-fit:cover}
+@keyframes heroFleetMarquee{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}
+@keyframes heroFleetBob{0%,100%{transform:translateY(0) rotate(-1.6deg)}50%{transform:translateY(-7px) rotate(-1.6deg)}}
+@keyframes heroFleetBobAlt{0%,100%{transform:translateY(0) rotate(1.6deg)}50%{transform:translateY(-7px) rotate(1.6deg)}}
+.dashboard-hero .orbit-delivery .hero-fleet-strip{display:none}
 `;
 function OrbitDeliveryHero({ theme = "auto", assetBaseUrl = "https://cdn.jsdelivr.net/gh/fadeichev2121/planet@b3f70fbf4b577845b1d9d5947c9410fb4d925dae", story, onStoryChange }: { theme?: string; assetBaseUrl?: string; story?: string | null; onStoryChange?: (story: string | null) => void } = {}) {
   return <AssetBaseContext.Provider value={assetBaseUrl.replace(/\/$/, "") + "/"}><div className="orbit-delivery" data-theme={theme}><style>{css}</style><App story={story} onStoryChange={onStoryChange} /></div></AssetBaseContext.Provider>;

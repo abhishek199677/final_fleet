@@ -120,7 +120,7 @@ export default function LandingPage() {
   return (
     <div style={{ colorScheme: 'light' }} className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 border-b border-gray-100/80 bg-white/70 backdrop-blur-xl">
+      <nav className="landing-nav sticky top-0 z-50 border-b border-gray-100/80 bg-white/70 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-teal-600 to-emerald-600 shadow-md shadow-teal-600/20">
