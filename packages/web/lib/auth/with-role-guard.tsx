@@ -22,7 +22,7 @@ export function withRoleGuard<P extends object>(
       if (!loading && user && !allowedRoles.includes(user.role)) {
         // Redirect to appropriate page based on role
         if (user.role === 'owner' || user.role === 'admin') {
-          router.push('/');
+          router.push('/home');
         } else if (user.role === 'ops') {
           router.push('/today');
         } else {

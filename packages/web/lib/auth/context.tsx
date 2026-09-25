@@ -66,12 +66,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('fleetos_token', token);
     setUser(userData);
 
-    // Redirect based on role
-    if (userData.role === 'owner' || userData.role === 'admin') {
-      router.push('/');
-    } else {
-      router.push('/today');
-    }
+    // Redirect straight to the right dashboard: ops gets the operations view,
+    // owners/admins get the owner home. The landing page is for signed-out visitors.
+    router.push(userData.role === 'ops' ? '/today' : '/home');
   };
 
   const register = async (email: string, password: string, tenantName: string) => {
@@ -94,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { token, user: userData } = body;
     localStorage.setItem('fleetos_token', token);
     setUser(userData);
-    router.push('/');
+    router.push(userData.role === 'ops' ? '/today' : '/home');
   };
 
   const logout = () => {
