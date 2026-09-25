@@ -6,7 +6,6 @@
 // Drag to rotate. Pause to greet. Supports .dark and data-theme="dark".
 
 "use client";
-import { Component as InteractiveGlobe } from "@/components/ui/interactive-globe";
 const __defProp = Object.defineProperty;
 const __getOwnPropNames = Object.getOwnPropertyNames;
 const __esm = (fn, res) => function __init() {
@@ -1001,7 +1000,7 @@ function App({ story: controlledStory, onStoryChange }) {
   const [visible, setVisible] = useState4(true), [tabVisible, setTabVisible] = useState4(true);
   const [reduced, setReduced] = useState4(false);
   const [sceneMounted, setSceneMounted] = useState4(false);
-  const [auto, setAuto] = useState4(true), [dragging, setDragging] = useState4(false);
+  const [auto, setAuto] = useState4(true), [dragging, setDragging] = useState4(false), [ready, setReady] = useState4(false);
   const [internalStory, setInternalStory] = useState4(null);
   // Story can be driven by the host app (e.g. a nav outside this component).
   const story = controlledStory !== undefined ? controlledStory : internalStory;
@@ -1097,8 +1096,7 @@ function App({ story: controlledStory, onStoryChange }) {
     aria-describedby="planet-instructions"
     onPointerDown={(event) => {
       if (!auto || !event.isPrimary || event.button !== 0) return;
-      // The globe canvas captures the pointer itself; capturing here as well
-      // would steal it and break the canvas drag handlers.
+      event.currentTarget.setPointerCapture(event.pointerId);
       drag.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
       const m = motion.current;
       m.dragTarget = m.planetAngle;
@@ -1137,15 +1135,12 @@ function App({ story: controlledStory, onStoryChange }) {
       }
     }}
   >
-          {sceneMounted && (
-            <InteractiveGlobe
-              autoRotateSpeed={auto && visible && tabVisible && !story && !reduced ? 0.002 : 0}
-            />
-          )}
+          {sceneMounted && <SceneBoundary><Suspense fallback={null}><PlanetScene3 motion={motion} active={visible && tabVisible && !story} auto={auto} reduced={reduced} prototype={prototype} onReady={setReady} /></Suspense></SceneBoundary>}
+          {!ready && <div className="loading" role="status"><span />Your fleet is loading…</div>}
         </div>
       </div>
       <div className={`planet-caption ${dragging ? "is-dragging" : ""}`} aria-hidden="true"><p>{!auto ? "Press Start" : dragging ? "Your fleet." : "Drag to turn"}<br />{!auto ? "to keep moving" : dragging ? "Always in view." : "the world"}</p><svg viewBox="0 0 180 165" fill="none"><path d="M161 148C137 82 103 39 28 14m0 0 6 16m-6-16 19-2" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
-      <p id="planet-instructions" className="sr-only">Drag in any direction to rotate the globe. It auto-rotates when idle — press Space or the Pause button to stop the rotation, and again to start. On touch screens, swipe outside the globe to scroll the page.</p>
+      <p id="planet-instructions" className="sr-only">Drag in any direction, or use the arrow keys, to rotate the 3D globe. Space pauses the rotation; press again to start. On touch screens, swipe outside the globe to scroll the page.</p>
       <div className="cloud-bank" aria-hidden="true"><i /><i /><i /><i /><i /></div>
     </section></main>
     <footer className="site-footer"><p className="footer-left">Every machine<br />Always connected</p><button className="motion-button" onClick={toggleMotion} aria-pressed={!auto} aria-label={auto ? "Pause and explore" : "Start moving"}>{auto ? <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 5v10m6-10v10" stroke="currentColor" strokeWidth="1.5" /></svg> : <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 8 6-8 6Z" fill="currentColor" /></svg>}<span>{auto ? "Pause" : "Start"}</span></button><p className="footer-right">Total fleet<br />control<br />anywhere</p></footer>
@@ -1193,7 +1188,6 @@ const css = `
 .orbit-delivery .wordmark{color:var(--orbit-ink)}
 .orbit-delivery h1{font-family:inherit}
 .orbit-delivery button:disabled{opacity:1}
-.orbit-delivery .planet-stage>canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block}
 `;
 function OrbitDeliveryHero({ theme = "auto", assetBaseUrl = "https://cdn.jsdelivr.net/gh/fadeichev2121/planet@b3f70fbf4b577845b1d9d5947c9410fb4d925dae", story, onStoryChange }: { theme?: string; assetBaseUrl?: string; story?: string | null; onStoryChange?: (story: string | null) => void } = {}) {
   return <AssetBaseContext.Provider value={assetBaseUrl.replace(/\/$/, "") + "/"}><div className="orbit-delivery" data-theme={theme}><style>{css}</style><App story={story} onStoryChange={onStoryChange} /></div></AssetBaseContext.Provider>;
