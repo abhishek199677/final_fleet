@@ -443,7 +443,7 @@ docker build -t fleetos-web -f packages/web/Dockerfile .
 ### Render.com Deployment
 
 The web Dockerfile is pre-configured for Render.com deployment:
-- API_URL defaults to `https://fleetos-api-rdwp.onrender.com`
+- API_URL defaults to `https://fleetos-api-seven.vercel.app`
 - Set environment variables in Render dashboard:
   - `DATABASE_URL` (Neon or PostgreSQL connection string)
   - `JWT_SECRET` (strong secret for production)

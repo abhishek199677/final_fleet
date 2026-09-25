@@ -19,8 +19,8 @@ COPY packages/shared/ packages/shared/
 COPY tsconfig.base.json ./
 
 # API URLs - use build args so render.yaml can override
-ARG NEXT_PUBLIC_API_URL=https://fleetos-api-rdwp.onrender.com
-ARG API_URL=https://fleetos-api-rdwp.onrender.com
+ARG NEXT_PUBLIC_API_URL=https://fleetos-api-seven.vercel.app
+ARG API_URL=https://fleetos-api-seven.vercel.app
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV API_URL=${API_URL}
 
