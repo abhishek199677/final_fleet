@@ -4,6 +4,7 @@
 import './load-env';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { ProblemErrorFilter } from './common/filters/problem-error.filter';
@@ -25,6 +26,27 @@ async function createHandler(): Promise<ExpressHandler> {
   app.use((req: Request, _res: Response, next: () => void) => {
     requestStore.run(req, next);
   });
+  // Same normalization as main.ts: /api-prefixed callers would otherwise miss
+  // the `v1` global prefix.
+  app.use((req: Request, _res: Response, next: () => void) => {
+    if (req.url.startsWith('/api/')) req.url = req.url.slice(4);
+    next();
+  });
+  // Friendly landing at the deployment root — all API routes live under /v1.
+  app.use((req: Request, res: Response, next: () => void) => {
+    if ((req.method === 'GET' || req.method === 'HEAD') && req.path === '/') {
+      res.status(200).json({
+        service: 'Fleet OS API',
+        status: 'ok',
+        api_base: '/v1',
+        health: '/v1/health',
+        docs: '/docs',
+        web: 'https://fleetos-web-six.vercel.app',
+      });
+      return;
+    }
+    next();
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -33,6 +55,31 @@ async function createHandler(): Promise<ExpressHandler> {
     }),
   );
   app.useGlobalFilters(new ProblemErrorFilter());
+
+  const config = new DocumentBuilder()
+    .setTitle('Fleet OS API')
+    .setDescription('Multi-tenant SaaS for heavy-equipment operators')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Enter Cognito JWT token',
+      },
+      'tenant-auth',
+    )
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Enter Cognito platform admin token',
+      },
+      'platform-auth',
+    )
+    .build();
+  SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, config));
 
   await app.init();
 

@@ -28,6 +28,22 @@ async function bootstrap() {
   app.use((req: Request, _res: Response, next: () => void) => {
     requestStore.run(req, next);
   });
+  // Friendly landing at the deployment root (Vercel routes `/` through this
+  // entry) — all API routes live under /v1.
+  app.use((req: Request, res: Response, next: () => void) => {
+    if ((req.method === 'GET' || req.method === 'HEAD') && req.path === '/') {
+      res.status(200).json({
+        service: 'Fleet OS API',
+        status: 'ok',
+        api_base: '/v1',
+        health: '/v1/health',
+        docs: '/docs',
+        web: 'https://fleetos-web-six.vercel.app',
+      });
+      return;
+    }
+    next();
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
