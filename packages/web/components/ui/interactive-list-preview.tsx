@@ -44,8 +44,6 @@ const DEFAULT_ITEMS: InteractiveListItem[] = [
 const BASE_IMAGE_WIDTH_REM = 19.5;
 const BASE_IMAGE_HEIGHT_REM = 22.5;
 const IMAGE_OFFSET_MULTIPLIER = 20;
-const ACTIVE_ROW_TEXT_COLOR = "#000000";
-const INACTIVE_ROW_TEXT_COLOR = "#ffffff";
 const IMAGE_HIDDEN_CLIP_PATH = "inset(50%)";
 const IMAGE_VISIBLE_CLIP_PATH = "inset(0%)";
 const IMAGE_VISIBILITY_HIDDEN = "hidden";
@@ -75,8 +73,6 @@ export default function InteractiveListPreview({
   const imageRefs = useRef<any[]>([]);
   const imageContainerRef = useRef<any>(null);
   const tableRef = useRef<any>(null);
-  const highlightRef = useRef<any>(null);
-  const rowRefs = useRef<Record<number, any>>({});
   const pendingLeaveRef = useRef<Record<number, boolean>>({});
   const tweenGenerationRef = useRef<Record<number, number>>({});
   const activeIndexRef = useRef<number | null>(null);
@@ -170,14 +166,6 @@ export default function InteractiveListPreview({
         });
       }
     });
-
-    if (!highlightRef.current) return;
-
-    gsap.set(highlightRef.current, {
-      opacity: 0,
-      y: 0,
-      height: 0,
-    });
   }, []);
 
   /** @param {number} index */
@@ -194,43 +182,6 @@ export default function InteractiveListPreview({
    */
   const setImageRef = (index: number, element: HTMLDivElement | null) => {
     imageRefs.current[index] = element;
-  };
-
-  /**
-   * @param {number} index
-   * @param {string} color
-   */
-  const setRowTextColor = (index: number, color: string) => {
-    const rowElement = rowRefs.current[index];
-
-    if (!rowElement) return;
-
-    gsap.to(rowElement.querySelectorAll("td"), {
-      color,
-      duration: safeSmoothness,
-      ease: "power2.out",
-      overwrite: "auto",
-    });
-  };
-
-  /** @param {HTMLTableRowElement|null} rowElement */
-  const moveHighlightToRow = (rowElement: HTMLTableRowElement | null) => {
-    const tableElement = tableRef.current;
-    const highlightElement = highlightRef.current;
-
-    if (!tableElement || !highlightElement || !rowElement) return;
-
-    const tableBounds = tableElement.getBoundingClientRect();
-    const rowBounds = rowElement.getBoundingClientRect();
-
-    gsap.to(highlightElement, {
-      y: rowBounds.top - tableBounds.top,
-      height: rowBounds.height,
-      opacity: 1,
-      duration: safeSmoothness,
-      ease: "power3.out",
-      overwrite: "auto",
-    });
   };
 
   /** @param {number} index */
@@ -273,7 +224,6 @@ export default function InteractiveListPreview({
     const previousIndex = activeIndexRef.current;
 
     pendingLeaveRef.current[index] = false;
-    rowRefs.current[index] = rowElement;
 
     // Reduced-motion: only one image at a time — fade the previous out first.
     if (reduceMotion && previousIndex !== null && previousIndex !== index) {
@@ -330,14 +280,7 @@ export default function InteractiveListPreview({
       });
     }
 
-    if (previousIndex !== null && previousIndex !== index) {
-      setRowTextColor(previousIndex, INACTIVE_ROW_TEXT_COLOR);
-    }
-
     activeIndexRef.current = index;
-
-    setRowTextColor(index, ACTIVE_ROW_TEXT_COLOR);
-    moveHighlightToRow(rowElement);
   };
 
   /** @param {number} index */
@@ -355,20 +298,7 @@ export default function InteractiveListPreview({
   };
 
   const onTableLeave = () => {
-    if (activeIndexRef.current !== null) {
-      setRowTextColor(activeIndexRef.current, INACTIVE_ROW_TEXT_COLOR);
-      activeIndexRef.current = null;
-    }
-
-    if (!highlightRef.current) return;
-
-    gsap.to(highlightRef.current, {
-      opacity: 0,
-      duration: safeSmoothness,
-      ease: "power2.out",
-      overwrite: "auto",
-    });
-
+    activeIndexRef.current = null;
     pointerTargetRef.current = { x: 0, y: 0 };
   };
 
@@ -396,11 +326,6 @@ export default function InteractiveListPreview({
         className={`relative w-full overflow-hidden font-mono text-white ${className}`}
         onMouseMove={onMouseMove}
       >
-        <div
-          ref={highlightRef}
-          className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-white"
-        />
-
         <div
           ref={imageContainerRef}
           className="pointer-events-none absolute inset-0 z-20"

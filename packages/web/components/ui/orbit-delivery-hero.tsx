@@ -1210,7 +1210,7 @@ const css = `
 .orbit-delivery .hero-fleet-strip{position:relative;margin-top:clamp(22px,4vh,44px);height:126px;overflow:hidden;pointer-events:none}
 .orbit-delivery .hero-fleet-sand{position:absolute;inset:auto 0 0 0;height:34px;background:linear-gradient(180deg,#e8d5ac 0%,#d4b98c 55%,#bfa473 100%);border-radius:20px 20px 12px 12px;box-shadow:0 -8px 22px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.35)}
 .orbit-delivery .hero-fleet-sand::after{content:"";position:absolute;inset:0;border-radius:inherit;background-image:radial-gradient(rgba(255,255,255,.55) 1px,transparent 1.5px),radial-gradient(rgba(120,90,50,.4) 1px,transparent 1.5px);background-size:23px 15px,17px 12px;background-position:0 0,7px 5px;opacity:.55}
-.orbit-delivery .hero-fleet-track{position:absolute;left:0;bottom:18px;display:flex;width:max-content;animation:heroFleetMarquee 30s linear infinite}
+.orbit-delivery .hero-fleet-track{position:absolute;left:0;bottom:18px;z-index:2;display:flex;width:max-content;animation:heroFleetMarquee 30s linear infinite}
 .orbit-delivery .hero-fleet-slot{width:106px;height:76px;margin-right:16px;flex:0 0 auto}
 .orbit-delivery .hero-fleet-photo{width:100%;height:100%;border-radius:10px;overflow:hidden;border:2px solid rgba(255,255,255,.78);box-shadow:0 10px 18px rgba(0,0,0,.4);animation:heroFleetBob 3.4s ease-in-out infinite}
 .orbit-delivery .hero-fleet-slot:nth-child(even) .hero-fleet-photo{animation-name:heroFleetBobAlt;animation-delay:-1.7s}
