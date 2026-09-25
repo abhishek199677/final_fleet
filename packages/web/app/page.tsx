@@ -8,6 +8,7 @@ import {
   Truck, Clock, FileText, Building2,
 } from 'lucide-react';
 import { InteractiveHoverButton } from '@/components/ui/interactive-hover-button';
+import InteractiveListPreview from '@/components/ui/interactive-list-preview';
 import dynamic from 'next/dynamic';
 
 // The Orbit hero boots a WebGL canvas and reads browser-only APIs, so skip SSR.
@@ -227,6 +228,23 @@ export default function LandingPage() {
                 <p className="mt-2 text-sm leading-relaxed text-gray-500">{f.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Interactive fleet list preview */}
+      <section id="fleet" className="py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+              Every machine, one live list
+            </h2>
+            <p className="mt-4 text-lg text-gray-500">
+              Hover any machine to preview what Fleet OS tracks — from hour meters to invoices.
+            </p>
+          </div>
+          <div className="mx-auto mt-14 max-w-5xl overflow-hidden rounded-2xl border border-black/10 shadow-2xl shadow-gray-900/10">
+            <InteractiveListPreview />
           </div>
         </div>
       </section>
