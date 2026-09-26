@@ -101,15 +101,14 @@ export class AlertEngineService {
     try {
       const result = await this.db.queryWithTenant(tenantId, 'owner',
         `SELECT c.id, c.name, c.payment_terms_days,
-                SUM(CASE WHEN bl.kind != 'adjustment' THEN bl.amount_minor ELSE 0 END) AS total_billed,
+                SUM(bl.amount_minor) AS total_billed,
                 MAX(bl.entry_date) AS last_billing_date
          FROM tenant.clients c
          JOIN tenant.sites s ON s.client_id = c.id
          JOIN tenant.deployments d ON d.site_id = s.id
          JOIN tenant.billing_ledger bl ON bl.deployment_id = d.id
-         WHERE bl.kind != 'adjustment'
          GROUP BY c.id, c.name, c.payment_terms_days
-         HAVING SUM(CASE WHEN bl.kind != 'adjustment' THEN bl.amount_minor ELSE 0 END) > 0`);
+         HAVING SUM(bl.amount_minor) > 0`);
 
       for (const row of result.rows) {
         const lastBilling = new Date(row.last_billing_date);

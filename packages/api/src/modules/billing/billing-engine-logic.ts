@@ -68,6 +68,12 @@ export class BillingEngine {
     let total_minor = 0;
     const push = (e: LedgerEntry) => {
       e.amount_minor = Math.round(e.amount_minor);
+      // A zero-amount entry is not money. Posting one plants a permanent
+      // `work` row worth 0 for the day, and because netting compares against
+      // what is already posted, every later recompute then lands as an
+      // adjustment instead of a base entry — which the read views exclude,
+      // so billed/receivable would show 0 forever. Nothing to bill = no row.
+      if (e.amount_minor === 0) return;
       entries.push(e);
       total_minor += e.amount_minor;
     };
@@ -152,26 +158,40 @@ export class BillingEngine {
       if (!deploymentId) continue;
       const existing = await this.db.queryWithTenant(tenantId, 'owner',
         `SELECT id, kind, amount_minor FROM tenant.billing_ledger
-         WHERE deployment_id = $1 AND entry_date = $2 AND kind != 'adjustment'`,
+         WHERE deployment_id = $1 AND entry_date = $2`,
         [deploymentId, day]);
 
+      // Net against EVERYTHING already posted for the day, adjustments
+      // included: adjustments are deltas on top of the untouched base row
+      // (append-only, BIL-03), so they are money the client owes. Summing
+      // only the base is what made a re-run re-post the same delta forever.
       const postedWork = existing.rows
         .filter((r) => r.kind !== 'extra_charge')
         .reduce((a, r) => a + Number(r.amount_minor), 0);
       const computedWork = bucket.work.reduce((a, e) => a + e.amount_minor, 0);
       const delta = Math.round(computedWork - postedWork);
       const hasWork = existing.rows.some((r) => r.kind !== 'extra_charge');
-      const firstId = existing.rows.find((r) => r.kind !== 'extra_charge')?.id ?? null;
+      // `adjusts_id` points at the original base entry, never at another delta.
+      const firstId =
+        existing.rows.find((r) => r.kind !== 'extra_charge' && r.kind !== 'adjustment')?.id ??
+        existing.rows.find((r) => r.kind !== 'extra_charge')?.id ?? null;
 
       if (!hasWork) {
         // First run for this day: post the computed work entries directly.
+        // The partial unique index on (deployment_id, entry_date, kind) makes
+        // two concurrent posts of the same day a no-op instead of a double
+        // invoice — the loser's delta is picked up by the next recompute.
         for (const entry of bucket.work) {
           const inserted = await this.db.queryWithTenant(tenantId, 'owner',
             `INSERT INTO tenant.billing_ledger (tenant_id, deployment_id, work_session_id, rate_card_id, entry_date, kind, units, currency, amount_minor, fx, base_minor)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,1,$9) RETURNING id`,
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,1,$9)
+             ON CONFLICT (deployment_id, entry_date, kind)
+               WHERE kind NOT IN ('adjustment', 'extra_charge') DO NOTHING
+             RETURNING id`,
             [tenantId, entry.deployment_id, entry.work_session_id ?? null, entry.rate_card_id ?? null,
              entry.entry_date, entry.kind, entry.units, entry.currency, entry.amount_minor]);
-          if (entry.amount_minor > 0) await this.consumeAdvances(tenantId, entry.deployment_id, inserted.rows[0].id as string, entry.amount_minor);
+          const ledgerId = inserted.rows[0]?.id as string | undefined;
+          if (ledgerId && entry.amount_minor > 0) await this.consumeAdvances(tenantId, entry.deployment_id, ledgerId, entry.amount_minor);
         }
       } else if (delta !== 0 && bucket.work.length > 0) {
         // Recompute: net the difference as a single adjustment referencing the original.

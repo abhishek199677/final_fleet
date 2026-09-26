@@ -46,14 +46,14 @@ export class WorkSessionsService {
 
     const created = await this.repo.create(tenantId, data, clientUuid, userId);
     // Billing runs for the session's day (TSD §5, §7). Never fails the write.
-    void this.runBillingForSession(tenantId, created).catch((e) => this.logger.warn(`billing hook failed: ${(e as Error).message}`));
+    await this.tryRunBilling(tenantId, created);
     return created;
   }
 
   async correct(tenantId: string, id: string, data: Record<string, unknown>, userId: string) {
     const result = await this.repo.correct(tenantId, id, data, userId);
     if (!result) throw new NotFoundException('Work session not found');
-    void this.runBillingForSession(tenantId, result).catch((e) => this.logger.warn(`billing hook failed: ${(e as Error).message}`));
+    await this.tryRunBilling(tenantId, result);
     return result;
   }
 
@@ -108,9 +108,25 @@ export class WorkSessionsService {
     if (!result) throw new NotFoundException('Failed to end session');
 
     // Run billing for the session's day
-    void this.runBillingForSession(tenantId, result).catch((e) => this.logger.warn(`billing hook failed: ${(e as Error).message}`));
+    await this.tryRunBilling(tenantId, result);
 
     return result;
+  }
+
+  /**
+   * Billing is awaited, not fired and forgotten: the hook reads the day's
+   * sessions to decide what is already posted, so running it detached let it
+   * interleave with the very next request (and could be cut short when a
+   * serverless function returns) — two hooks then both believed nothing was
+   * posted and both inserted the day's first row. Failures are still swallowed:
+   * a billing hiccup must not lose the operator's write.
+   */
+  private async tryRunBilling(tenantId: string, session: Record<string, unknown>): Promise<void> {
+    try {
+      await this.runBillingForSession(tenantId, session);
+    } catch (e) {
+      this.logger.warn(`billing hook failed: ${(e as Error).message}`);
+    }
   }
 
   private async runBillingForSession(tenantId: string, session: Record<string, unknown>): Promise<void> {
