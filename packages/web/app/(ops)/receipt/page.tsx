@@ -7,6 +7,7 @@ import { fetchListStrict } from '@/lib/api/fetch-list';
 import { useOfflineQueue } from '@/hooks/use-offline-queue';
 import { useAuth } from '@/lib/auth/context';
 import { ApiErrorBanner } from '@/components/api-error-banner';
+import { RecordActions } from '@/components/records/record-actions';
 import { Banknote, ArrowDownToLine } from 'lucide-react';
 
 interface Row extends Record<string, unknown> {
@@ -154,6 +155,7 @@ export default function ReceiptPage() {
                   <div className="flex items-center gap-3">
                     <span className="font-semibold text-slate-900">₹{((e.amount_minor as number) / 100).toLocaleString('en-IN')}</span>
                     <span className="text-slate-500">{String(e.event_date).slice(0, 10)}</span>
+                    <RecordActions table="client_money_events" row={e} onChanged={() => void load()} />
                   </div>
                 </div>
               ))}

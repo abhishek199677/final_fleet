@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { assertEvidence } from '../../common/policy/evidence-policy';
+import { correctRecord, voidRecord } from '../../common/records/record-tools';
 
 @Injectable()
 export class ClientMoneyService {
   constructor(private db: DatabaseService) {}
 
   async getEvents(tenantId: string, clientId?: string, role?: string, userId?: string) {
-    const clauses: string[] = [];
+    const clauses: string[] = ['cme.is_current = true'];
     const params: unknown[] = [];
     if (clientId) {
       params.push(clientId);
@@ -51,5 +52,18 @@ export class ClientMoneyService {
     const result = await this.db.queryWithTenant(tenantId, 'owner',
       `SELECT * FROM tenant.v_unused_advances WHERE remaining_minor > 0 ORDER BY event_date`);
     return result.rows;
+  }
+
+  // ── edit / void ──────────────────────────────────────────────────────────
+  // Money events are append-only: a correction writes a new version, a void
+  // retires the current one. Either way the row survives for audit and only
+  // `is_current = true` ever reaches balances.
+
+  async correctEvent(tenantId: string, id: string, data: Record<string, unknown>, userId: string) {
+    return correctRecord(this.db, tenantId, 'client_money_events', id, data, userId);
+  }
+
+  async voidEvent(tenantId: string, id: string, reason: string) {
+    return voidRecord(this.db, tenantId, 'client_money_events', id, reason);
   }
 }

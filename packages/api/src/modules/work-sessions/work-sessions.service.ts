@@ -3,6 +3,7 @@ import { WorkSessionsRepository } from './work-sessions.repository';
 import { BillingEngine } from '../billing/billing-engine-logic';
 import { DatabaseService } from '../../common/database/database.service';
 import { assertEvidence } from '../../common/policy/evidence-policy';
+import { voidRecord } from '../../common/records/record-tools';
 
 @Injectable()
 export class WorkSessionsService {
@@ -54,6 +55,15 @@ export class WorkSessionsService {
     if (!result) throw new NotFoundException('Work session not found');
     void this.runBillingForSession(tenantId, result).catch((e) => this.logger.warn(`billing hook failed: ${(e as Error).message}`));
     return result;
+  }
+
+  /**
+   * Void = retire the current version with a reason. The session leaves every
+   * `is_current = true` read (lists, rollups, billing input) while its versions
+   * and audit rows stay queryable.
+   */
+  async voidSession(tenantId: string, id: string, reason: string) {
+    return voidRecord(this.db, tenantId, 'work_sessions', id, reason);
   }
 
   async endSession(tenantId: string, id: string, data: {

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
+import { patchRecord, deleteRecord, mapDbError } from '../../common/records/record-tools';
 
 @Injectable()
 export class AlertsService {
@@ -26,16 +27,44 @@ export class AlertsService {
   }
 
   async getRules(tenantId: string) {
+    // Returns every rule, active or not: this is the configuration list, and a
+    // rule paused with `is_active = false` still has to be reachable to turn
+    // back on. The alert engine reads its own copy from `tenant.alert_rules`.
     const result = await this.db.queryWithTenant(tenantId, 'owner',
-      `SELECT * FROM tenant.alert_rules WHERE is_active = true ORDER BY rule_type`);
+      `SELECT * FROM tenant.alert_rules ORDER BY rule_type`);
     return result.rows;
   }
 
   async createRule(tenantId: string, data: Record<string, unknown>, clientUuid: string) {
-    const result = await this.db.queryWithTenant(tenantId, 'owner',
-      `INSERT INTO tenant.alert_rules (tenant_id, rule_type, threshold, threshold_unit, notify_channels, client_uuid)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-      [tenantId, data.rule_type, data.threshold, data.threshold_unit, data.notify_channels, clientUuid]);
-    return result.rows[0];
+    // `notify_channels` is NOT NULL and the caller (settings form, API client)
+    // has no reason to always repeat the default — absent means "in-app only",
+    // exactly like the column default. Passing it through as NULL made a plain
+    // create a 500.
+    const channels = Array.isArray(data.notify_channels) && data.notify_channels.length
+      ? data.notify_channels
+      : ['in_app'];
+    try {
+      const result = await this.db.queryWithTenant(tenantId, 'owner',
+        `INSERT INTO tenant.alert_rules (tenant_id, rule_type, threshold, threshold_unit, notify_channels, client_uuid)
+         VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+        [tenantId, data.rule_type, data.threshold, data.threshold_unit, channels, clientUuid]);
+      return result.rows[0];
+    } catch (e) {
+      // One rule per (tenant, rule_type) — a duplicate used to reach the filter
+      // as a raw 23505 and come back as a 500.
+      mapDbError(e, 'alert_rules');
+    }
+  }
+
+  // ── edit / delete ────────────────────────────────────────────────────────
+  // Alert rules are configuration, not evidence: they can be tuned in place or
+  // removed outright. `is_active = false` hides a rule without losing it.
+
+  async updateRule(tenantId: string, id: string, data: Record<string, unknown>) {
+    return patchRecord(this.db, tenantId, 'alert_rules', id, data);
+  }
+
+  async deleteRule(tenantId: string, id: string) {
+    return deleteRecord(this.db, tenantId, 'alert_rules', id);
   }
 }

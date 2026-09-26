@@ -34,6 +34,12 @@ export class WorkSessionsController {
     return this.service.correct(req.tenant!.tenantId, id, dto, req.user!.id as string);
   }
 
+  @Post(':id/void')
+  @ApiOperation({ summary: 'Void a work session with a reason (retires it from live data, keeps history)' })
+  voidSession(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: { reason: string }) {
+    return this.service.voidSession(req.tenant!.tenantId, id, dto?.reason);
+  }
+
   @Post(':id/end')
   @ApiOperation({ summary: 'End a work session with end meter reading' })
   endSession(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: {

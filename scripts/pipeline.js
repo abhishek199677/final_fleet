@@ -20,8 +20,12 @@
  *  10  e2e-api      scripts/e2e-pipeline.js — registers its own tenant and
  *                   walks provision -> ops -> billing -> audit (~65 checks,
  *                   includes all seven wiring-fix assertions)
- *  11  error-log    the forced 500 must be visible in the API log
- *  12  teardown     stop the pipeline API
+ *  11  e2e-crud     scripts/e2e-crud.js — edit/delete coverage: config
+ *                   PATCH/DELETE (409 while in use, 400 on unknown/empty
+ *                   fields, 404 when already gone) plus correct+void for all
+ *                   eight money tables
+ *  12  error-log    the forced 500 must be visible in the API log
+ *  13  teardown     stop the pipeline API
  *
  * Exit code 0 only when no stage FAILed.
  */
@@ -224,6 +228,16 @@ process.on('SIGTERM', () => { stopApi(); process.exit(143); });
     });
     console.log(r.out.replace(/\s+$/, ''));
     const m = r.out.match(/E2E SUITE: (\d+)\/(\d+) passed/);
+    return { ok: r.code === 0, note: m ? `${m[1]}/${m[2]} checks` : '', output: r.out };
+  }) && ok;
+
+  ok = await stage('e2e-crud', () => {
+    const r = sh('node', ['scripts/e2e-crud.js'], {
+      ...process.env,
+      E2E_BASE_URL: `http://localhost:${API_PORT}`,
+    });
+    console.log(r.out.replace(/\s+$/, ''));
+    const m = r.out.match(/CRUD SUITE: (\d+)\/(\d+) passed/);
     return { ok: r.code === 0, note: m ? `${m[1]}/${m[2]} checks` : '', output: r.out };
   }) && ok;
 

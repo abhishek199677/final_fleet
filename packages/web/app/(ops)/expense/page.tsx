@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { fetchListStrict } from '@/lib/api/fetch-list';
 import { useAuth } from '@/lib/auth/context';
 import { ApiErrorBanner } from '@/components/api-error-banner';
+import { RecordActions } from '@/components/records/record-actions';
 import { Receipt, Plus, AlertCircle } from 'lucide-react';
 
 interface ExpenseEntry {
@@ -90,8 +91,15 @@ export default function OpsExpense() {
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-slate-900">{exp.currency} {(exp.amount_minor / 100).toFixed(2)}</p>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="font-bold text-slate-900">{exp.currency} {(exp.amount_minor / 100).toFixed(2)}</p>
+                  </div>
+                  <RecordActions
+                    table="expenses"
+                    row={exp as unknown as Record<string, unknown>}
+                    onChanged={loadExpenses}
+                  />
                 </div>
               </div>
             </div>

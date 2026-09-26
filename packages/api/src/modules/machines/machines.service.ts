@@ -1,6 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { MachinesRepository } from './machines.repository';
 import { DatabaseService } from '../../common/database/database.service';
+
+/**
+ * Human names for the append-only tables that stop a machine delete, keyed by
+ * the `what` alias in `remove()`. Used to say precisely what would be lost.
+ */
+const HISTORY_LABELS: Record<string, string> = {
+  billing_ledger: 'ledger entries',
+  work_sessions: 'work sessions',
+  fuel_logs: 'fuel logs',
+  downtime_segments: 'downtime segments',
+  maintenance_visits: 'maintenance visits',
+  expenses: 'expenses',
+  extra_charges: 'extra charges',
+};
 
 @Injectable()
 export class MachinesService {
@@ -61,6 +75,46 @@ export class MachinesService {
   async remove(tenantId: string, id: string) {
     const existing = await this.repo.findById(tenantId, id);
     if (!existing) throw new NotFoundException('Machine not found');
+
+    // Money is append-only everywhere else in this product: it is corrected to
+    // a new version or voided, never destroyed. The cascade below would delete
+    // billing_ledger, work_sessions, fuel_logs, downtime, visits, expenses and
+    // extra charges outright, so those are counted first and the delete is
+    // refused while any exist — void them (or correct them away) first.
+    // Config rows (rate cards, tasks) and the machine's deployments still fall
+    // away with it: those are not evidence of anything that happened.
+    const history = await this.db.queryWithTenant(tenantId, 'owner',
+      `SELECT what, count(*)::int AS n FROM (
+         SELECT 'billing_ledger' AS what
+           FROM tenant.billing_ledger bl
+          WHERE (bl.work_session_id IN (SELECT id FROM tenant.work_sessions WHERE machine_id = $1))
+             OR (bl.deployment_id IN (SELECT id FROM tenant.deployments WHERE machine_id = $1))
+         UNION ALL SELECT 'work_sessions'
+           FROM tenant.work_sessions WHERE machine_id = $1
+         UNION ALL SELECT 'fuel_logs'
+           FROM tenant.fuel_logs WHERE machine_id = $1
+         UNION ALL SELECT 'downtime_segments'
+           FROM tenant.downtime_segments WHERE machine_id = $1
+         UNION ALL SELECT 'maintenance_visits'
+           FROM tenant.maintenance_visits WHERE machine_id = $1
+         UNION ALL SELECT 'expenses'
+           FROM tenant.expenses WHERE machine_id = $1
+         UNION ALL SELECT 'extra_charges'
+           FROM tenant.extra_charges ec
+           JOIN tenant.deployments d ON d.id = ec.deployment_id
+          WHERE d.machine_id = $1
+       ) counts
+       GROUP BY what
+       HAVING count(*) > 0`, [id]);
+
+    if (history.rows.length > 0) {
+      const parts = history.rows
+        .map((r) => `${r.n} ${HISTORY_LABELS[String(r.what)] ?? r.what}`)
+        .join(', ');
+      throw new ConflictException(
+        `This machine still has financial history (${parts}). Deleting it would erase all of it — void or correct those records first.`,
+      );
+    }
 
     // Delete related records in the correct order to respect foreign key constraints.
     // Order matters: child tables must be deleted before parent tables.

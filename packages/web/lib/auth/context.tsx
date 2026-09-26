@@ -15,6 +15,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, tenantName: string) => Promise<void>;
+  acceptInvite: (token: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -94,6 +95,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push(userData.role === 'ops' ? '/today' : '/home');
   };
 
+  const acceptInvite = async (token: string, password: string) => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const url = apiUrl ? `${apiUrl}/v1/auth/accept-invite` : '/api/auth/accept-invite';
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, password }),
+    });
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({}));
+      throw new Error(error.detail || error.message || 'Could not accept the invite');
+    }
+
+    const body = await res.json().catch(() => null);
+    if (!body?.token) throw new Error('Invalid server response');
+    const { token: sessionToken, user: userData } = body;
+    localStorage.setItem('fleetos_token', sessionToken);
+    setUser(userData);
+    router.push(userData.role === 'ops' ? '/today' : '/home');
+  };
+
   const logout = () => {
     localStorage.removeItem('fleetos_token');
     setUser(null);
@@ -101,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, acceptInvite, logout }}>
       {children}
     </AuthContext.Provider>
   );

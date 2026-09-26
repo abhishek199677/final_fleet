@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { fetchListStrict } from '@/lib/api/fetch-list';
 import { useAuth } from '@/lib/auth/context';
 import { ApiErrorBanner } from '@/components/api-error-banner';
+import { RecordActions } from '@/components/records/record-actions';
 import { History as HistoryIcon, Fuel, Droplets, Clock, Receipt, Banknote } from 'lucide-react';
 
 interface Row extends Record<string, unknown> {
@@ -14,6 +15,9 @@ interface Row extends Record<string, unknown> {
 interface Entry {
   id: string;
   kind: string;
+  /** Append-only table the entry came from, so it can be corrected or voided here. */
+  table: string;
+  row: Row;
   text: string;
   t: number;
 }
@@ -49,7 +53,7 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState(false);
 
-  useEffect(() => {
+  const load = () => {
     const id = myId();
     if (!id) {
       setLoading(false);
@@ -72,11 +76,11 @@ export default function HistoryPage() {
 
       if (s.length > 0 || f.length > 0 || d.length > 0 || e.length > 0 || c.length > 0) {
         all = [
-          ...mine(s).map((x) => ({ id: String(x.id), kind: 'Session', text: `${code.get(String(x.machine_id)) ?? 'Machine'} · ${new Date(String(x.start_at)).toLocaleString()}`, t: ts(x.start_at ?? x.created_at) })),
-          ...mine(f).map((x) => ({ id: String(x.id), kind: 'Fuel', text: `${code.get(String(x.machine_id)) ?? 'Machine'} · ${x.litres} L`, t: ts(x.created_at) })),
-          ...mine(d).map((x) => ({ id: String(x.id), kind: 'Downtime', text: `${code.get(String(x.machine_id)) ?? 'Machine'} · ${String(x.reason_code ?? '').replace(/_/g, ' ')}`, t: ts(x.started_at ?? x.created_at) })),
-          ...mine(e).map((x) => ({ id: String(x.id), kind: 'Expense', text: `${String(x.category_name ?? x.category ?? 'Expense')}`, t: ts(x.date ?? x.created_at) })),
-          ...mine(c).map((x) => ({ id: String(x.id), kind: 'Receipt', text: `${String(x.event_type)}`, t: ts(x.event_date ?? x.created_at) })),
+          ...mine(s).map((x) => ({ id: String(x.id), kind: 'Session', table: 'work_sessions', row: x, text: `${code.get(String(x.machine_id)) ?? 'Machine'} · ${new Date(String(x.start_at)).toLocaleString()}`, t: ts(x.start_at ?? x.created_at) })),
+          ...mine(f).map((x) => ({ id: String(x.id), kind: 'Fuel', table: 'fuel_logs', row: x, text: `${code.get(String(x.machine_id)) ?? 'Machine'} · ${x.litres} L`, t: ts(x.created_at) })),
+          ...mine(d).map((x) => ({ id: String(x.id), kind: 'Downtime', table: 'downtime_segments', row: x, text: `${code.get(String(x.machine_id)) ?? 'Machine'} · ${String(x.reason_code ?? '').replace(/_/g, ' ')}`, t: ts(x.started_at ?? x.created_at) })),
+          ...mine(e).map((x) => ({ id: String(x.id), kind: 'Expense', table: 'expenses', row: x, text: `${String(x.category_name ?? x.category ?? 'Expense')}`, t: ts(x.date ?? x.created_at) })),
+          ...mine(c).map((x) => ({ id: String(x.id), kind: 'Receipt', table: 'client_money_events', row: x, text: `${String(x.event_type)}`, t: ts(x.event_date ?? x.created_at) })),
         ];
       }
 
@@ -86,6 +90,10 @@ export default function HistoryPage() {
       setApiError(true);
       setEntries([]);
     }).finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load();
   }, []);
 
   return (
@@ -129,7 +137,10 @@ export default function HistoryPage() {
                     </span>
                     <span className="text-slate-700">{x.text}</span>
                   </div>
-                  <span className="text-slate-500">{new Date(x.t).toLocaleString()}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-slate-500">{new Date(x.t).toLocaleString()}</span>
+                    <RecordActions table={x.table} row={x.row} onChanged={load} />
+                  </div>
                 </div>
               );
             })}

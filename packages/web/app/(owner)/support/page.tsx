@@ -18,6 +18,7 @@ import { Headphones, MessageCircle, Send, CheckCircle, Clock, AlertCircle, HelpC
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchListStrict } from '@/lib/api/fetch-list';
 import { ApiErrorBanner } from '@/components/api-error-banner';
+import { ConfigActions } from '@/components/records/config-actions';
 
 interface Row extends Record<string, unknown> {
   id?: string;
@@ -239,6 +240,21 @@ export default function SupportPage() {
                                     <span aria-hidden="true">·</span>
                                     <span>{new Date(String(t.created_at)).toLocaleString()}</span>
                                   </span>
+                                  <ConfigActions
+                                    path="support/tickets"
+                                    row={t}
+                                    label="support ticket"
+                                    fields={['status', 'subject', 'description']}
+                                    options={{
+                                      status: [
+                                        { value: 'open', label: 'Open' },
+                                        { value: 'pending', label: 'Pending' },
+                                        { value: 'resolved', label: 'Resolved' },
+                                        { value: 'closed', label: 'Closed' },
+                                      ],
+                                    }}
+                                    onChanged={() => void load()}
+                                  />
                                 </MessageFooter>
                               </MessageContent>
                             </Message>

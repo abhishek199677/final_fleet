@@ -7,6 +7,7 @@ import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
 import { useAuth } from '@/lib/auth/context';
 import { ApiErrorBanner } from '@/components/api-error-banner';
+import { RecordActions } from '@/components/records/record-actions';
 import { Wrench, History } from 'lucide-react';
 
 interface Row extends Record<string, unknown> {
@@ -207,9 +208,16 @@ export default function MaintenanceVisitPage() {
           ) : (
             <div className="space-y-2">
               {visits.slice(0, 10).map((v) => (
-                <div key={String(v.id)} className="flex items-center justify-between rounded-lg border border-[#E5E2DB] bg-slate-50 p-3 text-sm">
+                <div key={String(v.id)} className="flex items-center justify-between gap-3 rounded-lg border border-[#E5E2DB] bg-slate-50 p-3 text-sm">
                   <span className="font-medium text-slate-900">{String(v.visit_type)}</span>
                   <span className="text-slate-500">{String(v.visit_date).slice(0, 10)} · {String(v.mechanic ?? '')}</span>
+                  <RecordActions
+                    table="maintenance_visits"
+                    row={v}
+                    onChanged={() => {
+                      void fetchList<Row>(`/api/v1/maintenance/machines/${machineId}/visits`).then(setVisits);
+                    }}
+                  />
                 </div>
               ))}
             </div>

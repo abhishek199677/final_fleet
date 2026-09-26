@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
+import { correctRecord, voidRecord, patchRecord, deleteRecord } from '../../common/records/record-tools';
 
 @Injectable()
 export class CashService {
@@ -59,7 +60,7 @@ export class CashService {
 
   async getCounts(tenantId: string, accountId: string) {
     const result = await this.db.queryWithTenant(tenantId, 'ops',
-      `SELECT * FROM tenant.cash_counts WHERE cash_account_id = $1 ORDER BY count_date DESC`, [accountId]);
+      `SELECT * FROM tenant.cash_counts WHERE cash_account_id = $1 AND is_current = true ORDER BY count_date DESC`, [accountId]);
     return result.rows;
   }
 
@@ -70,5 +71,25 @@ export class CashService {
       [tenantId, data.cash_account_id, data.count_date, JSON.stringify(data.counted),
        data.photo_key, data.note, userId, clientUuid]);
     return result.rows[0];
+  }
+
+  // ── edit / void ──────────────────────────────────────────────────────────
+
+  /** A count is append-only: correct it by writing a new version. */
+  async correctCount(tenantId: string, id: string, data: Record<string, unknown>, userId: string) {
+    return correctRecord(this.db, tenantId, 'cash_counts', id, data, userId);
+  }
+
+  async voidCount(tenantId: string, id: string, reason: string) {
+    return voidRecord(this.db, tenantId, 'cash_counts', id, reason);
+  }
+
+  /** An account is reference data: edit and delete outright. */
+  async updateAccount(tenantId: string, id: string, data: Record<string, unknown>) {
+    return patchRecord(this.db, tenantId, 'cash_accounts', id, data);
+  }
+
+  async deleteAccount(tenantId: string, id: string) {
+    return deleteRecord(this.db, tenantId, 'cash_accounts', id);
   }
 }

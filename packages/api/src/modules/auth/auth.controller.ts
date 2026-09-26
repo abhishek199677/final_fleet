@@ -24,6 +24,14 @@ export class AuthController {
   }
 
   @Public()
+  @Post('accept-invite')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Redeem an invite token and set the new user password' })
+  acceptInvite(@Body() dto: { token: string; password: string }) {
+    return this.service.acceptInvite(dto.token, dto.password);
+  }
+
+  @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token' })

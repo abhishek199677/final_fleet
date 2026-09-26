@@ -11,6 +11,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { History, Filter, User, FileText, AlertTriangle, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchListStrict } from '@/lib/api/fetch-list';
+import { RECORD_ROUTES, isVoidable } from '@/lib/api/record-routes';
 import { ApiErrorBanner } from '@/components/api-error-banner';
 
 interface Row extends Record<string, unknown> {
@@ -114,24 +115,22 @@ export default function AuditPage() {
     setVoidError('');
     try {
       const table = String(row.table_name);
-      const recordId = String(row.record_id);
-      let res: Response | null = null;
-      if (table === 'work_sessions') {
-        res = await authFetch(`/api/v1/work-sessions/${recordId}/corrections`, {
-          method: 'POST',
-          body: JSON.stringify({ billable: false, notes: `VOID: ${reason.trim()}`, client_uuid: crypto.randomUUID() }),
-        });
-      } else if (table === 'expenses') {
-        res = await authFetch(`/api/v1/expenses/${recordId}/corrections`, {
-          method: 'POST',
-          body: JSON.stringify({ note: `VOID: ${reason.trim()}`, client_uuid: crypto.randomUUID() }),
-        });
+      const route = RECORD_ROUTES[table];
+      if (!route) {
+        setVoidError('This record type cannot be voided.');
+        return;
       }
-      if (!res || !res.ok) {
-        setVoidError('Void failed — the entry was not changed.');
+      const res = await authFetch(`/api/v1/${route}/${String(row.record_id)}/void`, {
+        method: 'POST',
+        body: JSON.stringify({ reason: reason.trim() }),
+      });
+      if (!res.ok) {
+        const detail = await res.json().catch(() => null) as { message?: string } | null;
+        setVoidError(detail?.message || 'Void failed — the entry was not changed.');
         return;
       }
       setReason('');
+      setVoiding(null);
       void load();
     } catch {
       setVoidError('Void failed — the API is unreachable.');
@@ -140,14 +139,12 @@ export default function AuditPage() {
     }
   };
 
-  const voidable = (table: string) => table === 'work_sessions' || table === 'expenses';
-
   return (
     <div className="space-y-6">
       {apiError && <ApiErrorBanner onRetry={() => { void load(); }} />}
       <div>
         <h1 className="text-3xl font-bold">Audit</h1>
-        <p className="text-muted-foreground mt-1">Every write, filterable. Voids create new versions with a reason.</p>
+        <p className="text-muted-foreground mt-1">Every write, filterable. A void retires the record from live data and keeps every version behind it.</p>
       </div>
       {voidError && <p className="text-sm text-red-600">{voidError}</p>}
 
@@ -293,7 +290,7 @@ export default function AuditPage() {
                             </div>
                           </div>
                       
-                          {voidable(String(r.table_name)) && (
+                          {isVoidable(String(r.table_name)) && (
                             <div className="flex items-center gap-2">
                               <Input
                                 placeholder="Void reason…"

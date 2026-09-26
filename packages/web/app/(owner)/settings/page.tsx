@@ -6,12 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Settings as SettingsIcon, Users, Truck, Tag, DollarSign, Camera, Bell, Clock, Globe, Shield, Wrench, CheckCircle } from 'lucide-react';
 import { fetchListStrict } from '@/lib/api/fetch-list';
+import { useAuth } from '@/lib/auth/context';
+import { UserActions } from '@/components/users/user-actions';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { useLocale, type Locale } from '@/components/i18n-provider';
 import { ApiErrorBanner } from '@/components/api-error-banner';
 import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from '@/components/ui/item';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Spinner } from '@/components/ui/spinner';
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import { ConfigActions } from '@/components/records/config-actions';
 
 interface TenantSettings {
   evidence_policy: Record<string, string>;
@@ -33,8 +37,28 @@ const TAB_CONFIG = [
   { id: 'language', label: 'Language', icon: Globe, color: 'from-purple-500 to-pink-500' },
 ] as const;
 
+/**
+ * Mirrors the `alert_rules_rule_type_check` constraint in `tenant.alert_rules`.
+ * The DB rejects anything outside this list with 23514, which the API turns
+ * into a 400 — offering the same set here means a user never sees that.
+ */
+const RULE_TYPES = [
+  'maintenance_warning',
+  'maintenance_overdue',
+  'payment_due',
+  'payment_overdue',
+  'log_pending',
+  'diesel_anomaly',
+  'cash_variance',
+  'duplicate_expense',
+  'concentration',
+  'ocr_mismatch',
+  'auto_hold',
+] as const;
+
 export default function Settings() {
   const { locale, setLocale } = useLocale();
+  const { user } = useAuth();
   const [tab, setTab] = useState<'users' | 'machines' | 'categories' | 'fx' | 'evidence' | 'thresholds' | 'notifications' | 'periodClose' | 'language'>('users');
   const [periodClosePeriod, setPeriodClosePeriod] = useState('');
   const [periodCloseNote, setPeriodCloseNote] = useState('');
@@ -50,6 +74,198 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState(false);
 
+  // Invite flow: POST /users/invite returns a one-time invite_token that the
+  // invitee redeems at /accept-invite to set their own password.
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteName, setInviteName] = useState('');
+  const [inviteRole, setInviteRole] = useState('ops');
+  const [invitePassword, setInvitePassword] = useState('');
+  const [inviteError, setInviteError] = useState('');
+  const [inviteBusy, setInviteBusy] = useState(false);
+  const [inviteLink, setInviteLink] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  // Config CRUD: expense categories, maintenance tasks and alert rules are
+  // read-only or absent elsewhere in the product, so Settings is where they
+  // are added, renamed and removed.
+  const [newCategory, setNewCategory] = useState('');
+  const [categoryBusy, setCategoryBusy] = useState(false);
+  const [configError, setConfigError] = useState('');
+  const [taskForm, setTaskForm] = useState({
+    name: '',
+    machine_id: '',
+    trigger: 'calendar',
+    interval_value: '',
+    warning_value: '',
+  });
+  const [taskBusy, setTaskBusy] = useState(false);
+  const [alertRules, setAlertRules] = useState<Record<string, unknown>[]>([]);
+  const [ruleForm, setRuleForm] = useState({
+    rule_type: 'maintenance_warning',
+    threshold: '',
+    threshold_unit: '',
+  });
+  const [ruleBusy, setRuleBusy] = useState(false);
+
+  const reloadUsers = async () => {
+    try {
+      setUsers(await fetchListStrict<Record<string, unknown>>('/api/v1/users'));
+    } catch {
+      setConfigError('Could not reload users — the API is unreachable.');
+    }
+  };
+
+  const reloadConfig = async () => {
+    try {
+      const [mt, c, ar] = await Promise.all([
+        fetchListStrict<Record<string, unknown>>('/api/v1/maintenance/tasks'),
+        fetchListStrict<Record<string, unknown>>('/api/v1/expenses/categories'),
+        fetchListStrict<Record<string, unknown>>('/api/v1/alerts/rules'),
+      ]);
+      setMaintenanceTasks(mt);
+      setCategories(c);
+      setAlertRules(ar);
+    } catch {
+      setConfigError('Could not reload — the API is unreachable.');
+    }
+  };
+
+  const createRule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRuleBusy(true);
+    setConfigError('');
+    try {
+      const res = await authFetch('/api/v1/alerts/rules', {
+        method: 'POST',
+        body: JSON.stringify({
+          rule_type: ruleForm.rule_type,
+          threshold: ruleForm.threshold === '' ? null : Number(ruleForm.threshold),
+          threshold_unit: ruleForm.threshold_unit || null,
+          is_active: true,
+          client_uuid: crypto.randomUUID(),
+        }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        setConfigError(body?.message || 'Could not add that rule.');
+        return;
+      }
+      setRuleForm({ rule_type: 'maintenance_warning', threshold: '', threshold_unit: '' });
+      await reloadConfig();
+    } catch {
+      setConfigError('Could not add that rule — the API is unreachable.');
+    } finally {
+      setRuleBusy(false);
+    }
+  };
+
+  const createCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = newCategory.trim();
+    if (!name) return;
+    setCategoryBusy(true);
+    setConfigError('');
+    try {
+      const res = await authFetch('/api/v1/expenses/categories', {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        setConfigError(body?.message || 'Could not add that category.');
+        return;
+      }
+      setNewCategory('');
+      await reloadConfig();
+    } catch {
+      setConfigError('Could not add that category — the API is unreachable.');
+    } finally {
+      setCategoryBusy(false);
+    }
+  };
+
+  const createTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTaskBusy(true);
+    setConfigError('');
+    try {
+      const res = await authFetch('/api/v1/maintenance/tasks', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: taskForm.name.trim(),
+          machine_id: taskForm.machine_id,
+          trigger: taskForm.trigger,
+          interval_value: Number(taskForm.interval_value),
+          warning_value: taskForm.warning_value === '' ? null : Number(taskForm.warning_value),
+          client_uuid: crypto.randomUUID(),
+        }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        setConfigError(body?.message || 'Could not add that task.');
+        return;
+      }
+      setTaskForm({ name: '', machine_id: '', trigger: 'calendar', interval_value: '', warning_value: '' });
+      await reloadConfig();
+    } catch {
+      setConfigError('Could not add that task — the API is unreachable.');
+    } finally {
+      setTaskBusy(false);
+    }
+  };
+
+  const sendInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInviteError('');
+    setInviteLink('');
+    setCopied(false);
+
+    if (invitePassword && invitePassword.length < 8) {
+      setInviteError('Password must be at least 8 characters, or leave it blank.');
+      return;
+    }
+
+    setInviteBusy(true);
+    try {
+      const res = await authFetch('/api/v1/users/invite', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: inviteEmail.trim(),
+          name: inviteName.trim() || inviteEmail.trim(),
+          role: inviteRole,
+          ...(invitePassword ? { password: invitePassword } : {}),
+        }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        setInviteError(body?.detail || 'Invite failed');
+        return;
+      }
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      setInviteLink(body?.invite_token
+        ? `${origin}/accept-invite?token=${encodeURIComponent(body.invite_token)}`
+        : '');
+      setInviteEmail('');
+      setInviteName('');
+      setInvitePassword('');
+      const fresh = await fetchListStrict<Record<string, unknown>>('/api/v1/users');
+      setUsers(fresh);
+    } catch {
+      setInviteError('Invite failed — the API is unreachable.');
+    } finally {
+      setInviteBusy(false);
+    }
+  };
+
+  const copyInviteLink = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
+
   useEffect(() => {
     setApiError(false);
     void Promise.all([
@@ -57,14 +273,16 @@ export default function Settings() {
       fetchListStrict<Record<string, unknown>>('/api/v1/machines'),
       fetchListStrict<Record<string, unknown>>('/api/v1/maintenance/tasks'),
       fetchListStrict<Record<string, unknown>>('/api/v1/expenses/categories'),
+      fetchListStrict<Record<string, unknown>>('/api/v1/alerts/rules'),
       authFetch('/api/v1/tenants/settings').then(r => r.ok ? r.json() : null).catch(() => null),
       fetchListStrict<Record<string, unknown>>('/api/v1/tenants/period-closes'),
-    ]).then(([u, m, mt, c, s, pc]) => {
+    ]).then(([u, m, mt, c, ar, s, pc]) => {
       // API up → show exactly what's in the DB (empty = empty state)
       setUsers(u);
       setMachines(m);
       setMaintenanceTasks(mt);
       setCategories(c);
+      setAlertRules(ar);
       setPeriodCloses(pc);
       if (s) {
         setSettings(s);
@@ -180,7 +398,73 @@ export default function Settings() {
                   <Users className="h-5 w-5" /> User Management
                 </CardTitle>
               </div>
-              <CardContent className="pt-6">
+              <CardContent className="pt-6 space-y-6">
+                <form onSubmit={(e) => { void sendInvite(e); }} className="space-y-4 rounded-lg border border-border p-4">
+                  <div>
+                    <h3 className="text-sm font-semibold">Invite a teammate</h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      They set their own password with the invite link — they&rsquo;ll share this workspace&rsquo;s data with you.
+                    </p>
+                  </div>
+
+                  {inviteError && <p className="text-sm text-red-600">{inviteError}</p>}
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <Input
+                      type="email"
+                      required
+                      placeholder="teammate@company.com"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      aria-label="Teammate email"
+                    />
+                    <Input
+                      placeholder="Full name"
+                      value={inviteName}
+                      onChange={(e) => setInviteName(e.target.value)}
+                      aria-label="Teammate name"
+                    />
+                    <NativeSelect
+                      value={inviteRole}
+                      onChange={(e) => setInviteRole(e.target.value)}
+                      aria-label="Role"
+                    >
+                      <NativeSelectOption value="ops">Role: Operator</NativeSelectOption>
+                      <NativeSelectOption value="owner">Role: Owner</NativeSelectOption>
+                    </NativeSelect>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Input
+                      type="password"
+                      placeholder="Optional: set their password now"
+                      value={invitePassword}
+                      onChange={(e) => setInvitePassword(e.target.value)}
+                      aria-label="Optional password"
+                      minLength={8}
+                    />
+                    <Button type="submit" disabled={inviteBusy}>
+                      {inviteBusy ? <Spinner className="mr-2" /> : null}
+                      {inviteBusy ? 'Sending…' : 'Send invite'}
+                    </Button>
+                  </div>
+
+                  {inviteLink && (
+                    <div className="rounded-lg bg-muted p-3 space-y-2">
+                      <p className="text-xs font-medium">Share this link with them (valid for 7 days):</p>
+                      <div className="flex gap-2">
+                        <Input readOnly value={inviteLink} className="text-xs" aria-label="Invite link" />
+                        <Button type="button" variant="outline" size="sm" onClick={() => { void copyInviteLink(); }}>
+                          {copied ? 'Copied' : 'Copy'}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Works from <code>/accept-invite</code> — they choose their own password and land signed in.
+                      </p>
+                    </div>
+                  )}
+                </form>
+
                 <ItemGroup className="gap-3">
                   {users.map((u: Record<string, unknown>) => (
                     <Item key={u.id as string} variant="outline">
@@ -191,10 +475,15 @@ export default function Settings() {
                         <ItemTitle>{u.email as string}</ItemTitle>
                         <ItemDescription>{u.role as string}</ItemDescription>
                       </ItemContent>
-                      <ItemActions>
+                      <ItemActions className="flex items-center gap-3">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${u.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                           {u.is_active ? 'Active' : 'Inactive'}
                         </span>
+                        <UserActions
+                          user={u}
+                          isSelf={String(u.id) === String(user?.id ?? '')}
+                          onChanged={() => void reloadUsers()}
+                        />
                       </ItemActions>
                     </Item>
                   ))}
@@ -249,6 +538,82 @@ export default function Settings() {
                   </CardTitle>
                 </div>
                 <CardContent className="pt-6">
+                  <form
+                    onSubmit={(e) => void createTask(e)}
+                    className="mb-5 grid gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 sm:grid-cols-2"
+                  >
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Task name *</label>
+                      <Input
+                        value={taskForm.name}
+                        onChange={(e) => setTaskForm({ ...taskForm, name: e.target.value })}
+                        placeholder="Oil change"
+                        required
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Machine *</label>
+                      <NativeSelect
+                        value={taskForm.machine_id}
+                        onChange={(e) => setTaskForm({ ...taskForm, machine_id: e.target.value })}
+                        required
+                        className="mt-1"
+                      >
+                        <NativeSelectOption value="">Select machine…</NativeSelectOption>
+                        {machines.map((m) => (
+                          <NativeSelectOption key={m.id as string} value={m.id as string}>
+                            {m.code as string}
+                          </NativeSelectOption>
+                        ))}
+                      </NativeSelect>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Repeat every *</label>
+                      <Input
+                        type="number"
+                        min={1}
+                        step="any"
+                        value={taskForm.interval_value}
+                        onChange={(e) => setTaskForm({ ...taskForm, interval_value: e.target.value })}
+                        placeholder="250"
+                        required
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Counted in</label>
+                      <NativeSelect
+                        value={taskForm.trigger}
+                        onChange={(e) => setTaskForm({ ...taskForm, trigger: e.target.value })}
+                        className="mt-1"
+                      >
+                        <NativeSelectOption value="calendar">Days</NativeSelectOption>
+                        <NativeSelectOption value="meter">Meter hours</NativeSelectOption>
+                      </NativeSelect>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Warn at</label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step="any"
+                        value={taskForm.warning_value}
+                        onChange={(e) => setTaskForm({ ...taskForm, warning_value: e.target.value })}
+                        placeholder="e.g. 50 before due"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <Button
+                        type="submit"
+                        disabled={taskBusy || !taskForm.name.trim() || !taskForm.machine_id || !taskForm.interval_value}
+                      >
+                        {taskBusy ? 'Adding…' : 'Add task'}
+                      </Button>
+                    </div>
+                  </form>
+
                   <ItemGroup className="gap-3">
                     {maintenanceTasks.map((task: Record<string, unknown>) => (
                       <Item key={task.id as string} variant="outline">
@@ -258,8 +623,22 @@ export default function Settings() {
                             {task.trigger as string === 'meter' ? `Every ${task.interval_value as number} hours` : `Every ${task.interval_value as number} days`}
                           </ItemDescription>
                         </ItemContent>
-                        <ItemActions>
+                        <ItemActions className="flex items-center gap-3">
                           <span className="text-sm text-amber-600">Warning: {task.warning_value as number}</span>
+                          <ConfigActions
+                            path="maintenance/tasks"
+                            row={task}
+                            label="maintenance task"
+                            fields={['name', 'machine_id', 'trigger', 'interval_value', 'warning_value']}
+                            options={{
+                              machine_id: machines.map((m) => ({ value: String(m.id), label: String(m.code) })),
+                              trigger: [
+                                { value: 'calendar', label: 'Days' },
+                                { value: 'meter', label: 'Meter hours' },
+                              ],
+                            }}
+                            onChanged={() => void reloadConfig()}
+                          />
                         </ItemActions>
                       </Item>
                     ))}
@@ -286,6 +665,24 @@ export default function Settings() {
                 </CardTitle>
               </div>
               <CardContent className="pt-6">
+                <form onSubmit={(e) => void createCategory(e)} className="mb-5 flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="min-w-56 flex-1">
+                    <label className="text-sm font-medium text-gray-700">New category *</label>
+                    <Input
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      placeholder="Spare parts"
+                      required
+                      className="mt-1"
+                    />
+                  </div>
+                  <Button type="submit" disabled={categoryBusy || !newCategory.trim()}>
+                    {categoryBusy ? 'Adding…' : 'Add category'}
+                  </Button>
+                </form>
+
+                {configError && <p className="mb-3 text-sm text-red-600">{configError}</p>}
+
                 <ItemGroup className="gap-3">
                   {categories.map((c: Record<string, unknown>) => (
                     <Item key={c.id as string} variant="outline">
@@ -295,14 +692,32 @@ export default function Settings() {
                       <ItemContent>
                         <ItemTitle>{c.name as string}</ItemTitle>
                       </ItemContent>
-                      <ItemActions>
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
-                          {c.type as string}
-                        </span>
+                      <ItemActions className="flex items-center gap-3">
+                        {(c.is_default as boolean) && (
+                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+                            default
+                          </span>
+                        )}
+                        <ConfigActions
+                          path="expenses/categories"
+                          row={c}
+                          label="expense category"
+                          fields={['name']}
+                          onChanged={() => void reloadConfig()}
+                        />
                       </ItemActions>
                     </Item>
                   ))}
                 </ItemGroup>
+                {categories.length === 0 && (
+                  <Empty className="py-6">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon"><Tag /></EmptyMedia>
+                      <EmptyTitle>No categories yet</EmptyTitle>
+                      <EmptyDescription>Add your first one above — expenses need somewhere to go.</EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                )}
               </CardContent>
             </Card>
           )}
@@ -386,6 +801,7 @@ export default function Settings() {
           )}
 
           {tab === 'thresholds' && settings && (
+            <>
             <Card className="overflow-hidden">
               <div className="bg-gradient-to-r from-gray-950 to-gray-900 p-4">
                 <CardTitle className="text-white flex items-center gap-2">
@@ -418,6 +834,94 @@ export default function Settings() {
                 </Button>
               </CardContent>
             </Card>
+
+            <Card className="overflow-hidden">
+              <div className="bg-gradient-to-r from-gray-950 to-gray-900 p-4">
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Bell className="h-5 w-5" /> Alert Rules
+                </CardTitle>
+              </div>
+              <CardContent className="pt-6 space-y-5">
+                <form onSubmit={(e) => void createRule(e)} className="grid gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 sm:grid-cols-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Rule *</label>
+                    <NativeSelect
+                      value={ruleForm.rule_type}
+                      onChange={(e) => setRuleForm({ ...ruleForm, rule_type: e.target.value })}
+                      className="mt-1"
+                    >
+                      {RULE_TYPES.map((t) => (
+                        <NativeSelectOption key={t} value={t} disabled={alertRules.some((r) => r.rule_type === t)}>
+                          {t.replace(/_/g, ' ')}
+                        </NativeSelectOption>
+                      ))}
+                    </NativeSelect>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Threshold</label>
+                    <Input
+                      type="number"
+                      step="any"
+                      value={ruleForm.threshold}
+                      onChange={(e) => setRuleForm({ ...ruleForm, threshold: e.target.value })}
+                      placeholder="e.g. 7"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Unit</label>
+                    <Input
+                      value={ruleForm.threshold_unit}
+                      onChange={(e) => setRuleForm({ ...ruleForm, threshold_unit: e.target.value })}
+                      placeholder="days, litres…"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button type="submit" disabled={ruleBusy}>
+                      {ruleBusy ? 'Adding…' : 'Add rule'}
+                    </Button>
+                  </div>
+                </form>
+
+                {configError && <p className="text-sm text-red-600">{configError}</p>}
+
+                {alertRules.length === 0 ? (
+                  <p className="text-muted-foreground">No alert rules yet — add one above to start raising alerts.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {alertRules.map((r) => (
+                      <div
+                        key={String(r.id)}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-800">{String(r.rule_type).replace(/_/g, ' ')}</p>
+                          <p className="text-xs text-gray-500">
+                            {r.threshold === null || r.threshold === undefined
+                              ? 'no threshold'
+                              : `threshold ${String(r.threshold)}${r.threshold_unit ? ` ${String(r.threshold_unit)}` : ''}`}
+                            {' · '}
+                            {r.is_active ? 'active' : 'paused'}
+                          </p>
+                        </div>
+                        <ConfigActions
+                          path="alerts/rules"
+                          row={r}
+                          label="alert rule"
+                          fields={['rule_type', 'threshold', 'threshold_unit', 'is_active']}
+                          options={{
+                            rule_type: RULE_TYPES.map((t) => ({ value: t, label: t.replace(/_/g, ' ') })),
+                          }}
+                          onChanged={() => void reloadConfig()}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            </>
           )}
 
           {tab === 'notifications' && (

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { fetchListStrict } from '@/lib/api/fetch-list';
 import { useAuth } from '@/lib/auth/context';
 import { ApiErrorBanner } from '@/components/api-error-banner';
+import { RecordActions } from '@/components/records/record-actions';
 import { Play, Clock, ArrowRight, CheckCircle, Gauge } from 'lucide-react';
 
 export default function OpsWorkSession() {
@@ -140,9 +141,12 @@ export default function OpsWorkSession() {
                     </p>
                   </div>
                 </div>
-                <span className="text-sm font-medium text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
-                  {session.end_at ? `${((new Date(session.end_at as string).getTime() - new Date(session.start_at as string).getTime()) / 3600000).toFixed(1)} hrs` : 'Running'}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
+                    {session.end_at ? `${((new Date(session.end_at as string).getTime() - new Date(session.start_at as string).getTime()) / 3600000).toFixed(1)} hrs` : 'Running'}
+                  </span>
+                  <RecordActions table="work_sessions" row={session} onChanged={loadSessions} />
+                </div>
               </div>
             ))}
           </div>

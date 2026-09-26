@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
+import { correctRecord, voidRecord, patchRecord, deleteRecord } from '../../common/records/record-tools';
 
 @Injectable()
 export class MaintenanceService {
@@ -86,5 +87,25 @@ export class MaintenanceService {
     const result = await this.db.queryWithTenant(tenantId, 'ops',
       `SELECT * FROM tenant.v_maintenance_status WHERE machine_id = $1`, [machineId]);
     return result.rows;
+  }
+
+  // ── edit / void ──────────────────────────────────────────────────────────
+
+  /** A visit is append-only money/ops history: correct by writing a new version. */
+  async correctVisit(tenantId: string, id: string, data: Record<string, unknown>, userId: string) {
+    return correctRecord(this.db, tenantId, 'maintenance_visits', id, data, userId);
+  }
+
+  async voidVisit(tenantId: string, id: string, reason: string) {
+    return voidRecord(this.db, tenantId, 'maintenance_visits', id, reason);
+  }
+
+  /** A task is plain reference data: edit and delete outright. */
+  async updateTask(tenantId: string, id: string, data: Record<string, unknown>) {
+    return patchRecord(this.db, tenantId, 'maintenance_tasks', id, data);
+  }
+
+  async deleteTask(tenantId: string, id: string) {
+    return deleteRecord(this.db, tenantId, 'maintenance_tasks', id);
   }
 }

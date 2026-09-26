@@ -10,7 +10,11 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && user && !['owner', 'admin'].includes(user.role)) {
+    if (!loading && !user) {
+      // Not signed in: shared URLs like /machines must land on the login
+      // page instead of rendering a blank screen.
+      router.push('/login');
+    } else if (!loading && user && !['owner', 'admin'].includes(user.role)) {
       if (user.role === 'ops') {
         router.push('/today');
       } else {

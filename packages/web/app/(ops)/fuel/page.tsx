@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { fetchListStrict } from '@/lib/api/fetch-list';
 import { useAuth } from '@/lib/auth/context';
 import { ApiErrorBanner } from '@/components/api-error-banner';
+import { RecordActions } from '@/components/records/record-actions';
 import { Droplets, Plus, Fuel } from 'lucide-react';
 
 interface FuelLogEntry {
@@ -92,8 +93,15 @@ export default function OpsFuel() {
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-slate-900">{log.currency} {(log.cost_minor / 100).toFixed(2)}</p>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="font-bold text-slate-900">{log.currency} {(log.cost_minor / 100).toFixed(2)}</p>
+                  </div>
+                  <RecordActions
+                    table="fuel_logs"
+                    row={log as unknown as Record<string, unknown>}
+                    onChanged={loadLogs}
+                  />
                 </div>
               </div>
             </div>

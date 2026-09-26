@@ -7,6 +7,7 @@ import { fetchListStrict } from '@/lib/api/fetch-list';
 import { useOfflineQueue } from '@/hooks/use-offline-queue';
 import { useAuth } from '@/lib/auth/context';
 import { ApiErrorBanner } from '@/components/api-error-banner';
+import { RecordActions } from '@/components/records/record-actions';
 import { Clock, AlertTriangle } from 'lucide-react';
 
 interface Row extends Record<string, unknown> {
@@ -131,10 +132,11 @@ export default function DowntimePage() {
           ) : (
             <div className="space-y-2">
               {recent.map((d) => (
-                <div key={String(d.id)} className="flex items-center justify-between rounded-lg border border-[#E5E2DB] bg-slate-50 p-3 text-sm">
+                <div key={String(d.id)} className="flex items-center justify-between gap-3 rounded-lg border border-[#E5E2DB] bg-slate-50 p-3 text-sm">
                   <span className="font-medium text-slate-900">{String(d.machine_code ?? '')}</span>
                   <span className="text-slate-600">{String(d.reason_code ?? '').replace(/_/g, ' ')}</span>
                   <span className="text-slate-500">{new Date(String(d.started_at)).toLocaleString()}</span>
+                  <RecordActions table="downtime_segments" row={d} onChanged={load} />
                 </div>
               ))}
             </div>

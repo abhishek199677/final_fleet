@@ -76,7 +76,10 @@ const PASSWORD = 'Pipeline!1234';
     api('POST', '/v1/auth/login', { email: EMAIL, password: PASSWORD }));
   const T = login.data && login.data.token;
   if (!T) { report(); return; }
-  await step('GET /v1/auth/me', (r) => ok2xx(r) && r.data.email === EMAIL, () => api('GET', '/v1/auth/me', undefined, T));
+  // EMAIL embeds an uppercased STAMP; identity lookups are case-insensitive
+  // and the API normalises to lowercase, so compare without case.
+  await step('GET /v1/auth/me', (r) => ok2xx(r) && String(r.data.email).toLowerCase() === EMAIL.toLowerCase(),
+    () => api('GET', '/v1/auth/me', undefined, T));
   await step('register seeds categories + cash account (FIX4 seed)', (r) =>
     ok2xx(r) && Array.isArray(r.data) && r.data.length >= 1, () => api('GET', '/v1/cash/accounts', undefined, T));
 

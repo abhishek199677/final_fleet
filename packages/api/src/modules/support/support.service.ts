@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { supportGrantValid } from '../../common/domain/hardening.js';
 import { DatabaseService } from '../../common/database/database.service';
 
@@ -22,6 +22,62 @@ export class SupportService {
        FROM platform.support_tickets WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT 50`,
       [tenantId]);
     return result.rows;
+  }
+
+  /**
+   * Edit a ticket. Only its text and status are mutable — `user_id`,
+   * `tenant_id` and `created_at` are not, so a ticket can be re-scoped or
+   * closed but never re-attributed.
+   */
+  async updateTicket(tenantId: string, id: string, data: Record<string, unknown>) {
+    const STATUSES = new Set(['open', 'pending', 'resolved', 'closed']);
+    const sets: string[] = [];
+    const values: unknown[] = [];
+
+    if (data.subject !== undefined) {
+      const subject = String(data.subject).trim();
+      if (!subject) throw new BadRequestException('subject cannot be empty');
+      values.push(subject);
+      sets.push(`subject = $${values.length}`);
+    }
+    if (data.description !== undefined) {
+      values.push(data.description === null ? null : String(data.description));
+      sets.push(`description = $${values.length}`);
+    }
+    if (data.status !== undefined) {
+      if (!STATUSES.has(String(data.status))) {
+        throw new BadRequestException('status must be one of open, pending, resolved, closed');
+      }
+      values.push(String(data.status));
+      sets.push(`status = $${values.length}`);
+    }
+    if (sets.length === 0) throw new BadRequestException('No fields to update');
+
+    values.push(id, tenantId);
+    const result = await this.db.queryWithTenant(tenantId, 'owner',
+      `UPDATE platform.support_tickets SET ${sets.join(', ')}
+        WHERE id = $${values.length - 1} AND tenant_id = $${values.length}
+        RETURNING id, subject, description, status, created_at`,
+      values);
+    if (result.rows.length === 0) throw new NotFoundException('Support ticket not found');
+    return result.rows[0];
+  }
+
+  /**
+   * Remove a ticket.
+   *
+   * `platform.support_access_grants` is deliberately left alone: there is no FK
+   * from grants to tickets, and the tenant role holds no privileges on that
+   * platform table at all (migration 1725400000011 grants it to `app_platform`
+   * only) — touching it here aborted the whole delete with 42501. Grants are
+   * time-limited by `expires_at` whatever happens to their ticket.
+   */
+  async deleteTicket(tenantId: string, id: string) {
+    const deleted = await this.db.queryWithTenant(tenantId, 'owner',
+      `DELETE FROM platform.support_tickets WHERE id = $1 AND tenant_id = $2 RETURNING id`,
+      [id, tenantId]);
+    if (deleted.rows.length === 0) throw new NotFoundException('Support ticket not found');
+    return { deleted: true, id };
   }
 
   /**

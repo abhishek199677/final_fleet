@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { FuelDowntimeService } from './fuel-downtime.service';
 import { TenantRequest } from '../../common/middleware/tenant-context.middleware';
@@ -22,6 +22,18 @@ export class FuelDowntimeController {
     return this.service.createFuelLog(req.tenant!.tenantId, dto, dto.client_uuid as string, req.user!.id as string);
   }
 
+  @Post('fuel-logs/:id/corrections')
+  @ApiOperation({ summary: 'Correct a fuel log (creates a new version)' })
+  correctFuelLog(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: Record<string, unknown>) {
+    return this.service.correctFuelLog(req.tenant!.tenantId, id, dto, req.user!.id as string);
+  }
+
+  @Post('fuel-logs/:id/void')
+  @ApiOperation({ summary: 'Void a fuel log with a reason (retires it from live data, keeps history)' })
+  voidFuelLog(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: { reason: string }) {
+    return this.service.voidFuelLog(req.tenant!.tenantId, id, dto?.reason);
+  }
+
   @Get('downtime')
   @ApiOperation({ summary: 'List downtime segments' })
   @ApiQuery({ name: 'machine_id', required: false })
@@ -33,5 +45,17 @@ export class FuelDowntimeController {
   @ApiOperation({ summary: 'Create a downtime segment' })
   createDowntime(@Req() req: TenantRequest, @Body() dto: Record<string, unknown>) {
     return this.service.createDowntimeSegment(req.tenant!.tenantId, dto, dto.client_uuid as string, req.user!.id as string);
+  }
+
+  @Post('downtime/:id/corrections')
+  @ApiOperation({ summary: 'Correct a downtime segment (creates a new version)' })
+  correctDowntime(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: Record<string, unknown>) {
+    return this.service.correctDowntime(req.tenant!.tenantId, id, dto, req.user!.id as string);
+  }
+
+  @Post('downtime/:id/void')
+  @ApiOperation({ summary: 'Void a downtime segment with a reason (retires it from live data, keeps history)' })
+  voidDowntime(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: { reason: string }) {
+    return this.service.voidDowntime(req.tenant!.tenantId, id, dto?.reason);
   }
 }

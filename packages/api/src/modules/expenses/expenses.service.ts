@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { assertEvidence } from '../../common/policy/evidence-policy';
+import { correctRecord, voidRecord, patchRecord, deleteRecord } from '../../common/records/record-tools';
 
 @Injectable()
 export class ExpensesService {
@@ -74,22 +75,38 @@ export class ExpensesService {
     return result.rows;
   }
 
-  /** Correction = new version row (append-only; is_current maintained by trigger). */
+  /**
+   * Correction = new version row (append-only; is_current maintained by
+   * trigger). Delegates to the shared helper so every money table edits the
+   * same way and unknown/empty fields come back as 400 instead of a 500.
+   */
   async correct(tenantId: string, id: string, data: Record<string, unknown>, userId: string) {
-    const original = await this.db.queryWithTenant(tenantId, 'ops',
-      `SELECT * FROM tenant.expenses WHERE id = $1 AND is_current = true`, [id]);
-    if (original.rows.length === 0) return null;
-    const o = original.rows[0];
-    const result = await this.db.queryWithTenant(tenantId, 'ops',
-      `INSERT INTO tenant.expenses (tenant_id, date, category_id, description, currency, amount_minor, fx_rate, base_minor, cash_account_id, paid_by, allocation_type, site_id, machine_id, receipt_photo_key, note, created_by, client_uuid, supersedes_id, version)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
-      [tenantId, data.date || o.date, data.category_id || o.category_id, data.description || o.description,
-       data.currency || o.currency, data.amount_minor ?? o.amount_minor, data.fx_rate ?? o.fx_rate,
-       data.base_minor ?? o.base_minor, data.cash_account_id || o.cash_account_id, data.paid_by || o.paid_by,
-       data.allocation_type || o.allocation_type, data.site_id || o.site_id, data.machine_id || o.machine_id,
-       data.receipt_photo_key ?? o.receipt_photo_key,
-       data.note !== undefined ? `${o.note ? `${o.note} | ` : ''}${data.note}` : o.note,
-       userId, data.client_uuid, id, Number(o.version) + 1]);
+    return correctRecord(this.db, tenantId, 'expenses', id, data, userId);
+  }
+
+  /** Void = retire the current version so it leaves live totals, with the reason stamped on it. */
+  async voidExpense(tenantId: string, id: string, reason: string) {
+    return voidRecord(this.db, tenantId, 'expenses', id, reason);
+  }
+
+  async createCategory(tenantId: string, name: string) {
+    const trimmed = String(name ?? '').trim();
+    if (!trimmed) throw new BadRequestException('Category name is required');
+    if (trimmed.length > 80) throw new BadRequestException('Category name must be 80 characters or fewer');
+    const clash = await this.db.queryWithTenant(tenantId, 'owner',
+      `SELECT 1 FROM tenant.expense_categories WHERE lower(name) = lower($1)`, [trimmed]);
+    if (clash.rows.length > 0) throw new ConflictException('A category with that name already exists');
+    const result = await this.db.queryWithTenant(tenantId, 'owner',
+      `INSERT INTO tenant.expense_categories (tenant_id, name) VALUES ($1, $2) RETURNING *`,
+      [tenantId, trimmed]);
     return result.rows[0];
+  }
+
+  async updateCategory(tenantId: string, id: string, data: Record<string, unknown>) {
+    return patchRecord(this.db, tenantId, 'expense_categories', id, data);
+  }
+
+  async deleteCategory(tenantId: string, id: string) {
+    return deleteRecord(this.db, tenantId, 'expense_categories', id);
   }
 }

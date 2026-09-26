@@ -57,13 +57,13 @@ export class InsightsService {
       `SELECT ws.*, op.name AS operator_name
        FROM tenant.work_sessions ws
        LEFT JOIN tenant.operators op ON op.id = ws.operator_id
-       WHERE ws.tenant_id = $1 ORDER BY ws.start_at`, [tenantId],
+       WHERE ws.tenant_id = $1 AND ws.is_current = true ORDER BY ws.start_at`, [tenantId],
     );
     const allDowntime = await q(
-      `SELECT * FROM tenant.downtime_segments WHERE tenant_id = $1 ORDER BY started_at`, [tenantId],
+      `SELECT * FROM tenant.downtime_segments WHERE tenant_id = $1 AND is_current = true ORDER BY started_at`, [tenantId],
     );
     const allFuel = await q(
-      `SELECT * FROM tenant.fuel_logs WHERE tenant_id = $1 ORDER BY created_at`, [tenantId],
+      `SELECT * FROM tenant.fuel_logs WHERE tenant_id = $1 AND is_current = true ORDER BY created_at`, [tenantId],
     );
     const rateCards = await q(
       `SELECT rc.*, d.machine_id FROM tenant.rate_cards rc

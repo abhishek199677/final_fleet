@@ -15,3 +15,6 @@ packages/api/exports/
 
 # Vercel project links
 .vercel/
+
+# third-party gateway clone (contains local secrets)
+freellmapi/

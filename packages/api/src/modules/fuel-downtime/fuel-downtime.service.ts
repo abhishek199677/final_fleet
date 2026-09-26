@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { assertEvidence } from '../../common/policy/evidence-policy';
+import { correctRecord, voidRecord } from '../../common/records/record-tools';
 
 @Injectable()
 export class FuelDowntimeService {
@@ -53,5 +54,25 @@ export class FuelDowntimeService {
       [tenantId, data.machine_id, data.work_session_id ?? null, data.started_at, data.ended_at ?? null,
        data.reason_code ?? data.reason ?? 'other', data.note ?? null, data.photo_key ?? null, userId, clientUuid]);
     return result.rows[0];
+  }
+
+  // ── edit / void ──────────────────────────────────────────────────────────
+  // Both tables are append-only: editing writes a new version, voiding retires
+  // the current one. Neither destroys a row, so audit_log keeps the history.
+
+  async correctFuelLog(tenantId: string, id: string, data: Record<string, unknown>, userId: string) {
+    return correctRecord(this.db, tenantId, 'fuel_logs', id, data, userId);
+  }
+
+  async voidFuelLog(tenantId: string, id: string, reason: string) {
+    return voidRecord(this.db, tenantId, 'fuel_logs', id, reason);
+  }
+
+  async correctDowntime(tenantId: string, id: string, data: Record<string, unknown>, userId: string) {
+    return correctRecord(this.db, tenantId, 'downtime_segments', id, data, userId);
+  }
+
+  async voidDowntime(tenantId: string, id: string, reason: string) {
+    return voidRecord(this.db, tenantId, 'downtime_segments', id, reason);
   }
 }

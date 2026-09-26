@@ -39,8 +39,8 @@ export class UsersController {
   @Post('invite')
   @UseGuards(RolesGuard)
   @Roles('owner')
-  @ApiOperation({ summary: 'Invite a new user (owner only)' })
-  invite(@Req() req: TenantRequest, @Body() dto: { email: string; name: string; role: string }) {
+  @ApiOperation({ summary: 'Invite a new user (owner only). Returns a one-time invite_token the invitee uses to set their password.' })
+  invite(@Req() req: TenantRequest, @Body() dto: { email: string; name: string; role: string; password?: string }) {
     return this.service.invite(req.tenant!.tenantId, dto);
   }
 

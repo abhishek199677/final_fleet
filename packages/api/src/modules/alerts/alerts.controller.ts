@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AlertsService } from './alerts.service';
 import { AlertEngineService } from './alert-engine.service';
@@ -36,6 +36,18 @@ export class AlertsController {
   @ApiOperation({ summary: 'Create an alert rule' })
   createRule(@Req() req: TenantRequest, @Body() dto: Record<string, unknown>) {
     return this.service.createRule(req.tenant!.tenantId, dto, dto.client_uuid as string);
+  }
+
+  @Patch('rules/:id')
+  @ApiOperation({ summary: 'Edit an alert rule (threshold, channels, or is_active)' })
+  updateRule(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: Record<string, unknown>) {
+    return this.service.updateRule(req.tenant!.tenantId, id, dto);
+  }
+
+  @Delete('rules/:id')
+  @ApiOperation({ summary: 'Delete an alert rule' })
+  deleteRule(@Req() req: TenantRequest, @Param('id') id: string) {
+    return this.service.deleteRule(req.tenant!.tenantId, id);
   }
 
   @Post('check')

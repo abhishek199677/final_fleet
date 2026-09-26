@@ -8,6 +8,8 @@ import { Download, CreditCard, TrendingUp, AlertCircle, Receipt, IndianRupee, Pl
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchListStrict } from '@/lib/api/fetch-list';
 import { ApiErrorBanner } from '@/components/api-error-banner';
+import { ConfigActions } from '@/components/records/config-actions';
+import { RecordActions } from '@/components/records/record-actions';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '@/components/ui/input-group';
@@ -44,6 +46,14 @@ export default function BillingPage() {
   });
   const [running, setRunning] = useState<string | null>(null);
   const [formError, setFormError] = useState('');
+  const [extraForm, setExtraForm] = useState({
+    deployment_id: '',
+    kind: 'other',
+    date: new Date().toISOString().slice(0, 10),
+    amount: '',
+    currency: 'INR',
+    note: '',
+  });
 
   const [apiError, setApiError] = useState(false);
 
@@ -96,9 +106,42 @@ export default function BillingPage() {
         void load();
         return;
       }
-      setFormError('Rate card was not created — nothing was saved.');
+      const body = await res.json().catch(() => null);
+      setFormError(body?.message || body?.detail || 'Rate card was not created — nothing was saved.');
     } catch {
       setFormError('Rate card was not created — the API is unreachable.');
+    }
+  };
+
+  const createExtra = async (ev: React.FormEvent) => {
+    ev.preventDefault();
+    setFormError('');
+    if (!extraForm.deployment_id) {
+      setFormError('Pick a deployment for the extra charge.');
+      return;
+    }
+    try {
+      const res = await authFetch('/api/v1/billing/extra-charges', {
+        method: 'POST',
+        body: JSON.stringify({
+          deployment_id: extraForm.deployment_id,
+          kind: extraForm.kind.trim() || 'other',
+          date: extraForm.date,
+          currency: extraForm.currency.trim() || 'INR',
+          amount_minor: Math.round(parseFloat(extraForm.amount || '0') * 100),
+          note: extraForm.note.trim() || undefined,
+          client_uuid: crypto.randomUUID(),
+        }),
+      });
+      if (res.ok) {
+        setExtraForm({ ...extraForm, amount: '', note: '' });
+        void load();
+        return;
+      }
+      const body = await res.json().catch(() => null);
+      setFormError(body?.message || body?.detail || 'Extra charge was not created — nothing was saved.');
+    } catch {
+      setFormError('Extra charge was not created — the API is unreachable.');
     }
   };
 
@@ -375,12 +418,30 @@ export default function BillingPage() {
                   <div className="mt-6 space-y-2">
                     <p className="text-sm font-medium text-gray-700 mb-3">Active Rate Cards</p>
                     {rates.slice(0, 4).map((r) => (
-                      <div key={String(r.id)} className="flex items-center justify-between rounded-lg bg-gray-50 p-3 text-sm border border-gray-100">
+                      <div key={String(r.id)} className="flex items-center justify-between gap-3 rounded-lg bg-gray-50 p-3 text-sm border border-gray-100">
                         <div>
                           <p className="font-medium text-gray-800">{String(r.machine_code)}</p>
                           <p className="text-xs text-gray-500">{String(r.strategy)} · {String(r.effective_from).slice(0, 10)}</p>
                         </div>
                         <span className="font-bold text-emerald-600">{money(r.rate_minor)}</span>
+                        <ConfigActions
+                          path="billing/rate-cards"
+                          row={r}
+                          label="rate card"
+                          fields={['deployment_id', 'strategy', 'effective_from', 'rate_minor', 'currency', 'min_units_per_day', 'standby_rate_minor']}
+                          options={{
+                            strategy: [
+                              { value: 'hourly', label: 'Hourly' },
+                              { value: 'daily', label: 'Daily' },
+                              { value: 'monthly', label: 'Monthly' },
+                            ],
+                            deployment_id: deployments.map((d) => ({
+                              value: String(d.id),
+                              label: [d.machine_code, d.site_name].filter(Boolean).join(' · '),
+                            })),
+                          }}
+                          onChanged={() => void load()}
+                        />
                       </div>
                     ))}
                   </div>
@@ -457,18 +518,87 @@ export default function BillingPage() {
                   <Receipt className="h-5 w-5" /> Extra Charges ({extras.length})
                 </CardTitle>
               </div>
-              <CardContent className="pt-6">
+              <CardContent className="pt-6 space-y-5">
+                <form onSubmit={(e) => void createExtra(e)} className="space-y-4 rounded-lg border border-border p-4">
+                  <Field>
+                    <FieldLabel htmlFor="extra-deployment">Deployment *</FieldLabel>
+                    <NativeSelect
+                      id="extra-deployment"
+                      className="w-full"
+                      value={extraForm.deployment_id}
+                      onChange={(e) => setExtraForm({ ...extraForm, deployment_id: e.target.value })}
+                      required
+                    >
+                      <NativeSelectOption value="">Select deployment…</NativeSelectOption>
+                      {deployments.map((d) => (
+                        <NativeSelectOption key={String(d.id)} value={String(d.id)}>
+                          {String(d.machine_code)} · {String(d.site_name)}
+                        </NativeSelectOption>
+                      ))}
+                    </NativeSelect>
+                  </Field>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field>
+                      <FieldLabel htmlFor="extra-kind">Kind</FieldLabel>
+                      <Input
+                        id="extra-kind"
+                        value={extraForm.kind}
+                        onChange={(e) => setExtraForm({ ...extraForm, kind: e.target.value })}
+                        placeholder="other"
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="extra-date">Date *</FieldLabel>
+                      <Input
+                        id="extra-date"
+                        type="date"
+                        value={extraForm.date}
+                        onChange={(e) => setExtraForm({ ...extraForm, date: e.target.value })}
+                        required
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="extra-amount">Amount (major) *</FieldLabel>
+                      <InputGroup>
+                        <InputGroupAddon align="inline-start">
+                          <InputGroupText>₹</InputGroupText>
+                        </InputGroupAddon>
+                        <InputGroupInput
+                          id="extra-amount"
+                          inputMode="decimal"
+                          value={extraForm.amount}
+                          onChange={(e) => setExtraForm({ ...extraForm, amount: e.target.value })}
+                          placeholder="0"
+                        />
+                      </InputGroup>
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="extra-note">Note</FieldLabel>
+                      <Input
+                        id="extra-note"
+                        value={extraForm.note}
+                        onChange={(e) => setExtraForm({ ...extraForm, note: e.target.value })}
+                        placeholder="why this charge"
+                      />
+                    </Field>
+                  </div>
+                  <Button type="submit" size="sm">
+                    <Plus className="h-4 w-4" /> Add extra charge
+                  </Button>
+                </form>
+
                 {extras.length === 0 ? (
                   <p className="text-muted-foreground">No extra charges.</p>
                 ) : (
                   <div className="space-y-3">
                     {extras.slice(0, 5).map((e) => (
-                      <div key={String(e.id)} className="flex items-center justify-between rounded-lg bg-gray-50 p-4 border border-gray-100">
+                      <div key={String(e.id)} className="flex items-center justify-between gap-3 rounded-lg bg-gray-50 p-4 border border-gray-100">
                         <div>
                           <p className="font-medium text-gray-800">{String(e.kind)}</p>
                           <p className="text-xs text-gray-500">{String(e.machine_code)} · {String(e.date).slice(0, 10)}</p>
                         </div>
                         <span className="font-bold text-violet-600">{money(e.amount_minor)}</span>
+                        <RecordActions table="extra_charges" row={e} onChanged={() => void load()} />
                       </div>
                     ))}
                   </div>

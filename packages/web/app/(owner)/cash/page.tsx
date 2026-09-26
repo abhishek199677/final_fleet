@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { flexRender } from '@tanstack/react-table';
 import {
   getCoreRowModel,
@@ -22,6 +22,8 @@ import { Wallet, ArrowRightLeft, Banknote, CheckCircle, Clock } from 'lucide-rea
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchListStrict } from '@/lib/api/fetch-list';
 import { ApiErrorBanner } from '@/components/api-error-banner';
+import { ConfigActions } from '@/components/records/config-actions';
+import { RecordActions } from '@/components/records/record-actions';
 
 interface Row extends Record<string, unknown> {
   id?: string;
@@ -74,13 +76,16 @@ export default function CashPage() {
     void load();
   }, []);
 
-  useEffect(() => {
-    if (accountId) {
-      void fetchListStrict<Row>(`/api/v1/cash/accounts/${accountId}/counts`).then((data) => {
-        setCounts(data);
-      }).catch(() => setApiError(true));
-    }
+  const loadCounts = useCallback(() => {
+    if (!accountId) return;
+    void fetchListStrict<Row>(`/api/v1/cash/accounts/${accountId}/counts`).then((data) => {
+      setCounts(data);
+    }).catch(() => setApiError(true));
   }, [accountId]);
+
+  useEffect(() => {
+    loadCounts();
+  }, [loadCounts]);
 
   const transfer = async (ev: React.FormEvent) => {
     ev.preventDefault();
@@ -180,8 +185,17 @@ export default function CashPage() {
           <span className='text-gray-500'>{String(row.original.note ?? '')}</span>
         ),
       },
+      {
+        id: 'actions',
+        header: 'Actions',
+        enableSorting: false,
+        enableHiding: false,
+        cell: ({ row }) => (
+          <RecordActions table="cash_counts" row={row.original} onChanged={loadCounts} />
+        ),
+      },
     ],
-    []
+    [loadCounts]
   );
 
   const countsTable = useLegacyTable({
@@ -283,6 +297,27 @@ export default function CashPage() {
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700">
                         {String(a.currency ?? 'INR')}
                       </span>
+                    </div>
+
+                    {/* stopPropagation: the card itself selects the account. */}
+                    <div className="mb-2 flex justify-end" onClick={(e) => e.stopPropagation()}>
+                      <ConfigActions
+                        path="cash/accounts"
+                        row={a}
+                        label="cash account"
+                        fields={['name', 'type', 'currency', 'is_default']}
+                        options={{
+                          type: [
+                            { value: 'site_cash', label: 'Site cash' },
+                            { value: 'bank', label: 'Bank' },
+                            { value: 'petty', label: 'Petty cash' },
+                          ],
+                        }}
+                        onChanged={() => {
+                          setAccountId('');
+                          void load();
+                        }}
+                      />
                     </div>
 
                     <div className="text-center py-2">

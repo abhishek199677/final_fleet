@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { BillingEngineService } from './billing-engine.service';
 import { BillingEngine } from './billing-engine-logic';
@@ -29,6 +29,18 @@ export class BillingEngineController {
     return this.service.createRateCard(req.tenant!.tenantId, dto, dto.client_uuid as string);
   }
 
+  @Patch('rate-cards/:rateCardId')
+  @ApiOperation({ summary: 'Edit a rate card' })
+  updateRateCard(@Req() req: TenantRequest, @Param('rateCardId') rateCardId: string, @Body() dto: Record<string, unknown>) {
+    return this.service.updateRateCard(req.tenant!.tenantId, rateCardId, dto);
+  }
+
+  @Delete('rate-cards/:rateCardId')
+  @ApiOperation({ summary: 'Delete a rate card' })
+  deleteRateCard(@Req() req: TenantRequest, @Param('rateCardId') rateCardId: string) {
+    return this.service.deleteRateCard(req.tenant!.tenantId, rateCardId);
+  }
+
   @Get('extra-charges')
   @ApiOperation({ summary: 'List extra charges' })
   @ApiQuery({ name: 'deployment_id', required: false })
@@ -40,6 +52,18 @@ export class BillingEngineController {
   @ApiOperation({ summary: 'Create an extra charge' })
   createExtraCharge(@Req() req: TenantRequest, @Body() dto: Record<string, unknown>) {
     return this.service.createExtraCharge(req.tenant!.tenantId, dto, dto.client_uuid as string, req.user!.id as string);
+  }
+
+  @Post('extra-charges/:chargeId/corrections')
+  @ApiOperation({ summary: 'Correct an extra charge (creates a new version)' })
+  correctExtraCharge(@Req() req: TenantRequest, @Param('chargeId') chargeId: string, @Body() dto: Record<string, unknown>) {
+    return this.service.correctExtraCharge(req.tenant!.tenantId, chargeId, dto, req.user!.id as string);
+  }
+
+  @Post('extra-charges/:chargeId/void')
+  @ApiOperation({ summary: 'Void an extra charge with a reason (retires it from live data, keeps history)' })
+  voidExtraCharge(@Req() req: TenantRequest, @Param('chargeId') chargeId: string, @Body() dto: { reason: string }) {
+    return this.service.voidExtraCharge(req.tenant!.tenantId, chargeId, dto?.reason);
   }
 
   @Get('ledger/:deploymentId')

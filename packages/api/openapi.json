@@ -46,6 +46,21 @@
         ]
       }
     },
+    "/auth/accept-invite": {
+      "post": {
+        "operationId": "AuthController_acceptInvite",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Redeem an invite token and set the new user password",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
     "/auth/refresh": {
       "post": {
         "operationId": "AuthController_refresh",
@@ -258,6 +273,55 @@
         ]
       }
     },
+    "/tenants/period-close/{period}": {
+      "post": {
+        "operationId": "TenantSettingsController_closePeriod",
+        "parameters": [
+          {
+            "name": "period",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Close a billing period (owner only, BIL-07)",
+        "tags": [
+          "Tenant Settings"
+        ]
+      }
+    },
+    "/tenants/period-closes": {
+      "get": {
+        "operationId": "TenantSettingsController_listPeriodCloses",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List closed periods",
+        "tags": [
+          "Tenant Settings"
+        ]
+      }
+    },
     "/machines": {
       "get": {
         "operationId": "MachinesController_findAll",
@@ -330,6 +394,60 @@
           }
         ],
         "summary": "Get machine by ID",
+        "tags": [
+          "Machines"
+        ]
+      },
+      "patch": {
+        "operationId": "MachinesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Update a machine",
+        "tags": [
+          "Machines"
+        ]
+      },
+      "delete": {
+        "operationId": "MachinesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Delete a machine",
         "tags": [
           "Machines"
         ]
@@ -429,6 +547,60 @@
         "tags": [
           "Clients"
         ]
+      },
+      "patch": {
+        "operationId": "ClientsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Update a client",
+        "tags": [
+          "Clients"
+        ]
+      },
+      "delete": {
+        "operationId": "ClientsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Delete a client",
+        "tags": [
+          "Clients"
+        ]
       }
     },
     "/deployments": {
@@ -493,6 +665,60 @@
           }
         ],
         "summary": "Get deployment by ID",
+        "tags": [
+          "Deployments"
+        ]
+      },
+      "patch": {
+        "operationId": "DeploymentsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Update a deployment",
+        "tags": [
+          "Deployments"
+        ]
+      },
+      "delete": {
+        "operationId": "DeploymentsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Delete a deployment",
         "tags": [
           "Deployments"
         ]
@@ -677,6 +903,60 @@
         "tags": [
           "Operators"
         ]
+      },
+      "patch": {
+        "operationId": "OperatorsController_patch",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Patch an operator",
+        "tags": [
+          "Operators"
+        ]
+      },
+      "delete": {
+        "operationId": "OperatorsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Delete an operator",
+        "tags": [
+          "Operators"
+        ]
       }
     },
     "/users": {
@@ -807,7 +1087,7 @@
             "tenant-auth": []
           }
         ],
-        "summary": "Invite a new user (owner only)",
+        "summary": "Invite a new user (owner only). Returns a one-time invite_token the invitee uses to set their password.",
         "tags": [
           "Users"
         ]
@@ -866,6 +1146,35 @@
           }
         ],
         "summary": "Reactivate a user",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/users/{id}/notification-prefs": {
+      "put": {
+        "operationId": "UsersController_updateNotificationPrefs",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Update own notification preferences",
         "tags": [
           "Users"
         ]
@@ -933,6 +1242,60 @@
           }
         ],
         "summary": "Get site by ID",
+        "tags": [
+          "Sites"
+        ]
+      },
+      "patch": {
+        "operationId": "SitesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Update a site",
+        "tags": [
+          "Sites"
+        ]
+      },
+      "delete": {
+        "operationId": "SitesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Delete a site",
         "tags": [
           "Sites"
         ]
@@ -1053,6 +1416,35 @@
         ]
       }
     },
+    "/work-sessions/{id}/void": {
+      "post": {
+        "operationId": "WorkSessionsController_voidSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Void a work session with a reason (retires it from live data, keeps history)",
+        "tags": [
+          "Work Sessions"
+        ]
+      }
+    },
     "/work-sessions/{id}/end": {
       "post": {
         "operationId": "WorkSessionsController_endSession",
@@ -1166,6 +1558,62 @@
         ]
       }
     },
+    "/billing/rate-cards/{rateCardId}": {
+      "patch": {
+        "operationId": "BillingEngineController_updateRateCard",
+        "parameters": [
+          {
+            "name": "rateCardId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Edit a rate card",
+        "tags": [
+          "Billing Engine"
+        ]
+      },
+      "delete": {
+        "operationId": "BillingEngineController_deleteRateCard",
+        "parameters": [
+          {
+            "name": "rateCardId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Delete a rate card",
+        "tags": [
+          "Billing Engine"
+        ]
+      }
+    },
     "/billing/extra-charges": {
       "get": {
         "operationId": "BillingEngineController_getExtraCharges",
@@ -1208,6 +1656,64 @@
           }
         ],
         "summary": "Create an extra charge",
+        "tags": [
+          "Billing Engine"
+        ]
+      }
+    },
+    "/billing/extra-charges/{chargeId}/corrections": {
+      "post": {
+        "operationId": "BillingEngineController_correctExtraCharge",
+        "parameters": [
+          {
+            "name": "chargeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Correct an extra charge (creates a new version)",
+        "tags": [
+          "Billing Engine"
+        ]
+      }
+    },
+    "/billing/extra-charges/{chargeId}/void": {
+      "post": {
+        "operationId": "BillingEngineController_voidExtraCharge",
+        "parameters": [
+          {
+            "name": "chargeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Void an extra charge with a reason (retires it from live data, keeps history)",
         "tags": [
           "Billing Engine"
         ]
@@ -1378,6 +1884,64 @@
         ]
       }
     },
+    "/fuel-downtime/fuel-logs/{id}/corrections": {
+      "post": {
+        "operationId": "FuelDowntimeController_correctFuelLog",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Correct a fuel log (creates a new version)",
+        "tags": [
+          "Fuel & Downtime"
+        ]
+      }
+    },
+    "/fuel-downtime/fuel-logs/{id}/void": {
+      "post": {
+        "operationId": "FuelDowntimeController_voidFuelLog",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Void a fuel log with a reason (retires it from live data, keeps history)",
+        "tags": [
+          "Fuel & Downtime"
+        ]
+      }
+    },
     "/fuel-downtime/downtime": {
       "get": {
         "operationId": "FuelDowntimeController_getDowntime",
@@ -1422,6 +1986,102 @@
         "summary": "Create a downtime segment",
         "tags": [
           "Fuel & Downtime"
+        ]
+      }
+    },
+    "/fuel-downtime/downtime/{id}/corrections": {
+      "post": {
+        "operationId": "FuelDowntimeController_correctDowntime",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Correct a downtime segment (creates a new version)",
+        "tags": [
+          "Fuel & Downtime"
+        ]
+      }
+    },
+    "/fuel-downtime/downtime/{id}/void": {
+      "post": {
+        "operationId": "FuelDowntimeController_voidDowntime",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Void a downtime segment with a reason (retires it from live data, keeps history)",
+        "tags": [
+          "Fuel & Downtime"
+        ]
+      }
+    },
+    "/maintenance/tasks": {
+      "get": {
+        "operationId": "MaintenanceController_getAllTasks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "List maintenance tasks for the tenant (settings page)",
+        "tags": [
+          "Maintenance"
+        ]
+      },
+      "post": {
+        "operationId": "MaintenanceController_createTask",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create a maintenance task (owner only)",
+        "tags": [
+          "Maintenance"
         ]
       }
     },
@@ -1532,10 +2192,19 @@
         ]
       }
     },
-    "/maintenance/tasks": {
+    "/maintenance/visits/{id}/corrections": {
       "post": {
-        "operationId": "MaintenanceController_createTask",
-        "parameters": [],
+        "operationId": "MaintenanceController_correctVisit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "201": {
             "description": ""
@@ -1546,7 +2215,92 @@
             "tenant-auth": []
           }
         ],
-        "summary": "Create a maintenance task (owner only)",
+        "summary": "Correct a maintenance visit (creates a new version)",
+        "tags": [
+          "Maintenance"
+        ]
+      }
+    },
+    "/maintenance/visits/{id}/void": {
+      "post": {
+        "operationId": "MaintenanceController_voidVisit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Void a maintenance visit with a reason (retires it from live data, keeps history)",
+        "tags": [
+          "Maintenance"
+        ]
+      }
+    },
+    "/maintenance/tasks/{id}": {
+      "patch": {
+        "operationId": "MaintenanceController_updateTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Edit a maintenance task (owner only)",
+        "tags": [
+          "Maintenance"
+        ]
+      },
+      "delete": {
+        "operationId": "MaintenanceController_deleteTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Delete a maintenance task (owner only)",
         "tags": [
           "Maintenance"
         ]
@@ -1608,6 +2362,80 @@
         "tags": [
           "Expenses"
         ]
+      },
+      "post": {
+        "operationId": "ExpensesController_createCategory",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create an expense category",
+        "tags": [
+          "Expenses"
+        ]
+      }
+    },
+    "/expenses/categories/{id}": {
+      "patch": {
+        "operationId": "ExpensesController_updateCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Rename an expense category",
+        "tags": [
+          "Expenses"
+        ]
+      },
+      "delete": {
+        "operationId": "ExpensesController_deleteCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Delete an expense category",
+        "tags": [
+          "Expenses"
+        ]
       }
     },
     "/expenses/{id}/corrections": {
@@ -1633,7 +2461,36 @@
             "tenant-auth": []
           }
         ],
-        "summary": "Correct an expense (creates new version, e.g. void with reason)",
+        "summary": "Correct an expense (creates a new version)",
+        "tags": [
+          "Expenses"
+        ]
+      }
+    },
+    "/expenses/{id}/void": {
+      "post": {
+        "operationId": "ExpensesController_voidExpense",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Void an expense with a reason (retires it from live data, keeps history)",
         "tags": [
           "Expenses"
         ]
@@ -1654,6 +2511,80 @@
           }
         ],
         "summary": "List cash accounts",
+        "tags": [
+          "Cash"
+        ]
+      },
+      "post": {
+        "operationId": "CashController_createAccount",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Create a cash account (owner only)",
+        "tags": [
+          "Cash"
+        ]
+      }
+    },
+    "/cash/accounts/{accountId}": {
+      "patch": {
+        "operationId": "CashController_updateAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Edit a cash account (owner only)",
+        "tags": [
+          "Cash"
+        ]
+      },
+      "delete": {
+        "operationId": "CashController_deleteAccount",
+        "parameters": [
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Delete a cash account (owner only)",
         "tags": [
           "Cash"
         ]
@@ -1766,6 +2697,64 @@
         ]
       }
     },
+    "/cash/counts/{countId}/corrections": {
+      "post": {
+        "operationId": "CashController_correctCount",
+        "parameters": [
+          {
+            "name": "countId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Correct a cash count (creates a new version)",
+        "tags": [
+          "Cash"
+        ]
+      }
+    },
+    "/cash/counts/{countId}/void": {
+      "post": {
+        "operationId": "CashController_voidCount",
+        "parameters": [
+          {
+            "name": "countId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Void a cash count with a reason (retires it from live data, keeps history)",
+        "tags": [
+          "Cash"
+        ]
+      }
+    },
     "/client-money/events": {
       "get": {
         "operationId": "ClientMoneyController_getEvents",
@@ -1808,6 +2797,64 @@
           }
         ],
         "summary": "Create a client money event (receipt/advance/credit note)",
+        "tags": [
+          "Client Money"
+        ]
+      }
+    },
+    "/client-money/events/{id}/corrections": {
+      "post": {
+        "operationId": "ClientMoneyController_correctEvent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Correct a client money event (creates a new version)",
+        "tags": [
+          "Client Money"
+        ]
+      }
+    },
+    "/client-money/events/{id}/void": {
+      "post": {
+        "operationId": "ClientMoneyController_voidEvent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Void a client money event with a reason (retires it from live data, keeps history)",
         "tags": [
           "Client Money"
         ]
@@ -1984,6 +3031,62 @@
           }
         ],
         "summary": "Create an alert rule",
+        "tags": [
+          "Alerts"
+        ]
+      }
+    },
+    "/alerts/rules/{id}": {
+      "patch": {
+        "operationId": "AlertsController_updateRule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Edit an alert rule (threshold, channels, or is_active)",
+        "tags": [
+          "Alerts"
+        ]
+      },
+      "delete": {
+        "operationId": "AlertsController_deleteRule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Delete an alert rule",
         "tags": [
           "Alerts"
         ]
@@ -2500,6 +3603,26 @@
         ]
       }
     },
+    "/insights/ai": {
+      "get": {
+        "operationId": "InsightsController_getAiInsights",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "AI-powered per-vehicle insights: performance, issues, earnings, recommendations",
+        "tags": [
+          "Insights"
+        ]
+      }
+    },
     "/support/tickets": {
       "post": {
         "operationId": "SupportController_create",
@@ -2533,6 +3656,62 @@
           }
         ],
         "summary": "List this tenant's support tickets",
+        "tags": [
+          "Support"
+        ]
+      }
+    },
+    "/support/tickets/{id}": {
+      "patch": {
+        "operationId": "SupportController_updateTicket",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Edit a support ticket's subject, description or status (owner only)",
+        "tags": [
+          "Support"
+        ]
+      },
+      "delete": {
+        "operationId": "SupportController_deleteTicket",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "tenant-auth": []
+          }
+        ],
+        "summary": "Delete a support ticket (owner only)",
         "tags": [
           "Support"
         ]

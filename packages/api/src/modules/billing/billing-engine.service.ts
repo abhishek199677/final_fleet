@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
+import { correctRecord, voidRecord, patchRecord, deleteRecord } from '../../common/records/record-tools';
 
 @Injectable()
 export class BillingEngineService {
@@ -42,10 +43,10 @@ export class BillingEngineService {
     const query = deploymentId
       ? `SELECT ec.*, cl.name AS client_name FROM tenant.extra_charges ec
          ${join}
-         WHERE ec.deployment_id = $1 ORDER BY ec.date DESC`
+         WHERE ec.deployment_id = $1 AND ec.is_current = true ORDER BY ec.date DESC`
       : `SELECT ec.*, cl.name AS client_name FROM tenant.extra_charges ec
          ${join}
-         ORDER BY ec.date DESC`;
+         WHERE ec.is_current = true ORDER BY ec.date DESC`;
     const params = deploymentId ? [deploymentId] : [];
     const result = await this.db.queryWithTenant(tenantId, 'owner', query, params);
     return result.rows;
@@ -94,5 +95,25 @@ export class BillingEngineService {
     const result = await this.db.queryWithTenant(tenantId, 'owner',
       `SELECT * FROM tenant.v_machine_contribution ORDER BY billed_minor DESC`);
     return result.rows;
+  }
+
+  // ── edit / void ──────────────────────────────────────────────────────────
+
+  /** An extra charge is billed history: correct it by writing a new version. */
+  async correctExtraCharge(tenantId: string, id: string, data: Record<string, unknown>, userId: string) {
+    return correctRecord(this.db, tenantId, 'extra_charges', id, data, userId);
+  }
+
+  async voidExtraCharge(tenantId: string, id: string, reason: string) {
+    return voidRecord(this.db, tenantId, 'extra_charges', id, reason);
+  }
+
+  /** A rate card is pricing configuration: edit and delete outright. */
+  async updateRateCard(tenantId: string, id: string, data: Record<string, unknown>) {
+    return patchRecord(this.db, tenantId, 'rate_cards', id, data);
+  }
+
+  async deleteRateCard(tenantId: string, id: string) {
+    return deleteRecord(this.db, tenantId, 'rate_cards', id);
   }
 }
