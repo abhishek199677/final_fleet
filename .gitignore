@@ -18,3 +18,6 @@ packages/api/exports/
 
 # third-party gateway clone (contains local secrets)
 freellmapi/
+
+# stray export sitting in the repo root (82MB, not referenced by the app)
+video/
