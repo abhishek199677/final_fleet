@@ -14,62 +14,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { Spinner } from '@/components/ui/spinner';
 import { Hash } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
-
-const METER_TYPES = ['hours', 'km', 'cycles', 'metres', 'tonnes', 'trips'];
-
-const MACHINE_TYPES = [
-  { value: 'excavator', label: 'Excavator' },
-  { value: 'dump_truck', label: 'Dumper' },
-  { value: 'dozer', label: 'Dozer' },
-  { value: 'wheel_loader', label: 'Wheel Loader' },
-  { value: 'backhoe', label: 'Backhoe' },
-  { value: 'crane', label: 'Crane' },
-  { value: 'bulldozer', label: 'Bulldozer' },
-  { value: 'grader', label: 'Grader' },
-  { value: 'compactor', label: 'Compactor' },
-  { value: 'roller', label: 'Roller' },
-  { value: 'telehandler', label: 'Telehandler' },
-  { value: 'forklift', label: 'Forklift' },
-  { value: 'motor_grader', label: 'Motor Grader' },
-  { value: 'motor_scraper', label: 'Motor Scraper' },
-  { value: 'pipelayer', label: 'Pipelayer' },
-  { value: 'other', label: 'Other' },
-];
-
-const MAKES = [
-  { value: 'Caterpillar', label: 'Caterpillar' },
-  { value: 'Komatsu', label: 'Komatsu' },
-  { value: 'Volvo', label: 'Volvo' },
-  { value: 'Hitachi', label: 'Hitachi' },
-  { value: 'Liebherr', label: 'Liebherr' },
-  { value: 'John Deere', label: 'John Deere' },
-  { value: 'Case', label: 'Case' },
-  { value: 'JCB', label: 'JCB' },
-  { value: 'XCMG', label: 'XCMG' },
-  { value: 'Sany', label: 'Sany' },
-  { value: 'Hyundai', label: 'Hyundai' },
-  { value: 'Doosan', label: 'Doosan' },
-  { value: 'Kobelco', label: 'Kobelco' },
-  { value: 'Terex', label: 'Terex' },
-  { value: 'Other', label: 'Other' },
-];
-
-const MODELS: Record<string, string[]> = {
-  Caterpillar: ['320', '320F', '330', 'D6', 'D8', 'D10', '966', '980', '777', '785'],
-  Komatsu: ['PC200', 'PC300', 'PC400', 'PC200-8', 'D65', 'D85', 'WA320', 'WA380', 'HD325'],
-  Volvo: ['L120', 'L150', 'EC200', 'EC300', 'EC480', 'A25G', 'A30G', 'A40G'],
-  Hitachi: ['ZX200', 'ZX300', 'ZX470', 'ZAXIS 200'],
-  Liebherr: ['R 920', 'R 930', 'R 944', 'PR 734', 'T 264'],
-  'John Deere': ['310', '410', '544', '644', '844'],
-  Case: ['CX200', 'CX300', '2050M'],
-  JCB: ['3CX', '4CX', 'JS200'],
-  XCMG: ['XC200', 'XE200', 'GR215'],
-  Sany: ['SY200', 'SY300', 'SY500'],
-  Hyundai: ['HX200', 'HX300', 'HL760'],
-  Doosan: ['DX200', 'DX300', 'DL200'],
-  Kobelco: ['SK200', 'SK300', 'SK460'],
-  Terex: ['TR100', 'TA300'],
-};
+import { MACHINE_TYPES, MAKES, METER_TYPES, YEARS, modelsForMake } from '@/lib/machine-options';
 
 export default function NewMachine() {
   const router = useRouter();
@@ -87,9 +32,7 @@ export default function NewMachine() {
 
   const set = (k: string, v: string) => setFormData((f) => ({ ...f, [k]: v }));
 
-  const availableModels = formData.make && formData.make !== 'Other'
-    ? (MODELS[formData.make] ?? [])
-    : [];
+  const availableModels = modelsForMake(formData.make);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,20 +134,30 @@ export default function NewMachine() {
               </Field>
               <Field>
                 <FieldLabel htmlFor="machine-model">Model</FieldLabel>
-                <NativeSelect
-                  id="machine-model"
-                  className="w-full"
-                  value={formData.model}
-                  onChange={(e) => set('model', e.target.value)}
-                  disabled={!formData.make}
-                >
-                  <NativeSelectOption value="">
-                    {formData.make ? 'Select model…' : 'Select make first'}
-                  </NativeSelectOption>
-                  {availableModels.map((m) => (
-                    <NativeSelectOption key={m} value={m}>{m}</NativeSelectOption>
-                  ))}
-                </NativeSelect>
+                {availableModels.length > 0 ? (
+                  <NativeSelect
+                    id="machine-model"
+                    className="w-full"
+                    value={formData.model}
+                    onChange={(e) => set('model', e.target.value)}
+                    disabled={!formData.make}
+                  >
+                    <NativeSelectOption value="">
+                      {formData.make ? 'Select model…' : 'Select make first'}
+                    </NativeSelectOption>
+                    {availableModels.map((m) => (
+                      <NativeSelectOption key={m} value={m}>{m}</NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                ) : (
+                  <Input
+                    id="machine-model"
+                    value={formData.model}
+                    onChange={(e) => set('model', e.target.value)}
+                    disabled={!formData.make}
+                    placeholder={formData.make ? 'Enter model…' : 'Select make first'}
+                  />
+                )}
               </Field>
             </div>
 
@@ -212,15 +165,17 @@ export default function NewMachine() {
             <div className="grid grid-cols-2 gap-4">
               <Field>
                 <FieldLabel htmlFor="machine-year">Year</FieldLabel>
-                <Input
+                <NativeSelect
                   id="machine-year"
-                  type="number"
+                  className="w-full"
                   value={formData.year}
                   onChange={(e) => set('year', e.target.value)}
-                  placeholder="2022"
-                  min="1970"
-                  max="2099"
-                />
+                >
+                  <NativeSelectOption value="">Select year…</NativeSelectOption>
+                  {YEARS.map((y) => (
+                    <NativeSelectOption key={y} value={y}>{y}</NativeSelectOption>
+                  ))}
+                </NativeSelect>
               </Field>
               <Field>
                 <FieldLabel htmlFor="machine-chassis">Chassis No</FieldLabel>

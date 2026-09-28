@@ -10,6 +10,7 @@ import { apiPatch } from '@/lib/api/mutations';
 import { fetchListStrict } from '@/lib/api/fetch-list';
 import { ApiErrorBanner } from '@/components/api-error-banner';
 import { Button } from '@/components/ui/button';
+import { MAKE_VALUES, YEARS, modelsForMake, withCurrent } from '@/lib/machine-options';
 
 interface Row extends Record<string, unknown> {
   id?: string;
@@ -153,6 +154,10 @@ export default function MachineDetail() {
     primary_meter_type: 'hours',
     status_flag: 'active',
   });
+
+  // Model choices follow the selected make; "Other" (or an unknown make) falls
+  // back to a free-text field so a custom model can still be typed in.
+  const modelOptions = modelsForMake(form.make);
 
   useEffect(() => {
     if (!id) return;
@@ -434,21 +439,40 @@ export default function MachineDetail() {
                   {/* Make and Model */}
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Make</label>
-                    <input
-                      type="text"
+                    <select
                       value={form.make}
                       onChange={(e) => setForm({ ...form, make: e.target.value })}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
+                    >
+                      <option value="">Select make…</option>
+                      {withCurrent(MAKE_VALUES, form.make).map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Model</label>
-                    <input
-                      type="text"
-                      value={form.model}
-                      onChange={(e) => setForm({ ...form, model: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
+                    {modelOptions.length > 0 ? (
+                      <select
+                        value={form.model}
+                        onChange={(e) => setForm({ ...form, model: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">Select model…</option>
+                        {withCurrent(modelOptions, form.model).map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={form.model}
+                        onChange={(e) => setForm({ ...form, model: e.target.value })}
+                        placeholder={form.make ? 'Enter model…' : 'Select make first'}
+                        disabled={!form.make}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -456,14 +480,16 @@ export default function MachineDetail() {
                   {/* Year and Chassis */}
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Year</label>
-                    <input
-                      type="number"
+                    <select
                       value={form.year}
                       onChange={(e) => setForm({ ...form, year: e.target.value })}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      min="1970"
-                      max="2099"
-                    />
+                    >
+                      <option value="">Select year…</option>
+                      {withCurrent(YEARS, form.year).map((y) => (
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Chassis No</label>
