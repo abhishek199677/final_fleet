@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -84,7 +85,7 @@ export default function SupportPage() {
       {apiError && <ApiErrorBanner onRetry={() => void load()} />}
       <div>
         <h1 className="text-3xl font-bold">Support</h1>
-        <p className="text-muted-foreground mt-1">Report a problem to Perceptiqx — issues route to WhatsApp</p>
+        <p className="text-muted-foreground mt-1">Report a problem to the Perceptiqx support team</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -169,9 +170,14 @@ export default function SupportPage() {
               {sent && (
                 <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg border border-green-200">
                   <CheckCircle className="h-5 w-5 text-green-600" />
-                  <p className="text-sm text-green-700">Ticket sent — Perceptiqx will respond on WhatsApp.</p>
+                  <p className="text-sm text-green-700">Ticket sent — our team will reply on this ticket.</p>
                 </div>
               )}
+              <p className="text-xs text-muted-foreground">
+                We only store the subject and description you type here. See the{' '}
+                <Link href="/legal/privacy" className="underline underline-offset-2">Privacy Policy</Link>{' '}
+                for how support data is handled.
+              </p>
             </form>
             
             <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-100">
@@ -180,8 +186,9 @@ export default function SupportPage() {
                 <div>
                   <p className="text-sm font-medium text-blue-800">How it works</p>
                   <p className="text-xs text-gray-700 mt-1">
-                    Your ticket is sent directly to the Perceptiqx support team via WhatsApp. 
-                    They typically respond within 30 minutes during business hours.
+                    Your ticket is saved to this workspace and reviewed by the Perceptiqx support
+                    team during business hours. They reply on the ticket — keep this page open or
+                    check back later.
                   </p>
                 </div>
               </div>

@@ -82,9 +82,9 @@ function AcceptInviteForm() {
           onChange={(e) => setToken(e.target.value)}
           placeholder="Paste the invite token"
           required
-          className="border-white/10 bg-white/5 text-white placeholder:text-white/30"
+          className="border-white/10 bg-white/5 text-white placeholder:text-white/50"
         />
-        <p className="text-xs text-white/30">Sent to you by the workspace owner.</p>
+        <p className="text-xs text-white/60">Sent to you by the workspace owner.</p>
       </div>
 
       <div className="space-y-1.5">
@@ -98,7 +98,7 @@ function AcceptInviteForm() {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="At least 8 characters"
           required
-          className="border-white/10 bg-white/5 text-white placeholder:text-white/30"
+          className="border-white/10 bg-white/5 text-white placeholder:text-white/50"
         />
       </div>
 
@@ -113,7 +113,7 @@ function AcceptInviteForm() {
           onChange={(e) => setConfirm(e.target.value)}
           placeholder="Repeat the password"
           required
-          className="border-white/10 bg-white/5 text-white placeholder:text-white/30"
+          className="border-white/10 bg-white/5 text-white placeholder:text-white/50"
         />
       </div>
 
@@ -122,9 +122,9 @@ function AcceptInviteForm() {
         {loading ? 'Setting up…' : 'Set password & join'}
       </Button>
 
-      <p className="text-center text-sm text-white/30">
+      <p className="text-center text-sm text-white/60">
         Already have an account?{' '}
-        <Link href="/login" className="font-semibold text-teal-400/60 hover:text-teal-300 transition-colors">
+        <Link href="/login" className="font-semibold text-teal-400 hover:text-teal-300 transition-colors">
           Sign in
         </Link>
       </p>
@@ -134,10 +134,10 @@ function AcceptInviteForm() {
 
 export default function AcceptInvitePage() {
   return (
-    <section className="flex min-h-screen items-center justify-center bg-gray-950 px-6 py-12">
+    <main id="content" className="flex min-h-screen items-center justify-center bg-gray-950 px-6 py-12">
       <Suspense fallback={<Spinner className="text-white/50" />}>
         <AcceptInviteForm />
       </Suspense>
-    </section>
+    </main>
   );
 }

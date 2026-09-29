@@ -9,6 +9,7 @@ import { Building2, Phone, Mail, MapPin, Briefcase, IndianRupee, ArrowRight, Pen
 import { fetchList } from '@/lib/api/fetch-list';
 import { apiDelete } from '@/lib/api/mutations';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { BorderButton } from '@/components/ui/border-button';
 import { LongText } from '@/components/long-text';
 import {
   Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
@@ -219,13 +220,15 @@ export default function OwnerClients() {
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
-                    <button
+                    <BorderButton
+                      size='sm'
+                      tone='destructive'
+                      title='Delete'
+                      aria-label='Delete'
                       onClick={(e) => { e.preventDefault(); void handleDelete(c.id, c.name); }}
-                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                      title="Delete"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                      <Trash2 aria-hidden='true' className='h-3.5 w-3.5' />
+                    </BorderButton>
                   </div>
                 </CardContent>
               </Card>

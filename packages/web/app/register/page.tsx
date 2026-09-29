@@ -3,119 +3,10 @@
 import { useState, ChangeEvent } from 'react';
 import { useAuth } from '@/lib/auth/context';
 import Link from 'next/link';
-import { Ripple, AuthTabs } from '@/components/blocks/modern-animated-sign-in';
+import { AuthTabs } from '@/components/blocks/modern-animated-sign-in';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Play } from 'lucide-react';
-import {
-  Truck, MapPin, BarChart3, Wrench, Shield, Clock, Fuel, FileText,
-} from 'lucide-react';
-
-const iconsArray = [
-  {
-    component: () => (
-      <div className="flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-teal-500/15">
-        <Truck className="h-[18px] w-[18px] text-teal-400" />
-      </div>
-    ),
-    className: 'size-[40px]',
-    duration: 20,
-    delay: 0,
-    radius: 100,
-    path: false,
-    reverse: false,
-  },
-  {
-    component: () => (
-      <div className="flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-emerald-500/15">
-        <MapPin className="h-[18px] w-[18px] text-emerald-400" />
-      </div>
-    ),
-    className: 'size-[40px]',
-    duration: 20,
-    delay: 10,
-    radius: 100,
-    path: false,
-    reverse: false,
-  },
-  {
-    component: () => (
-      <div className="flex h-[40px] w-[40px] items-center justify-center rounded-xl bg-blue-500/15">
-        <BarChart3 className="h-[22px] w-[22px] text-blue-400" />
-      </div>
-    ),
-    className: 'size-[48px]',
-    duration: 25,
-    delay: 5,
-    radius: 180,
-    path: false,
-    reverse: false,
-  },
-  {
-    component: () => (
-      <div className="flex h-[40px] w-[40px] items-center justify-center rounded-xl bg-amber-500/15">
-        <Wrench className="h-[22px] w-[22px] text-amber-400" />
-      </div>
-    ),
-    className: 'size-[48px]',
-    duration: 25,
-    delay: 15,
-    radius: 180,
-    path: false,
-    reverse: false,
-  },
-  {
-    component: () => (
-      <div className="flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-violet-500/15">
-        <Shield className="h-[18px] w-[18px] text-violet-400" />
-      </div>
-    ),
-    className: 'size-[40px]',
-    duration: 30,
-    delay: 8,
-    radius: 240,
-    path: false,
-    reverse: true,
-  },
-  {
-    component: () => (
-      <div className="flex h-[34px] w-[34px] items-center justify-center rounded-lg bg-rose-500/15">
-        <Clock className="h-[18px] w-[18px] text-rose-400" />
-      </div>
-    ),
-    className: 'size-[40px]',
-    duration: 30,
-    delay: 18,
-    radius: 240,
-    path: false,
-    reverse: true,
-  },
-  {
-    component: () => (
-      <div className="flex h-[44px] w-[44px] items-center justify-center rounded-xl bg-cyan-500/15">
-        <Fuel className="h-[24px] w-[24px] text-cyan-400" />
-      </div>
-    ),
-    className: 'size-[52px]',
-    duration: 35,
-    delay: 3,
-    radius: 300,
-    path: false,
-    reverse: true,
-  },
-  {
-    component: () => (
-      <div className="flex h-[44px] w-[44px] items-center justify-center rounded-xl bg-orange-500/15">
-        <FileText className="h-[24px] w-[24px] text-orange-400" />
-      </div>
-    ),
-    className: 'size-[52px]',
-    duration: 35,
-    delay: 22,
-    radius: 300,
-    path: false,
-    reverse: false,
-  },
-];
+import { TERMS_CONSENT_VERSION } from '@/lib/site-info';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -123,7 +14,9 @@ export default function RegisterPage() {
   const [tenantName, setTenantName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const [consentGiven, setConsentGiven] = useState(false);
+  const [tab, setTab] = useState<'login' | 'signup'>('signup');
+  const { login, register } = useAuth();
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>, field: string) => {
     if (field === 'email') setEmail(e.target.value);
@@ -136,7 +29,23 @@ export default function RegisterPage() {
     setError('');
     setLoading(true);
     try {
+      // The Sign in tab on this page performs a real sign-in.
+      if (tab === 'login') {
+        await login(email, password);
+        return;
+      }
+      // Defence in depth: the checkbox is `required`, but never sign up
+      // without an explicit, recorded agreement to the legal terms.
+      if (!consentGiven) {
+        setError('Please agree to the Terms and Conditions and Privacy Policy to continue.');
+        return;
+      }
       await register(email, password, tenantName);
+      // Consent receipt on this device: version of the terms accepted + when.
+      window.localStorage.setItem(
+        'fleetos_terms_consent',
+        JSON.stringify({ version: TERMS_CONSENT_VERSION, acceptedAt: new Date().toISOString() }),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
@@ -154,28 +63,30 @@ export default function RegisterPage() {
           type: 'email',
           placeholder: 'you@company.com',
           required: true,
-          onChange: () => {},
+          autoComplete: 'email',
+          onChange: (e: ChangeEvent<HTMLInputElement>) => handleInputChange(e, 'email'),
         },
         {
           label: 'Password',
           type: 'password',
           placeholder: 'Enter your password',
           required: true,
-          onChange: () => {},
+          autoComplete: 'current-password',
+          onChange: (e: ChangeEvent<HTMLInputElement>) => handleInputChange(e, 'password'),
         },
       ],
-      submitButton: 'Sign in',
-      textVariantButton: 'Forgot password?',
+      submitButton: loading && tab === 'login' ? 'Signing in...' : 'Sign in',
     },
     signup: {
       header: 'Create account',
-      subHeader: 'Start your free trial today',
+      subHeader: 'Create your workspace in a minute',
       fields: [
         {
           label: 'Company Name',
           type: 'text',
           placeholder: 'Acme Construction',
           required: true,
+          autoComplete: 'organization',
           onChange: (e: ChangeEvent<HTMLInputElement>) => handleInputChange(e, 'tenant'),
         },
         {
@@ -183,6 +94,7 @@ export default function RegisterPage() {
           type: 'email',
           placeholder: 'you@company.com',
           required: true,
+          autoComplete: 'email',
           onChange: (e: ChangeEvent<HTMLInputElement>) => handleInputChange(e, 'email'),
         },
         {
@@ -190,23 +102,28 @@ export default function RegisterPage() {
           type: 'password',
           placeholder: 'At least 8 characters',
           required: true,
+          autoComplete: 'new-password',
           onChange: (e: ChangeEvent<HTMLInputElement>) => handleInputChange(e, 'password'),
         },
       ],
-      submitButton: loading ? 'Creating account...' : 'Get started',
+      submitButton: loading && tab === 'signup' ? 'Creating account...' : 'Get started',
     },
   };
 
   return (
-    <section className="flex min-h-screen max-lg:justify-center">
+    <main id="content" className="flex min-h-screen max-lg:justify-center">
       {/* Left Side — animated orbit */}
-      <span className="relative flex w-1/2 flex-col justify-center overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 max-lg:hidden">
+      <div className="relative flex w-1/2 flex-col justify-center overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 max-lg:hidden">
         <AspectRatio ratio={16/9} className="w-[80%] mx-auto flex-1">
           <video
             controls
             autoPlay
             loop
+            muted
+            playsInline
+            preload="metadata"
             poster="/app-preview-poster.jpg"
+            aria-label="Fleet OS product preview video"
             className="w-full h-full object-cover rounded-xl transition-transform duration-500 hover:scale-[1.02]"
           >
             <source src="/app-preview.mp4" type="video/mp4" />
@@ -216,15 +133,15 @@ export default function RegisterPage() {
           <div className="absolute inset-x-0 top-[30%] bottom-[30%] flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 hover:scale-[1.05]">
             <div className="relative flex items-center space-x-3 group-hover:scale-[1.05]">
               <Play
+                aria-hidden="true"
                 className="h-6 w-6 text-white/90"
-                aria-label="Play video preview"
               />
               <span className="text-sm font-medium text-white/90">Watch Preview</span>
             </div>
           </div>
-          {/* Note about accessibility */}
+          {/* Honest description of the preview — no caption track is bundled. */}
           <p className="absolute bottom-2 left-2 right-2 text-xs text-center text-white/70">
-            Video is muted · Captions available
+            Product preview · plays muted · use the player controls to pause
           </p>
         </AspectRatio>
 
@@ -242,17 +159,20 @@ export default function RegisterPage() {
             </div>
             <span className="text-xl font-bold text-white">FleetOS</span>
           </div>
-          <h2 className="text-2xl font-bold text-white">
+          <p className="text-2xl font-bold text-white">
             Fleet management,<br />
             <span className="text-teal-400/80">simplified.</span>
-          </h2>
+          </p>
         </div>
-      </span>
+      </div>
 
       {/* Right Side — auth form */}
-      <span className="flex h-[100dvh] w-1/2 flex-col items-center justify-center bg-gray-950 px-[10%] max-lg:w-full max-lg:px-[8%]">
+      <div className="flex h-[100dvh] w-1/2 flex-col items-center justify-center bg-gray-950 px-[10%] max-lg:w-full max-lg:px-[8%]">
         {error && (
-          <div className="mb-4 w-full max-w-[380px] rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          <div
+            role="alert"
+            className="mb-4 w-full max-w-[380px] rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400"
+          >
             {error}
           </div>
         )}
@@ -260,14 +180,16 @@ export default function RegisterPage() {
           formFields={formFields}
           handleSubmit={(e) => { void handleSubmit(e); }}
           defaultTab="signup"
+          onTabChange={setTab}
+          onConsentChange={setConsentGiven}
         />
-        <p className="mt-8 text-center text-sm text-white/30 max-w-[380px]">
+        <p className="mt-8 text-center text-sm text-white/60 max-w-[380px]">
           Already have an account?{' '}
-          <Link href="/login" className="font-semibold text-teal-400/60 hover:text-teal-300 transition-colors">
+          <Link href="/login" className="font-semibold text-teal-400 hover:text-teal-300 transition-colors">
             Sign in
           </Link>
         </p>
-      </span>
-    </section>
+      </div>
+    </main>
   );
 }

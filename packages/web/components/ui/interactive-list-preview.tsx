@@ -70,9 +70,9 @@ export default function InteractiveListPreview({
   bgColor = "#171717",
   className = "",
 }: InteractiveListPreviewProps) {
-  const imageRefs = useRef<any[]>([]);
-  const imageContainerRef = useRef<any>(null);
-  const tableRef = useRef<any>(null);
+  const imageRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
   const pendingLeaveRef = useRef<Record<number, boolean>>({});
   const tweenGenerationRef = useRef<Record<number, number>>({});
   const activeIndexRef = useRef<number | null>(null);
@@ -149,7 +149,7 @@ export default function InteractiveListPreview({
   }, [safeLerp]);
 
   useEffect(() => {
-    imageRefs.current.forEach((imageElement: any) => {
+    imageRefs.current.forEach((imageElement) => {
       if (!imageElement) return;
 
       if (reduceMotionRef.current) {
@@ -330,8 +330,9 @@ export default function InteractiveListPreview({
           ref={imageContainerRef}
           className="pointer-events-none absolute inset-0 z-20"
           style={{ mixBlendMode: "difference" }}
+          aria-hidden="true"
         >
-          {items.map((item: any, index: number) => (
+          {items.map((item: InteractiveListItem, index: number) => (
             <div
               key={`${item.client}-${index}`}
               ref={(element) => setImageRef(index, element)}
@@ -343,7 +344,8 @@ export default function InteractiveListPreview({
                 zIndex: DEFAULT_IMAGE_Z_INDEX,
               }}
             >
-              <img src={item.img} alt="hover-item-image" className="absolute inset-0 h-full w-full object-cover" />
+              {/* Purely decorative duplicate of the row text beside it. */}
+              <img src={item.img} alt="" className="absolute inset-0 h-full w-full object-cover" />
             </div>
           ))}
         </div>
@@ -354,6 +356,7 @@ export default function InteractiveListPreview({
           onMouseLeave={onTableLeave}
         >
           <table className="relative z-30 w-full table-fixed border-collapse">
+            <caption className="sr-only">Machines tracked in this workspace</caption>
             <colgroup>
               <col style={{ width: "20%" }} />
               <col style={{ width: "20%" }} />
@@ -361,8 +364,25 @@ export default function InteractiveListPreview({
               <col style={{ width: "40%" }} />
             </colgroup>
 
+            <thead>
+              <tr>
+                <th scope="col" className="whitespace-nowrap px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-white/70">
+                  Machine
+                </th>
+                <th scope="col" className="whitespace-nowrap px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-white/70">
+                  Platform
+                </th>
+                <th scope="col" className="whitespace-nowrap px-6 py-3 text-center text-xs font-semibold uppercase tracking-widest text-white/70">
+                  <span className="sr-only">Preview</span>
+                </th>
+                <th scope="col" className="whitespace-nowrap px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-white/70">
+                  Services tracked
+                </th>
+              </tr>
+            </thead>
+
             <tbody>
-              {items.map((item: any, index: number) => (
+              {items.map((item: InteractiveListItem, index: number) => (
                 <tr
                   key={`${item.client}-${index}`}
                   onMouseEnter={(event) =>
@@ -399,7 +419,7 @@ export default function InteractiveListPreview({
 
       {isCoarsePointer && (
       <div style={{ backgroundColor: bgColor }} className={`w-full font-mono text-white ${className}`}>
-        {items.map((item: any, index: number) => (
+        {items.map((item: InteractiveListItem, index: number) => (
           <div key={`${item.client}-${index}`} className="flex border-b border-white/10">
             <div className="flex w-1/2 flex-col justify-between gap-3 p-4">
               <div className="flex flex-col gap-1">
@@ -424,7 +444,7 @@ export default function InteractiveListPreview({
             <div className="relative aspect-3/4 h-full w-1/2 max-[1025px]:h-[30vh]">
               <img
                 src={item.img}
-                alt={item.client}
+                alt={`Photo of ${String(item.client)}${item.platform ? `, ${String(item.platform)}` : ''}`}
                 className="absolute inset-0 h-full w-full object-cover"
               />
             </div>

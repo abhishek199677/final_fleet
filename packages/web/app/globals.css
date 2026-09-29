@@ -600,7 +600,7 @@
   .fleet-input:focus {
     outline: none;
     border-color: var(--fleet-border-focus);
-    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.3);
   }
 
   .fleet-badge {
@@ -894,7 +894,7 @@
 }
 
 /* Match the heading accent to Fleet OS teal */
-.landing-hero .orbit-delivery h1 em {
+.landing-hero .orbit-delivery h2 em {
   color: var(--fleet-brand-500, #14b8a6) !important;
 }
 
@@ -941,7 +941,7 @@
 }
 
 /* Heading accent matches Fleet OS brand */
-.dashboard-hero .orbit-delivery h1 em {
+.dashboard-hero .orbit-delivery h2 em {
   color: var(--fleet-brand-500, #14b8a6) !important;
 }
 
@@ -952,4 +952,200 @@
   }
   .dashboard-hero .orbit-delivery .planet-caption { display: none; }
   .dashboard-hero .orbit-delivery .cloud-bank { display: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Keyboard focus
+   Layered so that any Tailwind `focus-visible:*` utility on a component still
+   wins, while every interactive element gets a visible ring by default.
+--------------------------------------------------------------------------- */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--fleet-brand-600, #0d9488);
+    outline-offset: 2px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Legal documents (privacy, terms, cookie, refund)
+--------------------------------------------------------------------------- */
+.legal-doc {
+  color: var(--fleet-gray-700, #344054);
+  font-size: 16px;
+  line-height: 1.7;
+}
+.legal-doc h1 {
+  color: var(--fleet-gray-900, #101828);
+  font-size: clamp(1.75rem, 1.35rem + 1.6vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0 0 0.5rem;
+}
+.legal-doc .lead {
+  color: var(--fleet-gray-500, #667085);
+  font-size: 0.875rem;
+  margin-bottom: 2rem;
+}
+.legal-doc h2 {
+  color: var(--fleet-gray-900, #101828);
+  font-size: 1.125rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  margin: 2.25rem 0 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--fleet-border, #eaecf0);
+}
+.legal-doc h3 {
+  color: var(--fleet-gray-900, #101828);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.5rem;
+}
+.legal-doc p {
+  margin: 0 0 1rem;
+}
+.legal-doc ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  margin: 0 0 1rem;
+}
+.legal-doc li {
+  margin-bottom: 0.5rem;
+}
+.legal-doc li::marker {
+  color: var(--fleet-brand-600, #0d9488);
+}
+.legal-doc a {
+  color: var(--fleet-brand-700, #0f766e);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.legal-doc a:hover {
+  color: var(--fleet-brand-900, #134e4a);
+}
+.legal-doc strong {
+  color: var(--fleet-gray-900, #101828);
+  font-weight: 600;
+}
+.legal-doc code {
+  background: var(--fleet-surface-muted, #f2f4f7);
+  border: 1px solid var(--fleet-border, #eaecf0);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 0.8125rem;
+  color: var(--fleet-gray-800, #1d2939);
+  overflow-wrap: anywhere;
+}
+.legal-doc table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.25rem;
+  font-size: 0.9375rem;
+}
+.legal-doc th,
+.legal-doc td {
+  border: 1px solid var(--fleet-border, #eaecf0);
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+.legal-doc th {
+  background: var(--fleet-surface-muted, #f2f4f7);
+  color: var(--fleet-gray-700, #344054);
+  font-weight: 600;
+}
+
+/* ============================================
+   CHAT WIDGET — self-contained palette
+   The dark-mode "glass" rules above restyle .bg-white / .bg-gray-* and force
+   .text-gray-900 to near-white. That works for translucent dashboard cards,
+   but on the chat widget it produced a light panel with white text (unreadable).
+   The widget opts out below: later + !important beats those overrides, in both themes.
+   ============================================ */
+.chat-panel {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+}
+.dark .chat-panel {
+  background-color: #111827 !important;
+  color: #f9fafb !important;
+}
+
+.chat-bot-bubble {
+  background-color: #f3f4f6 !important;
+  color: #111827 !important;
+}
+.dark .chat-bot-bubble {
+  background-color: #374151 !important;
+  color: #f3f4f6 !important;
+}
+
+.chat-user-bubble {
+  background-color: #0f766e !important;
+  color: #ffffff !important;
+}
+
+.chat-time--bot { color: #4b5563 !important; }
+.dark .chat-time--bot { color: #d1d5db !important; }
+.chat-time--user { color: rgba(255, 255, 255, 0.92) !important; }
+
+.chat-muted { color: #6b7280 !important; }
+.dark .chat-muted { color: #9ca3af !important; }
+
+.chat-suggestion {
+  background-color: #e5e7eb !important;
+  color: #111827 !important;
+}
+.dark .chat-suggestion {
+  background-color: #4b5563 !important;
+  color: #f9fafb !important;
+}
+
+.chat-field {
+  background-color: #f9fafb !important;
+  color: #111827 !important;
+  border-color: #d1d5db !important;
+}
+.dark .chat-field {
+  background-color: #374151 !important;
+  color: #f9fafb !important;
+  border-color: #4b5563 !important;
+}
+.chat-field::placeholder { color: #6b7280 !important; }
+.dark .chat-field::placeholder { color: #cbd5e1 !important; }
+
+.chat-icon-surface {
+  background-color: #ccfbf1 !important;
+  color: #0f766e !important;
+}
+
+/* Hover states kept alive despite the !important surfaces above */
+.chat-suggestion:hover { background-color: #d1d5db !important; }
+.dark .chat-suggestion:hover { background-color: #5b6472 !important; }
+.chat-field:focus { border-color: #0f766e !important; }
+
+/* ——— GlowButton: animated glow layers (hover/focus only) ——— */
+@keyframes glow-spin {
+  0% { transform: rotate(10deg); }
+  50% { transform: rotate(190deg); }
+  100% { transform: rotate(370deg); }
+}
+@keyframes glow-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.75); }
+}
+.glow-button:hover .glow-layer,
+.glow-button:focus-visible .glow-layer {
+  animation:
+    glow-spin 8s cubic-bezier(0.56, 0.15, 0.28, 0.86) infinite,
+    glow-pulse 4s infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .glow-button:hover .glow-layer,
+  .glow-button:focus-visible .glow-layer {
+    animation: none !important;
+  }
 }

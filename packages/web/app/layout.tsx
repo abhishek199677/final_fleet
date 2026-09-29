@@ -8,10 +8,16 @@ import { ThemeProvider } from '@/context/theme-provider';
 import { SearchProvider } from '@/context/search-provider';
 import { LayoutProvider } from '@/context/layout-provider';
 import { NavigationProgress } from '@/components/navigation-progress';
+import { CookieConsent } from '@/components/cookie-consent';
+import { ChatBot } from '@/components/chat-bot';
 
 export const metadata: Metadata = {
-  title: 'Fleet OS',
-  description: 'Multi-tenant SaaS for heavy-equipment operators',
+  title: {
+    default: 'Fleet OS',
+    template: '%s — Fleet OS',
+  },
+  description:
+    'Fleet OS runs utilisation, billing, maintenance and records for heavy-equipment fleets, with row-level tenant isolation and append-only history.',
   icons: {
     icon: '/favicon.svg',
   },
@@ -37,6 +43,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <NavigationProgress />
                     <AmbientBackground />
                     <div className="fleet-shell">{children}</div>
+                    <CookieConsent />
+                    <ChatBot />
                   </LayoutProvider>
                 </SearchProvider>
               </DirectionProvider>
