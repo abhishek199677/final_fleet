@@ -5,11 +5,20 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Truck, MapPin, Calendar, Pencil, Trash2 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import {
+  Truck, MapPin, Calendar, Pencil, Trash2, PauseCircle, Clock, CheckCircle2,
+} from 'lucide-react';
 import { fetchList } from '@/lib/api/fetch-list';
 import { apiDelete } from '@/lib/api/mutations';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { BorderButton } from '@/components/ui/border-button';
+import {
+  RadialOrbitalTimeline,
+  formatTimelineDate,
+  type TimelineItem,
+  type TimelineStatus,
+} from '@/components/ui/radial-orbital-timeline';
 
 interface DeploymentEntry {
   id: string;
@@ -23,6 +32,32 @@ interface DeploymentEntry {
   status: string;
   machines?: { code: string };
   sites?: { name: string };
+}
+
+/** Maps a real deployment status onto the timeline status, badge, and icon. */
+function deploymentLifecycle(status: string): {
+  status: TimelineStatus;
+  label: string;
+  icon: LucideIcon;
+} {
+  switch (status) {
+    case 'active':
+      return { status: 'in-progress', label: 'Active', icon: Truck };
+    case 'on_hold_payment':
+      return { status: 'on-hold', label: 'On hold for payment', icon: PauseCircle };
+    case 'pending':
+      return { status: 'pending', label: 'Pending', icon: Clock };
+    case 'ended':
+      return { status: 'completed', label: 'Ended', icon: CheckCircle2 };
+    default:
+      return {
+        status: 'pending',
+        label: status
+          ? status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')
+          : 'Unknown',
+        icon: Clock,
+      };
+  }
 }
 
 export default function DeploymentsList() {
@@ -164,6 +199,41 @@ export default function DeploymentsList() {
               </Card>
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* ── Deployment lifecycle ── */}
+      {deployments.length > 0 && (
+        <div className="space-y-2">
+          <div>
+            <h2 className="text-lg font-semibold">Deployment lifecycle</h2>
+            <p className="text-sm text-muted-foreground">
+              Your {Math.min(deployments.length, 7)} most recent {deployments.length === 1 ? 'deployment' : 'deployments'}, newest first — colour and badge follow the live status.
+            </p>
+          </div>
+          <RadialOrbitalTimeline
+            hubLabel="Deployments"
+            timelineData={deployments.slice(0, 7).map((d, index, all): TimelineItem => {
+              const life = deploymentLifecycle(d.status);
+              const siteName = d.site_name ?? d.sites?.name;
+              return {
+                id: index,
+                title: d.machine_code ?? d.machine_type ?? 'Machine',
+                date: d.start_date ? formatTimelineDate(d.start_date) : 'No date',
+                category: siteName ?? 'Deployment',
+                content: [
+                  d.machine_type,
+                  siteName ? `Site: ${siteName}` : null,
+                  d.start_date ? `Since ${formatTimelineDate(d.start_date)}` : null,
+                  d.end_date ? `Until ${formatTimelineDate(d.end_date)}` : 'Ongoing',
+                ].filter(Boolean).join(' · ') || 'Deployment record',
+                icon: life.icon,
+                relatedIds: [index - 1, index + 1].filter((i) => i >= 0 && i < all.length),
+                status: life.status,
+                statusLabel: life.label,
+              };
+            })}
+          />
         </div>
       )}
 

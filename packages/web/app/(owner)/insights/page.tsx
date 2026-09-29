@@ -1,19 +1,30 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { authFetch } from '@/lib/api/auth-fetch';
-import { fetchListStrict } from '@/lib/api/fetch-list';
+import { fetchList, fetchListStrict } from '@/lib/api/fetch-list';
+import { DonutChart } from '@/components/ui/donut-chart';
+import {
+  RadialOrbitalTimeline, formatTimelineDate, type TimelineItem,
+} from '@/components/ui/radial-orbital-timeline';
+import { cn } from '@/lib/utils';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell,
 } from 'recharts';
 import {
-  AlertTriangle, Brain, Clock, Coins, Gauge, Power, Wrench,
+  AlertTriangle, Brain, CalendarClock, Clock, Coins, Gauge, Power, Wrench,
   CheckCircle2,
 } from 'lucide-react';
 import { ApiErrorBanner } from '@/components/api-error-banner';
 import { Spinner } from '@/components/ui/spinner';
+
+/** Local calendar day as `YYYY-MM-DD`, for comparing date-only records. */
+function localTodayIso(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
 
 function sessionHours(s: Record<string, unknown>): number {
   const a = new Date(String(s.start_at ?? '')).getTime();
@@ -75,6 +86,11 @@ export default function Insights() {
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState(false);
+  // Drives the status donut: hovered/focused segment ↔ centre text ↔ legend.
+  const [hoveredStatus, setHoveredStatus] = useState<string | null>(null);
+  // Maintenance history for the orbit — visits are scoped per machine by the API.
+  const [maintenanceVisits, setMaintenanceVisits] = useState<Record<string, unknown>[]>([]);
+  const [visitsLoading, setVisitsLoading] = useState(false);
 
   useEffect(() => {
     void Promise.all([
@@ -86,6 +102,35 @@ export default function Insights() {
       setSessions(s);
     }).catch(() => setApiError(true)).finally(() => setLoading(false));
   }, []);
+
+  // Flatten recent maintenance visits across the fleet (newest first).
+  useEffect(() => {
+    if (loading || machines.length === 0) return;
+    setVisitsLoading(true);
+    void Promise.all(
+      machines
+        .filter((m) => typeof m.id === 'string' && m.id)
+        .map((m) =>
+          fetchList<Record<string, unknown>>(`/api/v1/maintenance/machines/${String(m.id)}/visits`)
+            .then((rows) =>
+              rows.map(
+                (v): Record<string, unknown> => ({ ...v, machine_code: String(m.code ?? 'Machine') }),
+              ),
+            )
+            .catch(() => []),
+        ),
+    )
+      .then((groups) =>
+        setMaintenanceVisits(
+          groups
+            .flat()
+            .filter((v) => typeof v.visit_date === 'string' && v.visit_date)
+            .sort((a, b) => String(b.visit_date).localeCompare(String(a.visit_date)))
+            .slice(0, 7),
+        ),
+      )
+      .finally(() => setVisitsLoading(false));
+  }, [loading, machines]);
 
   // Fetch computed insights
   useEffect(() => {
@@ -143,6 +188,12 @@ export default function Insights() {
       machines: insights.filter((i) => i.status === 'idle').map((i) => i.machine_code)
     },
   ].filter((d) => d.value > 0);
+
+  const activeStatus = utilPieData.find((d) => d.name === hoveredStatus) ?? null;
+  const statusTotal = utilPieData.reduce((sum, d) => sum + d.value, 0);
+  const displayedValue = activeStatus ? activeStatus.value : statusTotal;
+  const displayedPct =
+    activeStatus && statusTotal > 0 ? Math.round((activeStatus.value / statusTotal) * 100) : 100;
 
   if (loading) {
     return (
@@ -298,58 +349,130 @@ export default function Insights() {
             {utilPieData.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">No machines</p>
             ) : (
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={utilPieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={4}
-                    dataKey="value"
-                    label={({ name: _name, value }) => `${value}`}
-                  >
-                    {utilPieData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const data = payload[0].payload;
-                        return (
-                          <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200 min-w-[150px]">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div 
-                                className="w-3 h-3 rounded-full" 
-                                style={{ backgroundColor: data.color }}
-                              />
-                              <span className="font-semibold text-gray-800">{data.name}</span>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-2">{data.value} machine{data.value > 1 ? 's' : ''}</p>
-                            {data.machines && data.machines.length > 0 && (
-                              <div className="border-t pt-2">
-                                <p className="text-xs text-gray-500 mb-1">Machines:</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {data.machines.map((m: string, i: number) => (
-                                    <span key={i} className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{m}</span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="flex flex-col items-center space-y-5">
+                <DonutChart
+                  data={utilPieData.map((d) => ({
+                    value: d.value,
+                    color: d.color,
+                    label: d.name,
+                  }))}
+                  size={230}
+                  strokeWidth={28}
+                  animationDuration={1.1}
+                  animationDelayPerSegment={0.12}
+                  highlightOnHover
+                  onSegmentHover={(segment) => setHoveredStatus(segment?.label ?? null)}
+                  centerContent={
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={activeStatus?.name ?? 'total'}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.2, ease: 'circOut' }}
+                        className="flex flex-col items-center justify-center text-center"
+                      >
+                        <p className="text-muted-foreground text-xs font-medium truncate max-w-[150px]">
+                          {activeStatus ? activeStatus.name : 'Total Machines'}
+                        </p>
+                        <p className="text-4xl font-bold">{displayedValue}</p>
+                        {activeStatus && (
+                          <p className="text-sm font-medium text-muted-foreground">
+                            {displayedPct}% of fleet
+                          </p>
+                        )}
+                      </motion.div>
+                    </AnimatePresence>
+                  }
+                />
+
+                {/* Legend rows mirror the chart and stay keyboard-reachable. */}
+                <div className="w-full space-y-1 border-t pt-3">
+                  {utilPieData.map((entry) => (
+                    <button
+                      key={entry.name}
+                      type="button"
+                      className={cn(
+                        'flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left transition-colors',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        hoveredStatus === entry.name ? 'bg-muted' : 'hover:bg-muted/60',
+                      )}
+                      onMouseEnter={() => setHoveredStatus(entry.name)}
+                      onMouseLeave={() => setHoveredStatus(null)}
+                      onFocus={() => setHoveredStatus(entry.name)}
+                      onBlur={() => setHoveredStatus(null)}
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <span
+                          className="h-3 w-3 shrink-0 rounded-full"
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        <span className="text-sm font-medium">{entry.name}</span>
+                      </span>
+                      <span className="text-sm font-semibold text-muted-foreground">
+                        {entry.value}
+                      </span>
+                    </button>
+                  ))}
+                  {activeStatus && activeStatus.machines.length > 0 && (
+                    <div className="flex flex-wrap gap-1 px-2 pt-1">
+                      {activeStatus.machines.map((code) => (
+                        <span
+                          key={code}
+                          className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+                        >
+                          {code}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* ── Maintenance timeline ── */}
+      {!loading && !apiError && (visitsLoading ? (
+        <p className="text-center text-sm text-muted-foreground">
+          Loading maintenance history…
+        </p>
+      ) : maintenanceVisits.length > 0 ? (
+        <div>
+          <div className="mb-2 flex items-center gap-2">
+            <Wrench className="h-5 w-5 text-amber-500" />
+            <h2 className="text-xl font-bold">Maintenance timeline</h2>
+          </div>
+          <p className="mb-3 text-sm text-muted-foreground">
+            The most recent service visits across the fleet — select a node for the visit details.
+          </p>
+          <RadialOrbitalTimeline
+            hubLabel="Visits"
+            timelineData={maintenanceVisits.map((visit, index, all): TimelineItem => {
+              const iso = String(visit.visit_date);
+              const isFuture = iso > localTodayIso();
+              const code = String(visit.machine_code);
+              const details = [
+                visit.mechanic ? `Mechanic: ${String(visit.mechanic)}` : null,
+                visit.meter_at_visit != null ? `Meter: ${String(visit.meter_at_visit)}` : null,
+                visit.notes ? String(visit.notes).slice(0, 120) : null,
+              ].filter(Boolean);
+              return {
+                id: index,
+                title: code,
+                date: formatTimelineDate(iso),
+                category: visit.visit_type ? String(visit.visit_type) : 'Maintenance',
+                content: details.join(' · ') || `Service visit recorded for ${code}.`,
+                icon: isFuture ? CalendarClock : Wrench,
+                relatedIds: [index - 1, index + 1].filter((i) => i >= 0 && i < all.length),
+                status: isFuture ? 'pending' : 'completed',
+                statusLabel: isFuture ? 'Scheduled' : 'Completed',
+              };
+            })}
+          />
+        </div>
+      ) : null)}
 
       {/* ── Per-Vehicle Report ── */}
       <div>

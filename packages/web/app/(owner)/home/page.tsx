@@ -6,11 +6,10 @@ import dynamic from 'next/dynamic';
 import {
   Bar, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
-import Link from 'next/link';
 import {
   Download, RefreshCw, TrendingUp, AlertTriangle,
   ArrowUpRight, MoreHorizontal, ChevronRight,
-  Tractor, MapPin, Rocket, Building2, Users, LifeBuoy, Play,
+  Tractor, MapPin, Building2, Users, Play,
 } from 'lucide-react';
 import { authFetch } from '@/lib/api/auth-fetch';
 import { fetchListStrict, ApiError } from '@/lib/api/fetch-list';
@@ -20,14 +19,9 @@ import { cn } from '@/lib/utils';
 import { GlassCard } from '@/components/dashboard/glass-card';
 import { GlareCard } from '@/components/fx/glare-card';
 import { Reveal } from '@/components/fx/reveal';
-import SplineSceneBasic from '@/components/spline-scene-basic';
-import { Spotlight } from '@/components/ui/spotlight';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { RadialOrbitalTimeline, type TimelineItem } from '@/components/ui/radial-orbital-timeline';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
-import {
-  Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious,
-} from '@/components/ui/carousel';
 
 // Orbit hero — WebGL canvas, skip SSR
 const OrbitDeliveryHero = dynamic(
@@ -38,15 +32,6 @@ const OrbitDeliveryHero = dynamic(
 interface Row extends Record<string, unknown> {
   id?: string;
 }
-
-const QUICK_ACTIONS = [
-  { href: '/machines/new', label: 'Add machine', hint: 'Grow the fleet', icon: Tractor },
-  { href: '/sites/new', label: 'New site', hint: 'Project location', icon: MapPin },
-  { href: '/deployments/new', label: 'New deployment', hint: 'Assign a machine', icon: Rocket },
-  { href: '/clients/new', label: 'Add client', hint: 'New account', icon: Building2 },
-  { href: '/operators/new', label: 'Add operator', hint: 'Crew roster', icon: Users },
-  { href: '/support', label: 'Support', hint: 'Report a problem', icon: LifeBuoy },
-] as const;
 
 function num(v: unknown, fallback = 0): number {
   const n = typeof v === 'string' ? Number(v) : (v as number);
@@ -165,12 +150,33 @@ function DashboardInner() {
   const [deployments, setDeployments] = useState<Row[]>([]);
   const [sites, setSites] = useState<Row[]>([]);
   const [clients, setClients] = useState<Row[]>([]);
+  const [operators, setOperators] = useState<Row[]>([]);
   const [receivables, setReceivables] = useState<Row[]>([]);
   const [advances, setAdvances] = useState<Row[]>([]);
-  const [isMuted, setIsMuted] = useState(false);
   const [alerts, setAlerts] = useState<Row[]>([]);
   const [heroOpacity, setHeroOpacity] = useState(1);
   const [heroScale, setHeroScale] = useState(1);
+
+  // Onboarding steps — a step counts as "done" only when a real record exists.
+  const onboardingSteps = [
+    { label: 'Add client', category: 'Client', hint: 'Add the company you will invoice for this work.', icon: Building2, done: clients.length > 0 },
+    { label: 'New site', category: 'Site', hint: 'Record where the work happens.', icon: MapPin, done: sites.length > 0 },
+    { label: 'Add machine', category: 'Machine', hint: 'Register a machine with its code and type.', icon: Tractor, done: machines.length > 0 },
+    { label: 'Add operator', category: 'Operator', hint: 'Add the crew member who runs the machine.', icon: Users, done: operators.length > 0 },
+    { label: 'First session', category: 'Session', hint: 'Log a job to start tracking hours and earnings.', icon: Play, done: sessions.length > 0 },
+  ];
+  const firstPendingStep = onboardingSteps.findIndex((s) => !s.done);
+  const milestones: TimelineItem[] = onboardingSteps.map((step, index, all) => ({
+    id: index,
+    title: step.label,
+    date: step.done ? 'Done' : index === firstPendingStep ? 'Next up' : 'Not started',
+    content: step.hint,
+    category: step.category,
+    icon: step.icon,
+    relatedIds: [index - 1, index + 1].filter((i) => i >= 0 && i < all.length),
+    status: step.done ? 'completed' : index === firstPendingStep ? 'in-progress' : 'pending',
+    statusLabel: step.done ? 'Done' : index === firstPendingStep ? 'Next up' : 'Not started',
+  }));
 
   useEffect(() => {
     const onScroll = () => {
@@ -209,7 +215,8 @@ function DashboardInner() {
       fetchListStrict<Row>('/api/v1/billing/receivables'),
       fetchListStrict<Row>('/api/v1/billing/unused-advances'),
       fetchListStrict<Row>('/api/v1/alerts'),
-    ]).then(([k, m, s, d, st, c, r, a, al]) => {
+      fetchListStrict<Row>('/api/v1/operators'),
+    ]).then(([k, m, s, d, st, c, r, a, al, op]) => {
       // API up → show exactly what's in the DB (empty = empty state)
       setRetryCount(0);
       if (k) setKpis(k);
@@ -221,6 +228,7 @@ function DashboardInner() {
       setReceivables(r);
       setAdvances(a);
       setAlerts(al.filter((x) => x.is_resolved !== true).slice(0, 5));
+      setOperators(op);
     }).catch((err) => {
       if (err instanceof ApiError && err.status === 401) {
         // Token expired/invalid — offer sign-in instead of claiming an outage
@@ -307,19 +315,6 @@ function DashboardInner() {
   const userName = user?.email
     ? user.email.split('@')[0].replace(/[^a-zA-Z]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
     : 'Demo';
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 100) {
-        setIsMuted(true);
-      } else {
-        setIsMuted(false);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
 
   if (loading) {
@@ -818,6 +813,30 @@ function DashboardInner() {
           </Reveal>
         </div>
       </div>
+
+      {/* Onboarding milestones — every status comes from real records */}
+      {!apiError && (
+        <Reveal delay={1}>
+          <GlassCard hover={false}>
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">
+                Set up your fleet
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {milestones.filter((m) => m.status === 'completed').length} of {milestones.length} steps done
+              </p>
+            </div>
+            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+              Each node reflects what&apos;s actually in your database — click one for details.
+            </p>
+            <RadialOrbitalTimeline
+              timelineData={milestones}
+              hubLabel="Steps"
+              className="mt-4 border-0 bg-transparent"
+            />
+          </GlassCard>
+        </Reveal>
+      )}
     </div>
   );
 }

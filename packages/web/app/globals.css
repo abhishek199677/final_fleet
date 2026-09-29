@@ -1168,3 +1168,28 @@
 @media (prefers-reduced-motion: reduce) {
   .spinning-border__ring { animation: none; }
 }
+
+/* ── Radial orbital timeline ─────────────────────────────────────────────
+   The decorative orbit ring rotates slowly around the hub, and active link
+   paths carry a dashed flow so you can see which milestone pair is lit up.
+   transform-box: view-box keeps the px transform-origin in SVG coordinates
+   (the component sets it inline to the measured hub position). */
+.orbital-spin {
+  transform-box: view-box;
+  animation: orbital-spin 90s linear infinite;
+}
+@keyframes orbital-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.orbital-link-flow {
+  animation: orbital-link-flow 1.6s linear infinite;
+}
+@keyframes orbital-link-flow {
+  /* -34 = two periods of the "5 12" dash pattern → seamless loop. */
+  to { stroke-dashoffset: -34; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .orbital-spin,
+  .orbital-link-flow { animation: none; }
+}
