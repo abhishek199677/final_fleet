@@ -19,6 +19,7 @@ import { ConfigDrawer } from '@/components/config-drawer';
 import { ProfileDropdown } from '@/components/profile-dropdown';
 import { Search } from '@/components/search';
 import { ThemeSwitch } from '@/components/theme-switch';
+import { RequestDemoButton } from '@/components/request-demo';
 import { useSearch } from '@/context/search-provider';
 
 interface NavEntry {
@@ -241,6 +242,9 @@ export function OwnerShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
+            {/* Product demo — plays the walkthrough video in a dialog */}
+            <RequestDemoButton />
+
             {/* Alert bell */}
             <Link
               href="/home#alerts"

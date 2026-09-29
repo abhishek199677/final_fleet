@@ -1149,3 +1149,22 @@
     animation: none !important;
   }
 }
+
+/* ——— SpinningBorderButton: rotating conic border ———
+   Transform carries the centering translate so the rotation happens around
+   the pill's centre instead of the element's top-left corner. */
+.spinning-border__ring {
+  transform: translate(-50%, -50%);
+  animation: border-spin 3s linear infinite;
+}
+.spinning-border:hover .spinning-border__ring,
+.spinning-border:focus-within .spinning-border__ring {
+  animation-duration: 1s;
+}
+@keyframes border-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinning-border__ring { animation: none; }
+}
